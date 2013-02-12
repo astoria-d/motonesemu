@@ -24,7 +24,7 @@ void clock_loop(void) {
         while (ch != NULL) {
             if (!ch->handler())
                 break;
-            ch = ch->l.next;
+            ch = (struct slist*)ch->l.next;
         }
         nanosleep(&ts, NULL);
     }
