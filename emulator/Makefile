@@ -1,10 +1,10 @@
 
 BIN=motonesemu
 
-OBJS=emu-main.o clock.o tools.o bus.o \
+OBJS=emu-main.o clock.o tools.o bus.o cpu.o \
 
 
-#LIBS=-L../libs -lmotones
+LIBS=-L../libs -pthread
 
 INCLUDE=-I../include
 
