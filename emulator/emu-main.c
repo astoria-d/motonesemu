@@ -5,11 +5,13 @@
 
 #include "tools.h"
 #include "clock.h"
+#include "rom.h"
 
 int init_cpu(void);
 int init_bus(void);
 void clean_bus(void);
 void reset_cpu(void);
+int load_cartridge(const char* cartridge);
 
 static int clock_done;
 
@@ -36,6 +38,12 @@ static int init_datas(void) {
         return FALSE;
     }
 
+    ret = init_rom();
+    if (!ret) {
+        fprintf(stderr, "rom init err.\n");
+        return FALSE;
+    }
+
     return TRUE;
 }
 
@@ -43,6 +51,7 @@ static void clean_datas(void) {
     dprint("clean data...\n");
     clean_clock();
     clean_bus();
+    clear_rom();
 }
 
 static void sig_handler(int sig) {
@@ -65,9 +74,35 @@ static int prepare_sig(void) {
     return TRUE;
 }
 
+static void print_usage(void) {
+    printf("motonesemu [option...] [.nes file]\n");
+    printf("Options:\n");
+    printf("\t-h: print this page.\n");
+    //printf("\t-o [output]: output object file.\n");
+}
+
 int main(int argc, char* argv[]) {
     int ret;
+    char ch;
+    char* cartridge;
+    extern int optind;
     printf("motonesemu start...\n");
+
+    while( (ch = getopt(argc, argv, "h")) != -1) {
+        switch (ch) {
+            case 'h':
+            default:
+                print_usage();
+                return 0;
+        }
+    }
+    argc -= optind - 1;
+    argv += optind - 1;
+
+    if (argc <= 1) {
+        print_usage();
+        return -1;
+    }
 
     ret = init_datas();
     if (!ret) {
@@ -82,6 +117,13 @@ int main(int argc, char* argv[]) {
         return RT_ERROR;
     }
  
+    cartridge = argv[1];
+    ret = load_cartridge(cartridge);
+    if (!ret) {
+        fprintf(stderr, "load cartridge file err.\n");
+        return FALSE;
+    }
+
     reset_cpu();
     start_clock();
 
