@@ -61,8 +61,8 @@ unsigned long clock_cnt;
 int clock_cpu(void) {
     int ret;
 
-    dprint("clock cpu %d\n", clock_cnt);
-    dump_cpu(0);
+    dprint("---------------\n%d\n", clock_cnt);
+    //dump_cpu(0);
     clock_cnt++;
 
     ret = execute_func[current_exec_func]();
@@ -118,6 +118,7 @@ static int reset_handler2(void) {
 static int fetch_inst(void) {
     dprint("fetch\n");
     load_memory(cpu_reg.pc);
+    dump_cpu(FALSE);
 
     cpu_reg.pc++;
     current_exec_func++;
@@ -134,8 +135,6 @@ static int decode_inst(void) {
         fprintf(stderr, "cpu decode instruction failure.\n");
         raise(SIGINT);
     }
-
-        return ret;
 
     cpu_reg.pc += inst_len - 1;
     return ret;

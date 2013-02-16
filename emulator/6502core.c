@@ -11,25 +11,24 @@
  *
  * */
 struct mem_opcode_fmt {
-    unsigned int aaa:3;
-    unsigned int bbb:3;
     unsigned int cc:2;
+    unsigned int bbb:3;
+    unsigned int aaa:3;
 };
 
 struct cond_br_opcode_fmt {
-    unsigned int xx:2;
-    unsigned int y:1;
     unsigned int one:5;
+    unsigned int y:1;
+    unsigned int xx:2;
 };
 
 struct single_opcode_fmt {
-    unsigned int aaaa:4;
     unsigned int eight:4;
+    unsigned int aaaa:4;
 };
 
 /*
- * addressing mode for group 1 instruction
- * addressing mode:
+ * addressing mode
  *
  * Zero Page
  * Zero Page, X
@@ -74,6 +73,7 @@ struct single_opcode_fmt {
 #define AM_GP3_ABS_X    7
 
 static int decode_gp1(struct mem_opcode_fmt fmt, int *cycle, int *len) {
+
 
     *cycle = 0;
     switch (fmt.aaa) {
@@ -425,6 +425,8 @@ int decode6502(unsigned char inst, int *cycle_cnt, int *inst_len) {
     struct cond_br_opcode_fmt* c_fmt = (struct cond_br_opcode_fmt*)&inst;
     struct single_opcode_fmt* s_fmt = (struct single_opcode_fmt*)&inst;
 
+    dprint("decode inst: %02x\n", inst);
+
 
     if (m_fmt->cc == 1)
         ret = decode_gp1(*m_fmt, cycle_cnt, inst_len);
@@ -434,11 +436,11 @@ int decode6502(unsigned char inst, int *cycle_cnt, int *inst_len) {
         ret = decode_gp3(*m_fmt, cycle_cnt, inst_len);
 
     /*conditional branc group*/
-    else if (c_fmt->one == 0x10)
+    if (!ret && c_fmt->one == 0x10)
         ret = decode_cond_br(inst, cycle_cnt, inst_len);
 
     /*single byte inst group*/
-    else if (s_fmt->eight == 0x08 || s_fmt->eight == 0x0a)
+    else if (!ret && (s_fmt->eight == 0x08 || s_fmt->eight == 0x0a))
         ret = decode_single(inst, cycle_cnt, inst_len);
 
     return ret;

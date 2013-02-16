@@ -23,11 +23,12 @@ static void *clock_loop(void* arg) {
     struct clock_handler *ch;
 
 #ifdef DEB_SLOW
-    ts.tv_sec = 1;
+    ts.tv_sec = 0;
+    ts.tv_nsec = 100000000;
 #else
     ts.tv_sec = 0;
-#endif
     ts.tv_nsec = 1;
+#endif
 
     while (!exit_loop) {
         //dprint("loop...\n");
