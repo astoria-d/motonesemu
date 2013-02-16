@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdio.h>
+#include <signal.h>
 #include "tools.h"
 #include "clock.h"
 #include "bus.h"
@@ -41,7 +42,8 @@ static int reset_handler2(void);
 #define RESET_ADDR      0xFFFC
 #define IRQ_BRK_ADDR    0xFFFE
 
-void dump_cpu(void);
+void dump_cpu(int full);
+int decode6502(unsigned char inst, int *cycle_cnt, int *inst_len);
 
 /*
  * clock execution function array.
@@ -57,13 +59,15 @@ unsigned long clock_cnt;
  * clock handler.
  * */
 int clock_cpu(void) {
+    int ret;
+
     dprint("clock cpu %d\n", clock_cnt);
-    dump_cpu();
+    dump_cpu(0);
     clock_cnt++;
 
-    execute_func[current_exec_func]();
+    ret = execute_func[current_exec_func]();
 
-    return TRUE;
+    return ret;
 }
 
 static unsigned char load_memory(unsigned short addr) {
@@ -112,18 +116,38 @@ static int reset_handler2(void) {
 }
 
 static int fetch_inst(void) {
+    dprint("fetch\n");
     load_memory(cpu_reg.pc);
-    decode_inst();
+
     cpu_reg.pc++;
     current_exec_func++;
     return TRUE;
 }
 
 static int decode_inst(void) {
-    return TRUE;
+    int inst_cycle, inst_len;
+    int ret;
+
+    ret = decode6502(cpu_data_buffer, &inst_cycle, &inst_len);
+
+    if (!ret) {
+        fprintf(stderr, "cpu decode instruction failure.\n");
+        raise(SIGINT);
+    }
+
+        return ret;
+
+    cpu_reg.pc += inst_len - 1;
+    return ret;
 }
 
 static int execute_inst(void) {
+    int ret;
+    dprint("execute\n");
+    ret = decode_inst();
+    if (!ret)
+        return FALSE;
+
     execute_func[0] = fetch_inst;
     execute_func[1]= execute_inst;
     execute_func[2] = NULL;
@@ -131,21 +155,27 @@ static int execute_inst(void) {
     return TRUE;
 }
 
-void dump_cpu(void) {
-    printf("6502 CPU registers:\n");
+void dump_cpu(int full) {
+    if (full) 
+        printf("6502 CPU registers:\n");
+
     printf("pc:     %04x\n", cpu_reg.pc);
-    printf("acc:    %02x\n", cpu_reg.acc);
-    printf("x:      %02x\n", cpu_reg.x);
-    printf("y:      %02x\n", cpu_reg.y);
-    printf("sp:     %04x\n", cpu_reg.sp);
-    printf("status:\n");
-    printf(" negative:   %d\n", cpu_reg.status.negative);
-    printf(" overflow:   %d\n", cpu_reg.status.overflow);
-    printf(" break:      %d\n", cpu_reg.status.break_mode);
-    printf(" decimal:    %d\n", cpu_reg.status.decimal);
-    printf(" irq:        %d\n", cpu_reg.status.irq_disable);
-    printf(" zero:       %d\n", cpu_reg.status.zero);
-    printf(" carry:      %d\n", cpu_reg.status.carry);
+    if (full) {
+        printf("acc:    %02x\n", cpu_reg.acc);
+        printf("x:      %02x\n", cpu_reg.x);
+        printf("y:      %02x\n", cpu_reg.y);
+        printf("sp:     %04x\n", cpu_reg.sp);
+        printf("status:\n");
+        printf(" negative:   %d\n", cpu_reg.status.negative);
+        printf(" overflow:   %d\n", cpu_reg.status.overflow);
+        printf(" break:      %d\n", cpu_reg.status.break_mode);
+        printf(" decimal:    %d\n", cpu_reg.status.decimal);
+        printf(" irq:        %d\n", cpu_reg.status.irq_disable);
+        printf(" zero:       %d\n", cpu_reg.status.zero);
+        printf(" carry:      %d\n", cpu_reg.status.carry);
+        printf("-------------------\n");
+    }
+    printf("data:     %02x\n", cpu_data_buffer);
 }
 
 int init_cpu(void) {
