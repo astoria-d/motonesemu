@@ -35,7 +35,7 @@ static void *clock_loop(void* arg) {
         ch = handler_list;
         while (ch != NULL) {
             if (!ch->handler())
-                break;
+                return NULL;
             ch = (struct clock_handler*)ch->l.next;
         }
         nanosleep(&ts, NULL);

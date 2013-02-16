@@ -134,6 +134,7 @@ static int decode_inst(void) {
     if (!ret) {
         fprintf(stderr, "cpu decode instruction failure.\n");
         raise(SIGINT);
+        return ret;
     }
 
     cpu_reg.pc += inst_len - 1;
