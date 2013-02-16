@@ -19,12 +19,16 @@ $(BIN): $(OBJS) ../libs
 .c.o: 
 	gcc $(CFLAGS) -c $<
 
+6502core.o: 6502core.c
+	./opcode-gen.sh
+	gcc $(CFLAGS) -c $<
+
 test:
 	make
 	./test.sh
 
 clean:
-	-rm $(OBJS) $(BIN) \
+	-rm $(OBJS) $(BIN) opcode \
 		
 
 

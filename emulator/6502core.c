@@ -1,417 +1,305 @@
+#include <libio.h>
 #include "tools.h"
 
+typedef int (handler_6502_t) (void);
+
+struct opcode_map {
+    unsigned char   opcode;
+    char            mnemonic[4];
+    handler_6502_t  *func;
+    int             addr_mode;
+    int             cycle;
+    int             inst_len;
+};
+
+int func_ADC(void);
+int func_AND(void);
+int func_ASL(void);
+int func_BCC(void);
+int func_BCS(void);
+int func_BEQ(void);
+int func_BIT(void);
+int func_BMI(void);
+int func_BNE(void);
+int func_BPL(void);
+int func_BRK(void);
+int func_BVC(void);
+int func_BVS(void);
+int func_CLC(void);
+int func_CLD(void);
+int func_CLI(void);
+int func_CLV(void);
+int func_CMP(void);
+int func_CPX(void);
+int func_CPY(void);
+int func_DEC(void);
+int func_DEX(void);
+int func_DEY(void);
+int func_EOR(void);
+int func_INC(void);
+int func_INX(void);
+int func_INY(void);
+int func_JMP(void);
+int func_JSR(void);
+int func_LDA(void);
+int func_LDX(void);
+int func_LDY(void);
+int func_LSR(void);
+int func_NOP(void);
+int func_ORA(void);
+int func_PHA(void);
+int func_PHP(void);
+int func_PLA(void);
+int func_PLP(void);
+int func_ROL(void);
+int func_ROR(void);
+int func_RTI(void);
+int func_RTS(void);
+int func_SBC(void);
+int func_SEC(void);
+int func_SED(void);
+int func_SEI(void);
+int func_STA(void);
+int func_STX(void);
+int func_STY(void);
+int func_TAX(void);
+int func_TAY(void);
+int func_TSX(void);
+int func_TXA(void);
+int func_TXS(void);
+int func_TYA(void);
+
+struct opcode_map opcode_list [255] = {
+#include "opcode"
+};
+
+
 /*
- * instruction consists of following format.
- * aaabbbcc
- * aaa and cc determins opcode
- * bbb determins addr mode.
- *
- * ref:
- * http://www.llx.com/~nparker/a2/opcodes.html
+ * awk '{print "int func_" $2 "(void) {\n\n}"}' < opcode-6502 | sort | uniq
  *
  * */
-struct mem_opcode_fmt {
-    unsigned int cc:2;
-    unsigned int bbb:3;
-    unsigned int aaa:3;
-};
 
-struct cond_br_opcode_fmt {
-    unsigned int one:5;
-    unsigned int y:1;
-    unsigned int xx:2;
-};
-
-struct single_opcode_fmt {
-    unsigned int eight:4;
-    unsigned int aaaa:4;
-};
-
-/*
- * addressing mode
- *
- * Zero Page
- * Zero Page, X
- * Zero Page, Y
- * Absolute
- * Absolute, X
- * Absolute, Y
- * Indirect
- * Implied
- * Accumulator
- * Immediate
- * Relative
- * (Indirect, X)
- * (Indirect), Y
- * */
-
-/*(zero page, x)*/
-#define AM_GP1_INDR_INDX    0
-
-#define AM_GP1_ZP       1
-#define AM_GP1_IMM      2
-#define AM_GP1_ABS      3
-
-/*(zero page), y*/
-#define AM_GP1_INDX_INDR    4
-
-#define AM_GP1_ZP_X     5
-#define AM_GP1_ABS_X    6
-#define AM_GP1_ABS_Y    7
-
-#define AM_GP2_IMM      0
-#define AM_GP2_ZP       1
-#define AM_GP2_ACC      2
-#define AM_GP2_ABS      3
-#define AM_GP2_ZP_X     5
-#define AM_GP2_ABS_X    7
-
-#define AM_GP3_IMM      0
-#define AM_GP3_ZP       1
-#define AM_GP3_ABS      3
-#define AM_GP3_ZP_X     5
-#define AM_GP3_ABS_X    7
-
-static int decode_gp1(struct mem_opcode_fmt fmt, int *cycle, int *len) {
-
-
-    *cycle = 0;
-    switch (fmt.aaa) {
-        case 0:
-            dprint("ORA\n");
-            break;
-
-        case 1:
-            dprint("AND\n");
-            break;
-
-        case 2:
-            dprint("EOR\n");
-            break;
-
-        case 3:
-            dprint("ADC\n");
-            break;
-
-        case 4:
-            dprint("STA\n");
-            break;
-
-        case 5:
-            dprint("LDA\n");
-            break;
-
-        case 6:
-            dprint("CMP\n");
-            break;
-
-        case 7:
-            dprint("SBC\n");
-        default:
-            break;
-    }
-
-    *len = 2;
-    switch (fmt.bbb) {
-        case AM_GP1_ZP:
-            *cycle = 3;
-            break;
-
-        case AM_GP1_IMM:    
-            *cycle = 2;
-            break;
-
-        case AM_GP1_ABS :  
-            *len = 3;
-        case AM_GP1_ZP_X:
-            *cycle = 4;
-            break;
-
-        case AM_GP1_ABS_X: 
-        case AM_GP1_ABS_Y:
-            *cycle = 7;
-            *len = 3;
-            break;
-
-        case AM_GP1_INDR_INDX:
-            *cycle = 6;
-            break;
-
-        case AM_GP1_INDX_INDR   :
-            *cycle = 5;
-            break;
-
-        default:
-            return FALSE;
-    }
-
+int func_ADC(void) {
     return TRUE;
 }
 
-static int decode_gp2(struct mem_opcode_fmt fmt, int *cycle, int *len) {
-    *cycle = 0;
-    switch (fmt.aaa) {
-        case 0:
-            dprint("ASL\n");
-            break;
-
-        case 1:
-            dprint("ROL\n");
-            break;
-
-        case 2:
-            dprint("LSR\n");
-            break;
-
-        case 3:
-            dprint("ROR\n");
-            break;
-
-        case 4:
-            dprint("STX\n");
-            break;
-
-        case 5:
-            dprint("LDX\n");
-            break;
-
-        case 6:
-            dprint("DEC\n");
-            break;
-
-        case 7:
-            dprint("INC\n");
-        default:
-            break;
-    }
-
-    *len = 2;
-    switch (fmt.bbb) {
-        case AM_GP2_ZP:
-            *cycle = 3;
-            break;
-
-        case AM_GP2_ACC:    
-            *len = 1;
-        case AM_GP2_IMM:    
-            *cycle = 2;
-            break;
-
-        case AM_GP2_ABS :  
-            *len = 3;
-        case AM_GP2_ZP_X:
-            *cycle = 4;
-            break;
-
-        case AM_GP2_ABS_X: 
-            *len = 3;
-            *cycle = 7;
-            break;
-
-        default:
-            return FALSE;
-    }
-
+int func_AND(void) {
     return TRUE;
 }
 
-static int decode_gp3(struct mem_opcode_fmt fmt, int *cycle, int *len) {
-    *cycle = 0;
-    switch (fmt.aaa) {
-        case 1:
-            dprint("BIT\n");
-            break;
-
-        case 2:
-            dprint("JMP\n");
-            break;
-
-        case 3:
-            dprint("JMP(abs)\n");
-            break;
-
-        case 4:
-            dprint("STY\n");
-            break;
-
-        case 5:
-            dprint("LDY\n");
-            break;
-
-        case 6:
-            dprint("CPY\n");
-            break;
-
-        case 7:
-            dprint("CPX\n");
-            break;
-
-        case 0:
-        default:
-            return FALSE;
-    }
-
-    *len = 2;
-    switch (fmt.bbb) {
-        case AM_GP3_ZP:
-            *cycle = 3;
-            break;
-
-        case AM_GP3_IMM:    
-            *cycle = 2;
-            break;
-
-        case AM_GP3_ABS :  
-            *len = 3;
-        case AM_GP3_ZP_X:
-            *cycle = 4;
-            break;
-
-        case AM_GP3_ABS_X: 
-            *cycle = 7;
-            *len = 3;
-            break;
-
-        default:
-            return FALSE;
-    }
-
+int func_ASL(void) {
     return TRUE;
 }
 
-static int decode_cond_br(unsigned char inst, int *cycle, int *len) {
-    *cycle = 2;
-    *len = 2;
-    switch (inst) {
-        case 0x10:
-            dprint("BPL\n");
-            break;
-        case 0x30:
-            dprint("BMI\n");
-            break;
-        case 0x50:
-            dprint("BVC\n");
-            break;
-        case 0x70:
-            dprint("BVS\n");
-            break;
-        case 0x90:
-            dprint("BCC\n");
-            break;
-        case 0xB0:
-            dprint("BCS\n");
-            break;
-        case 0xD0:
-            dprint("BNE\n");
-            break;
-        case 0xF0:
-            dprint("BEQ\n");
-            break;
-        case 0x00:
-            dprint("BRK\n");
-            *cycle = 7;
-            *len = 1;
-            break;
-        case 0x20:
-            dprint("JSR abs\n");
-            *cycle = 6;
-            *len = 3;
-            break;
-        case 0x40:
-            dprint("RTI\n");
-            *cycle = 6;
-            *len = 1;
-            break;
-        case 0x60:
-            dprint("RTS\n");
-            *cycle = 6;
-            *len = 1;
-            break;
-        default:
-            return FALSE;
-    }
-
+int func_BCC(void) {
     return TRUE;
 }
 
-static int decode_single(unsigned char inst, int *cycle, int *len) {
-    *cycle = 2;
-    *len = 1;
-    switch (inst) {
-        case 0x08:
-            dprint("PHP\n");
-            *cycle = 3;
-            break;
-        case 0x28:
-            dprint("PLP\n");
-            *cycle = 4;
-            break;
-        case 0x48:
-            dprint("PHA\n");
-            *cycle = 3;
-            break;
-        case 0x68:
-            dprint("PLA\n");
-            *cycle = 4;
-            break;
-        case 0x88:
-            dprint("DEY\n");
-            break;
-        case 0xA8:
-            dprint("TAY\n");
-            break;
-        case 0xC8:
-            dprint("INY\n");
-            break;
-        case 0xE8:
-            dprint("INX\n");
-            break;
-        case 0x18:
-            dprint("CLC\n");
-            break;
-        case 0x38:
-            dprint("SEC\n");
-            break;
-        case 0x58:
-            dprint("CLI\n");
-            break;
-        case 0x78:
-            dprint("SEI\n");
-            break;
-        case 0x98:
-            dprint("TYA\n");
-            break;
-        case 0xb8:
-            dprint("CLV\n");
-            break;
-        case 0xD8:
-            dprint("CLD\n");
-            break;
-        case 0xF8:
-            dprint("SED\n");
-            break;
-        case 0x8A:
-            dprint("TXA\n");
-            break;
-        case 0x9A:
-            dprint("TXS\n");
-            break;
-        case 0xAA:
-            dprint("TAX\n");
-            break;
-        case 0xBA:
-            dprint("TSX\n");
-            break;
-        case 0xCA:
-            dprint("DEX\n");
-            break;
-        case 0xEA:
-            dprint("NOP\n");
-            break;
-        default:
-            return FALSE;
-    }
+int func_BCS(void) {
+    return TRUE;
+}
 
+int func_BEQ(void) {
+    return TRUE;
+}
+
+int func_BIT(void) {
+    return TRUE;
+}
+
+int func_BMI(void) {
+    return TRUE;
+}
+
+int func_BNE(void) {
+    return TRUE;
+}
+
+int func_BPL(void) {
+    return TRUE;
+}
+
+int func_BRK(void) {
+    return TRUE;
+}
+
+int func_BVC(void) {
+    return TRUE;
+}
+
+int func_BVS(void) {
+    return TRUE;
+}
+
+int func_CLC(void) {
+    return TRUE;
+}
+
+int func_CLD(void) {
+    return TRUE;
+}
+
+int func_CLI(void) {
+    return TRUE;
+}
+
+int func_CLV(void) {
+    return TRUE;
+}
+
+int func_CMP(void) {
+    return TRUE;
+}
+
+int func_CPX(void) {
+    return TRUE;
+}
+
+int func_CPY(void) {
+    return TRUE;
+}
+
+int func_DEC(void) {
+    return TRUE;
+}
+
+int func_DEX(void) {
+    return TRUE;
+}
+
+int func_DEY(void) {
+    return TRUE;
+}
+
+int func_EOR(void) {
+    return TRUE;
+}
+
+int func_INC(void) {
+    return TRUE;
+}
+
+int func_INX(void) {
+    return TRUE;
+}
+
+int func_INY(void) {
+    return TRUE;
+}
+
+int func_JMP(void) {
+    return TRUE;
+}
+
+int func_JSR(void) {
+    return TRUE;
+}
+
+int func_LDA(void) {
+    return TRUE;
+}
+
+int func_LDX(void) {
+    return TRUE;
+}
+
+int func_LDY(void) {
+    return TRUE;
+}
+
+int func_LSR(void) {
+    return TRUE;
+}
+
+int func_NOP(void) {
+    return TRUE;
+}
+
+int func_ORA(void) {
+    return TRUE;
+}
+
+int func_PHA(void) {
+    return TRUE;
+}
+
+int func_PHP(void) {
+    return TRUE;
+}
+
+int func_PLA(void) {
+    return TRUE;
+}
+
+int func_PLP(void) {
+    return TRUE;
+}
+
+int func_ROL(void) {
+    return TRUE;
+}
+
+int func_ROR(void) {
+    return TRUE;
+}
+
+int func_RTI(void) {
+    return TRUE;
+}
+
+int func_RTS(void) {
+    return TRUE;
+}
+
+int func_SBC(void) {
+    return TRUE;
+}
+
+int func_SEC(void) {
+    return TRUE;
+}
+
+int func_SED(void) {
+    return TRUE;
+}
+
+int func_SEI(void) {
+    return TRUE;
+}
+
+int func_STA(void) {
+    return TRUE;
+}
+
+int func_STX(void) {
+    return TRUE;
+}
+
+int func_STY(void) {
+    return TRUE;
+}
+
+int func_TAX(void) {
+    return TRUE;
+}
+
+int func_TAY(void) {
+    return TRUE;
+}
+
+int func_TSX(void) {
+    return TRUE;
+}
+
+int func_TXA(void) {
+    return TRUE;
+}
+
+int func_TXS(void) {
+    return TRUE;
+}
+
+int func_TYA(void) {
     return TRUE;
 }
 
@@ -420,29 +308,16 @@ static int decode_single(unsigned char inst, int *cycle, int *len) {
  * return execution cycle count
  * */
 int decode6502(unsigned char inst, int *cycle_cnt, int *inst_len) {
-    int ret = FALSE;
-    struct mem_opcode_fmt* m_fmt = (struct mem_opcode_fmt*)&inst;
-    struct cond_br_opcode_fmt* c_fmt = (struct cond_br_opcode_fmt*)&inst;
-    struct single_opcode_fmt* s_fmt = (struct single_opcode_fmt*)&inst;
 
-    dprint("decode inst: %02x\n", inst);
+    struct opcode_map * omap = &opcode_list[inst];
+    if (omap->func == NULL) {
+        return FALSE;
+    }
 
-
-    if (m_fmt->cc == 1)
-        ret = decode_gp1(*m_fmt, cycle_cnt, inst_len);
-    else if (m_fmt->cc == 2)
-        ret = decode_gp2(*m_fmt, cycle_cnt, inst_len);
-    else if (m_fmt->cc == 0)
-        ret = decode_gp3(*m_fmt, cycle_cnt, inst_len);
-
-    /*conditional branc group*/
-    if (!ret && c_fmt->one == 0x10)
-        ret = decode_cond_br(inst, cycle_cnt, inst_len);
-
-    /*single byte inst group*/
-    else if (!ret && (s_fmt->eight == 0x08 || s_fmt->eight == 0x0a))
-        ret = decode_single(inst, cycle_cnt, inst_len);
-
-    return ret;
+    dprint("decode inst: %02x > %s, %d cycle, %d len\n", 
+            inst, omap->mnemonic, omap->cycle, omap->inst_len);
+    *cycle_cnt = omap->cycle;
+    *inst_len = omap->inst_len;
+    return TRUE;
 }
 
