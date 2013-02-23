@@ -13,12 +13,17 @@ void clean_bus(void);
 void reset_cpu(void);
 int load_cartridge(const char* cartridge);
 
-static int clock_done;
+static int main_loop_done;
+static int param_debug;
+int critical_error;
+int debug_mode;
 
 static int init_datas(void) {
     int ret;
 
-    clock_done = FALSE;
+    main_loop_done = FALSE;
+    debug_mode = FALSE;
+    critical_error = FALSE;
 
     ret = init_bus();
     if (!ret) {
@@ -29,12 +34,6 @@ static int init_datas(void) {
     ret = init_clock();
     if (!ret) {
         fprintf(stderr, "clock init err.\n");
-        return FALSE;
-    }
-
-    ret = emu_timer_init();
-    if (!ret) {
-        fprintf(stderr, "timer init err.\n");
         return FALSE;
     }
 
@@ -61,7 +60,11 @@ static void clean_datas(void) {
 }
 
 static void sig_handler(int sig) {
-    clock_done = TRUE;
+    if (!critical_error && param_debug) {
+        debug_mode = TRUE;
+        return;
+    }
+    main_loop_done = TRUE;
 }
 
 static int prepare_sig(void) {
@@ -84,6 +87,7 @@ static void print_usage(void) {
     printf("motonesemu [option...] [.nes file]\n");
     printf("Options:\n");
     printf("\t-h: print this page.\n");
+    printf("\t-d: debug mode.\n");
     //printf("\t-o [output]: output object file.\n");
 }
 
@@ -92,10 +96,14 @@ int main(int argc, char* argv[]) {
     char ch;
     char* cartridge;
     extern int optind;
+    param_debug = FALSE;
     printf("motonesemu start...\n");
 
-    while( (ch = getopt(argc, argv, "h")) != -1) {
+    while( (ch = getopt(argc, argv, "dh")) != -1) {
         switch (ch) {
+            case 'd':
+                param_debug = TRUE;
+                break;
             case 'h':
             default:
                 print_usage();
@@ -130,10 +138,11 @@ int main(int argc, char* argv[]) {
         return FALSE;
     }
 
+    debug_mode = param_debug;
     reset_cpu();
     start_clock();
 
-    while (!clock_done) {
+    while (!main_loop_done) {
         sleep(1);
     }
 

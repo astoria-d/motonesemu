@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <time.h>
+#include <stdlib.h>
 #include "tools.h"
 #include "clock.h"
 #include "bus.h"
@@ -45,6 +46,9 @@ static int reset_handler2(void);
 
 void dump_cpu(int full);
 int decode6502(unsigned char inst, int *cycle_cnt, int *inst_len);
+void emu_debug(void);
+
+extern int debug_mode;
 
 /*
  * clock execution function array.
@@ -122,6 +126,9 @@ static int reset_handler2(void) {
 
 static int fetch_inst(void) {
     dprint("fetch\n");
+    if (debug_mode) {
+        emu_debug();
+    }
     load_memory(cpu_reg.pc);
     dump_cpu(FALSE);
 
@@ -133,12 +140,15 @@ static int fetch_inst(void) {
 static int decode_inst(void) {
     int inst_cycle, inst_len;
     int ret;
+    extern int critical_error;
 
     ret = decode6502(cpu_data_buffer, &inst_cycle, &inst_len);
 
     if (!ret) {
         fprintf(stderr, "cpu decode instruction failure.\n");
+        critical_error = TRUE;
         raise(SIGINT);
+        //abort();
         return ret;
     }
 

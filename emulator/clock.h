@@ -11,10 +11,11 @@ void clean_clock(void);
 
 int register_clock_hander(clock_func_t *handler);
 int start_clock(void);
+int pause_cpu_clock(void);
+int start_cpu_clock(void);
 
-int emu_timer_init(void);
-int register_timer(unsigned long int_sec, unsigned long int_nanosec, 
-        __sighandler_t func, timer_t *timerid);
+/*int register_timer(unsigned long int_sec, unsigned long int_nanosec, 
+        __sighandler_t func, int signum, timer_t *timerid);*/
 
 #define DEB_SLOW
 

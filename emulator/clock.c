@@ -1,10 +1,11 @@
-
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "tools.h"
 #include "clock.h"
 
-static int rt_signal;
+#define SIG_CPU_CLOCK SIGRTMIN
+
 static timer_t cpu_clock_timer;
 
 struct clock_handler {
@@ -17,7 +18,7 @@ static struct clock_handler *handler_list;
 static void cpu_clock_loop(int arg) {
     struct clock_handler *ch;
 
-    dprint("loop...\n");
+    dprint("clock...\n");
     ch = handler_list;
     while (ch != NULL) {
         if (!ch->handler())
@@ -31,12 +32,52 @@ static void cpu_clock_loop(int arg) {
 
 int start_clock(void) {
     int ret;
-    int sec, nsec;
+    struct sigaction    sigact;
 
-    sec = CPU_CLOCK_SEC;
-    nsec = CPU_CLOCK_NSEC;
-    ret = register_timer(sec, nsec, cpu_clock_loop, &cpu_clock_timer);
-    return ret == TRUE;
+
+    //register handler
+    sigact.sa_handler = cpu_clock_loop;
+    sigact.sa_flags = 0;
+    sigemptyset(&sigact.sa_mask);
+
+    if(sigaction(SIG_CPU_CLOCK, &sigact, NULL) == -1)
+    {
+        return FALSE;
+    }
+    ret = start_cpu_clock();
+
+    return ret;
+}
+
+int pause_cpu_clock(void) {
+    return 0 == timer_delete(cpu_clock_timer);
+}
+
+int start_cpu_clock(void) {
+    struct sigevent sev;
+    struct itimerspec   itval;
+    int int_sec, int_nanosec;
+
+    sev.sigev_notify = SIGEV_SIGNAL;
+    sev.sigev_signo = SIG_CPU_CLOCK;
+    sev.sigev_value.sival_ptr = &cpu_clock_timer;
+
+    int_sec = CPU_CLOCK_SEC;
+    int_nanosec = CPU_CLOCK_NSEC;
+    itval.it_interval.tv_sec = int_sec;
+    itval.it_interval.tv_nsec = int_nanosec;
+    itval.it_value.tv_sec = int_sec;
+    itval.it_value.tv_nsec = int_nanosec;
+
+    if(timer_create(CLOCK_REALTIME, &sev, &cpu_clock_timer) == -1)
+    {
+        return FALSE;
+    }
+    if(timer_settime(cpu_clock_timer, 0, &itval, NULL) == -1)
+    {
+        return FALSE;
+    }
+    return TRUE;
 }
 
 int register_clock_hander(clock_func_t *handler) {
@@ -55,14 +96,9 @@ int register_clock_hander(clock_func_t *handler) {
     return TRUE;
 }
 
-int emu_timer_init(void) {
-    rt_signal = SIGRTMIN;
-    //rt_signal = SIGALRM;
-    return TRUE;
-}
-
+#if 0
 int register_timer(unsigned long int_sec, unsigned long int_nanosec, __sighandler_t func, 
-        timer_t *timerId) {
+        int signum, timer_t *timerId) {
     struct sigaction    sigact;
     struct itimerspec   itval;
     struct sigevent sev;
@@ -73,7 +109,7 @@ int register_timer(unsigned long int_sec, unsigned long int_nanosec, __sighandle
     sigact.sa_flags = 0;
     sigemptyset(&sigact.sa_mask);
 
-    if(sigaction(rt_signal,&sigact,NULL) == -1)
+    if(sigaction(signum,&sigact,NULL) == -1)
     {
         return FALSE;
     }
@@ -85,10 +121,8 @@ int register_timer(unsigned long int_sec, unsigned long int_nanosec, __sighandle
     itval.it_value.tv_nsec = int_nanosec;
 
     sev.sigev_notify = SIGEV_SIGNAL;
-    sev.sigev_signo = rt_signal;
+    sev.sigev_signo = signum;
     sev.sigev_value.sival_ptr = timerId;
-
-    rt_signal++;
 
     if(timer_create(CLOCK_REALTIME, &sev, timerId) == -1)
     {
@@ -100,6 +134,7 @@ int register_timer(unsigned long int_sec, unsigned long int_nanosec, __sighandle
     }
     return TRUE;
 }
+#endif
 
 int init_clock(void) {
     handler_list = NULL;
