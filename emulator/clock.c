@@ -1,10 +1,20 @@
 #include <stdlib.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "tools.h"
 #include "clock.h"
 
 #define SIG_CPU_CLOCK SIGRTMIN
+
+//#define USE_TIMER_SIG
+
+#ifdef USE_TIMER_SIG
+#define RETURN_HANDLER  return
+#else
+static pthread_t cpu_thread_id;
+#define RETURN_HANDLER  return NULL
+#endif
 
 static timer_t cpu_clock_timer;
 
@@ -15,18 +25,30 @@ struct clock_handler {
 
 static struct clock_handler *handler_list;
 
+#ifdef USE_TIMER_SIG
 static void cpu_clock_loop(int arg) {
+#else
+static void* cpu_clock_loop(void* arg) {
+#endif
     struct clock_handler *ch;
 
+#ifndef USE_TIMER_SIG
+    struct timespec ts = {CPU_CLOCK_SEC, CPU_CLOCK_NSEC};
+    while(TRUE) {
+#endif
     dprint("clock...\n");
     ch = handler_list;
     while (ch != NULL) {
         if (!ch->handler())
-            return;
+            RETURN_HANDLER;
         ch = (struct clock_handler*)ch->l.next;
     }
+#ifndef USE_TIMER_SIG
+    nanosleep(&ts, NULL);
+    }
+#endif
 
-    return;
+    RETURN_HANDLER;
 }
 
 
@@ -34,7 +56,7 @@ int start_clock(void) {
     int ret;
     struct sigaction    sigact;
 
-
+#ifdef USE_TIMER_SIG
     //register handler
     sigact.sa_handler = cpu_clock_loop;
     sigact.sa_flags = 0;
@@ -45,15 +67,31 @@ int start_clock(void) {
         return FALSE;
     }
     ret = start_cpu_clock();
+#else
+    {
+        pthread_attr_t attr;
+        ret = pthread_attr_init(&attr);
+        if (ret != RT_OK)
+            return FALSE;
+
+        cpu_thread_id = 0;
+        ret = pthread_create(&cpu_thread_id, &attr, cpu_clock_loop, NULL);
+        if (ret != RT_OK)
+            return FALSE;
+    }
+#endif
 
     return ret;
 }
 
 int pause_cpu_clock(void) {
+#ifdef USE_TIMER_SIG
     return 0 == timer_delete(cpu_clock_timer);
+#endif
 }
 
 int start_cpu_clock(void) {
+#ifdef USE_TIMER_SIG
     struct sigevent sev;
     struct itimerspec   itval;
     int int_sec, int_nanosec;
@@ -77,6 +115,7 @@ int start_cpu_clock(void) {
     {
         return FALSE;
     }
+#endif
     return TRUE;
 }
 
@@ -143,9 +182,14 @@ int init_clock(void) {
 }
 
 void clean_clock(void) {
+    void* ret;
     struct clock_handler *ch = handler_list;
 
+#ifdef USE_TIMER_SIG
     timer_delete(cpu_clock_timer);
+#else
+    pthread_join(cpu_thread_id, &ret);
+#endif
 
     while (ch != NULL) {
         struct clock_handler *pp = ch;
