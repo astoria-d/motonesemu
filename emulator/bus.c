@@ -37,6 +37,7 @@ static struct cpu_pin pin_status;
 void set_bus_addr(unsigned short addr) {
     if (addr & ROM_BIT) {
         set_rom_addr(addr & ROM_MASK);
+        set_rom_ce_pin(TRUE);
     }
     else if (addr & IO_APU_BIT) {
     }
@@ -55,7 +56,6 @@ void set_bus_data(unsigned char data){
 
 char get_bus_data(void){
     if (addr_bus & ROM_BIT) {
-        set_rom_ce_pin(TRUE);
         data_bus = get_rom_data();
         set_rom_ce_pin(FALSE);
     }

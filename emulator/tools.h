@@ -20,6 +20,7 @@ void dlist_add_prev (struct dlist* dest, struct dlist* node) ;
 int dlist_remove (struct dlist* node) ;
 int dlist_count (struct dlist* head);
 
+
 #define TRUE 1
 #define FALSE 0
 

@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <signal.h>
+#include <time.h>
 #include "tools.h"
 #include "clock.h"
 #include "bus.h"
@@ -72,9 +73,13 @@ int clock_cpu(void) {
 
 static unsigned char load_memory(unsigned short addr) {
     int rw = 0;
+    struct timespec ts = {CPU_CLOCK_SEC, CPU_CLOCK_NSEC / 2};
 
-    set_bus_addr(addr);
     set_rw_pin(rw);
+    set_bus_addr(addr);
+    //must wait half cycle for the bus ready
+    nanosleep(&ts, NULL);
+
     cpu_data_buffer = get_bus_data();
     return cpu_data_buffer;
 }

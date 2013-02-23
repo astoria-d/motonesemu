@@ -32,6 +32,12 @@ static int init_datas(void) {
         return FALSE;
     }
 
+    ret = emu_timer_init();
+    if (!ret) {
+        fprintf(stderr, "timer init err.\n");
+        return FALSE;
+    }
+
     ret = init_cpu();
     if (!ret) {
         fprintf(stderr, "cpu init err.\n");

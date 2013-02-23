@@ -1,13 +1,11 @@
 
 #include <stdlib.h>
-#include <time.h>
-#include <pthread.h>
 
 #include "tools.h"
 #include "clock.h"
 
-static int exit_loop;
-static pthread_t clock_thread_id;
+static int rt_signal;
+static timer_t cpu_clock_timer;
 
 struct clock_handler {
     struct slist l;
@@ -16,55 +14,29 @@ struct clock_handler {
 
 static struct clock_handler *handler_list;
 
-#define DEB_SLOW
-
-static void *clock_loop(void* arg) {
-    struct timespec ts;
+static void cpu_clock_loop(int arg) {
     struct clock_handler *ch;
 
-#ifdef DEB_SLOW
-    ts.tv_sec = 0;
-    ts.tv_nsec = 100000000;
-#else
-    ts.tv_sec = 0;
-    ts.tv_nsec = 1;
-#endif
-
-    while (!exit_loop) {
-        //dprint("loop...\n");
-        ch = handler_list;
-        while (ch != NULL) {
-            if (!ch->handler())
-                return NULL;
-            ch = (struct clock_handler*)ch->l.next;
-        }
-        nanosleep(&ts, NULL);
+    dprint("loop...\n");
+    ch = handler_list;
+    while (ch != NULL) {
+        if (!ch->handler())
+            return;
+        ch = (struct clock_handler*)ch->l.next;
     }
 
-    return NULL;
+    return;
 }
+
 
 int start_clock(void) {
     int ret;
-    pthread_attr_t attr;
+    int sec, nsec;
 
-    ret = pthread_attr_init(&attr);
-    if (ret != RT_OK)
-        return FALSE;
-
-    ret = pthread_create(&clock_thread_id, &attr, clock_loop, NULL);
+    sec = CPU_CLOCK_SEC;
+    nsec = CPU_CLOCK_NSEC;
+    ret = register_timer(sec, nsec, cpu_clock_loop, &cpu_clock_timer);
     return ret == TRUE;
-}
-
-static void end_loop(void) {
-    void* ret;
-    exit_loop = TRUE;
-
-    //join the running thread.
-    pthread_join(clock_thread_id, &ret);
-
-    dprint("clock thread joined.\n");
-
 }
 
 int register_clock_hander(clock_func_t *handler) {
@@ -83,16 +55,62 @@ int register_clock_hander(clock_func_t *handler) {
     return TRUE;
 }
 
+int emu_timer_init(void) {
+    rt_signal = SIGRTMIN;
+    //rt_signal = SIGALRM;
+    return TRUE;
+}
+
+int register_timer(unsigned long int_sec, unsigned long int_nanosec, __sighandler_t func, 
+        timer_t *timerId) {
+    struct sigaction    sigact;
+    struct itimerspec   itval;
+    struct sigevent sev;
+
+
+    //register handler
+    sigact.sa_handler = func;
+    sigact.sa_flags = 0;
+    sigemptyset(&sigact.sa_mask);
+
+    if(sigaction(rt_signal,&sigact,NULL) == -1)
+    {
+        return FALSE;
+    }
+
+    //create timer
+    itval.it_interval.tv_sec = int_sec;
+    itval.it_interval.tv_nsec = int_nanosec;
+    itval.it_value.tv_sec = int_sec;
+    itval.it_value.tv_nsec = int_nanosec;
+
+    sev.sigev_notify = SIGEV_SIGNAL;
+    sev.sigev_signo = rt_signal;
+    sev.sigev_value.sival_ptr = timerId;
+
+    rt_signal++;
+
+    if(timer_create(CLOCK_REALTIME, &sev, timerId) == -1)
+    {
+        return FALSE;
+    }
+    if(timer_settime(*timerId,0,&itval,NULL) == -1)
+    {
+        return FALSE;
+    }
+    return TRUE;
+}
+
 int init_clock(void) {
-    exit_loop = FALSE;
     handler_list = NULL;
+    cpu_clock_timer = 0;
     return TRUE;
 }
 
 void clean_clock(void) {
     struct clock_handler *ch = handler_list;
 
-    end_loop();
+    timer_delete(cpu_clock_timer);
 
     while (ch != NULL) {
         struct clock_handler *pp = ch;
@@ -103,3 +121,4 @@ void clean_clock(void) {
     
 
 }
+
