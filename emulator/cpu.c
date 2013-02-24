@@ -46,7 +46,7 @@ static int reset_handler2(void);
 
 void dump_cpu(int full);
 int decode6502(unsigned char inst, int *cycle_cnt, int *inst_len);
-void emu_debug(void);
+int emu_debug(void);
 
 extern int debug_mode;
 
@@ -127,7 +127,9 @@ static int reset_handler2(void) {
 static int fetch_inst(void) {
     dprint("fetch\n");
     if (debug_mode) {
-        emu_debug();
+        int ret = emu_debug();
+        if (!ret)
+            return FALSE;
     }
     load_memory(cpu_reg.pc);
     dump_cpu(FALSE);

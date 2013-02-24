@@ -20,12 +20,13 @@ int start_cpu_clock(void);
 #define DEB_SLOW
 
 #ifdef DEB_SLOW
-#define CPU_CLOCK_SEC   0
-#define CPU_CLOCK_NSEC  100000000
+#define CPU_CLOCK_FREQ  10L
 #else
-#define CPU_CLOCK_SEC   0
-#define CPU_CLOCK_NSEC  100
+#define CPU_CLOCK_FREQ  1789773L
 #endif
+
+#define CPU_CLOCK_SEC   (1L / CPU_CLOCK_FREQ)
+#define CPU_CLOCK_NSEC  (1000000000L / CPU_CLOCK_FREQ)
 
 #endif /*__clock_h__*/
 
