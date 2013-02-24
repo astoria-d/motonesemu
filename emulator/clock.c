@@ -17,13 +17,16 @@ struct clock_handler {
 
 static struct clock_handler *handler_list;
 
+#define NANOMAX 1000000000
+
 static void* cpu_clock_loop(void* arg) {
     struct clock_handler *ch;
     struct timespec begin;
     struct timespec end;
 
     while (!exit_loop) {
-        int sec, nsec;
+        long sec;
+        long nsec;
 
         clock_gettime(CLOCK_REALTIME, &begin);
         dprint("clock...\n");
@@ -41,8 +44,8 @@ static void* cpu_clock_loop(void* arg) {
         else
             sec = end.tv_sec - begin.tv_sec;
 
-        if (end.tv_nsec - begin.tv_nsec ) 
-            nsec = LONG_MAX - begin.tv_nsec + end.tv_nsec + 1;
+        if (end.tv_nsec < begin.tv_nsec) 
+            nsec = NANOMAX - begin.tv_nsec + end.tv_nsec + 1;
         else
             nsec = end.tv_nsec - begin.tv_nsec;
 
@@ -52,12 +55,6 @@ static void* cpu_clock_loop(void* arg) {
             int ret;
             ts.tv_sec = sec > CPU_CLOCK_SEC ? 0 : CPU_CLOCK_SEC - sec;
             ts.tv_nsec = nsec > CPU_CLOCK_NSEC ? 0 : CPU_CLOCK_NSEC - nsec;
-
-            /*
-             * The value of the nanoseconds field must be in the range 0 to 999999999.
-             * */
-            if (ts.tv_nsec > 999999999 )
-                ts.tv_nsec = 999999999;
 
             ret = nanosleep(&ts, NULL);
             //dprint("sleep %d sec:%d, nsec:%d, err:%d\n", ret, ts.tv_sec, ts.tv_nsec, errno);
