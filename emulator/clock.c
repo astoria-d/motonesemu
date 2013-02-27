@@ -17,7 +17,7 @@ struct clock_handler {
 
 static struct clock_handler *handler_list;
 
-#define NANOMAX 1000000000
+#define NANOMAX (1000000000 - 1)
 
 static void* cpu_clock_loop(void* arg) {
     struct clock_handler *ch;
@@ -28,7 +28,7 @@ static void* cpu_clock_loop(void* arg) {
         long sec;
         long nsec;
 
-        clock_gettime(CLOCK_REALTIME, &begin);
+        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &begin);
         dprint("clock...\n");
         ch = handler_list;
         while (ch != NULL) {
@@ -37,7 +37,7 @@ static void* cpu_clock_loop(void* arg) {
             ch = (struct clock_handler*)ch->l.next;
         }
         
-        clock_gettime(CLOCK_REALTIME, &end);
+        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
         //calcurate sleep time.
         if (end.tv_sec < begin.tv_sec )
             sec = LONG_MAX - begin.tv_sec + end.tv_sec + 1;
@@ -77,7 +77,7 @@ int start_clock(void) {
     if (ret != RT_OK)
         return FALSE;
 
-    return ret == TRUE;
+    return TRUE;
 }
 
 static void end_loop(void) {

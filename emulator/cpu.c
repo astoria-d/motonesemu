@@ -40,13 +40,19 @@ static int execute_inst(void);
 static int reset_handler1(void);
 static int reset_handler2(void);
 
+static int instruction_cycle;
+static int instruction_len;
+static int current_cycle;
+
 #define NMI_ADDR        0xFFFA
 #define RESET_ADDR      0xFFFC
 #define IRQ_BRK_ADDR    0xFFFE
 
 void dump_cpu(int full);
 int decode6502(unsigned char inst, int *cycle_cnt, int *inst_len);
+int execute6502(void);
 int emu_debug(void);
+int init_6502core(void);
 
 extern int debug_mode;
 
@@ -136,39 +142,58 @@ static int fetch_inst(void) {
 
     cpu_reg.pc++;
     current_exec_func++;
+    current_cycle++;
     return TRUE;
 }
 
 static int decode_inst(void) {
-    int inst_cycle, inst_len;
+    int ret;
+
+    ret = decode6502(cpu_data_buffer, &instruction_cycle, &instruction_len);
+
+    if (!ret) 
+        return ret;
+
+    cpu_reg.pc += instruction_len - 1;
+    return ret;
+}
+
+static int execute_inst(void) {
     int ret;
     extern int critical_error;
 
-    ret = decode6502(cpu_data_buffer, &inst_cycle, &inst_len);
+    dprint("execute\n");
 
+    if (current_cycle == 1) {
+        ret = decode_inst();
+        if (!ret) {
+            fprintf(stderr, "cpu decode instruction failure.\n");
+            critical_error = TRUE;
+            raise(SIGINT);
+            //abort();
+            return FALSE;
+        }
+    }
+
+    ret = execute6502();
     if (!ret) {
-        fprintf(stderr, "cpu decode instruction failure.\n");
+        fprintf(stderr, "cpu execute instruction failure.\n");
         critical_error = TRUE;
         raise(SIGINT);
         //abort();
         return ret;
     }
 
-    cpu_reg.pc += inst_len - 1;
-    return ret;
-}
-
-static int execute_inst(void) {
-    int ret;
-    dprint("execute\n");
-    ret = decode_inst();
-    if (!ret)
-        return FALSE;
-
-    execute_func[0] = fetch_inst;
-    execute_func[1]= execute_inst;
-    execute_func[2] = NULL;
-    current_exec_func = 0;
+    if (current_cycle == instruction_cycle - 1) {
+        execute_func[0] = fetch_inst;
+        execute_func[1]= execute_inst;
+        execute_func[2] = NULL;
+        current_exec_func = 0;
+        current_cycle = 0;
+    }
+    else {
+        current_cycle++;
+    }
     return TRUE;
 }
 
@@ -197,6 +222,12 @@ void dump_cpu(int full) {
 
 int init_cpu(void) {
     int ret;
+
+    ret = init_6502core();
+    if (!ret) {
+        return FALSE;
+    }
+
     ret = register_clock_hander(clock_cpu);
     if (!ret) {
         return FALSE;
@@ -207,6 +238,10 @@ int init_cpu(void) {
     clock_cnt = 0;
     cpu_data_buffer = 0;
     work_addr_buffer = 0;
+
+    instruction_cycle = 0;
+    instruction_len = 0;
+    current_cycle = 0;
 
     return TRUE;
 }

@@ -140,7 +140,11 @@ int main(int argc, char* argv[]) {
 
     debug_mode = param_debug;
     reset_cpu();
-    start_clock();
+    ret = start_clock();
+    if (!ret) {
+        fprintf(stderr, "clock start error\n");
+        return FALSE;
+    }
 
     while (!main_loop_done) {
         sleep(1);
