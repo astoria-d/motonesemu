@@ -952,12 +952,38 @@ int func_STY(void) {
     return TRUE;
 }
 
+/*
+ * Transfer Accumulator to Index X: TAX
+ * A -> X
+ * Flags: N, Z
+ * */
 int func_TAX(void) {
-    return FALSE;
+    cpu_reg.x = cpu_reg.a;
+
+    if (cpu_reg.x & N_BIT)
+        cpu_reg.status.negative = 1;
+    if (cpu_reg.x == 0)
+        cpu_reg.status.zero = 1;
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
+/*
+ * Transfer Accumulator to Index Y: TAY
+ * A -> Y
+ * Flags: N, Z
+ * */
 int func_TAY(void) {
-    return FALSE;
+    cpu_reg.y = cpu_reg.a;
+
+    if (cpu_reg.y & N_BIT)
+        cpu_reg.status.negative = 1;
+    if (cpu_reg.y == 0)
+        cpu_reg.status.zero = 1;
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
 /*
@@ -977,8 +1003,21 @@ int func_TSX(void) {
     return TRUE;
 }
 
+/*
+ * Transfer Index X to Accumulator: TXA
+ * X -> A
+ * Flags: N, Z
+ * */
 int func_TXA(void) {
-    return FALSE;
+    cpu_reg.a = cpu_reg.x;
+
+    if (cpu_reg.a & N_BIT)
+        cpu_reg.status.negative = 1;
+    if (cpu_reg.a == 0)
+        cpu_reg.status.zero = 1;
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
 /*
@@ -998,8 +1037,21 @@ int func_TXS(void) {
     return TRUE;
 }
 
+/*
+ * Transfer Index Y to Accumulator: TYA
+ * Y -> A
+ * Flags: N, Z
+ * */
 int func_TYA(void) {
-    return FALSE;
+    cpu_reg.a = cpu_reg.y;
+
+    if (cpu_reg.a & N_BIT)
+        cpu_reg.status.negative = 1;
+    if (cpu_reg.a == 0)
+        cpu_reg.status.zero = 1;
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
 /*
