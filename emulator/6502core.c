@@ -633,6 +633,26 @@ addr_mode_done:
     return TRUE;
 }
 
+
+/*-------------   flag operation..  ---------------------*/
+
+static void set_zero(unsigned char data) {
+    if (data == 0)
+        cpu_reg.status.zero = 1;
+    else
+        cpu_reg.status.zero = 0;
+}
+
+static void set_negative(unsigned char data) {
+    if (data & N_BIT)
+        cpu_reg.status.negative = 1;
+    else
+        cpu_reg.status.negative = 0;
+}
+
+
+/*---------- instruction implementations.   -----------------*/
+
 int func_ADC(void) {
     return FALSE;
 }
@@ -717,12 +737,36 @@ int func_DEC(void) {
     return FALSE;
 }
 
+/*
+ * Decrement Index X by One: DEX
+ * X - 1 -> X
+ * Flags: N, Z
+ * */
 int func_DEX(void) {
-    return FALSE;
+    cpu_reg.x--;
+
+    //ldx N/Z flags set.
+    set_negative(cpu_reg.x);
+    set_zero(cpu_reg.x);
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
+/*
+ * Decrement Index Y by One: DEY
+ * Y - 1 -> Y
+ * Flags: N, Z
+ * */
 int func_DEY(void) {
-    return FALSE;
+    cpu_reg.y--;
+
+    //ldx N/Z flags set.
+    set_negative(cpu_reg.y);
+    set_zero(cpu_reg.y);
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
 int func_EOR(void) {
@@ -733,12 +777,31 @@ int func_INC(void) {
     return FALSE;
 }
 
+/*
+ * Increment Index X by One: INX
+ * X + 1 -> X
+ * Flags: N, Z
+ * */
 int func_INX(void) {
-    return FALSE;
+    cpu_reg.x++;
+
+    //ldx N/Z flags set.
+    set_negative(cpu_reg.x);
+    set_zero(cpu_reg.x);
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
 int func_INY(void) {
-    return FALSE;
+    cpu_reg.y++;
+
+    //ldx N/Z flags set.
+    set_negative(cpu_reg.y);
+    set_zero(cpu_reg.y);
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
 int func_JMP(void) {
@@ -767,10 +830,9 @@ int func_LDA(void) {
 
     cpu_reg.acc = get_cpu_data_buf();
     //ldx N/Z flags set.
-    if (cpu_reg.acc == 0)
-        cpu_reg.status.zero = 1;
-    if (cpu_reg.acc & N_BIT)
-        cpu_reg.status.negative = 1;
+    set_negative(cpu_reg.acc);
+    set_zero(cpu_reg.acc);
+
     exec_done = TRUE;
     return TRUE;
 }
@@ -793,10 +855,9 @@ int func_LDX(void) {
 
     cpu_reg.x = get_cpu_data_buf();
     //ldx N/Z flags set.
-    if (cpu_reg.x == 0)
-        cpu_reg.status.zero = 1;
-    if (cpu_reg.x & N_BIT)
-        cpu_reg.status.negative = 1;
+    set_negative(cpu_reg.x);
+    set_zero(cpu_reg.x);
+
     exec_done = TRUE;
     return TRUE;
 }
@@ -819,10 +880,9 @@ int func_LDY(void) {
 
     cpu_reg.y = get_cpu_data_buf();
     //ldx N/Z flags set.
-    if (cpu_reg.y == 0)
-        cpu_reg.status.zero = 1;
-    if (cpu_reg.y & N_BIT)
-        cpu_reg.status.negative = 1;
+    set_negative(cpu_reg.y);
+    set_zero(cpu_reg.y);
+
     exec_done = TRUE;
     return TRUE;
 }
@@ -960,10 +1020,8 @@ int func_STY(void) {
 int func_TAX(void) {
     cpu_reg.x = cpu_reg.acc;
 
-    if (cpu_reg.x & N_BIT)
-        cpu_reg.status.negative = 1;
-    if (cpu_reg.x == 0)
-        cpu_reg.status.zero = 1;
+    set_negative(cpu_reg.x);
+    set_zero(cpu_reg.x);
 
     exec_done = TRUE;
     return TRUE;
@@ -977,10 +1035,8 @@ int func_TAX(void) {
 int func_TAY(void) {
     cpu_reg.y = cpu_reg.acc;
 
-    if (cpu_reg.y & N_BIT)
-        cpu_reg.status.negative = 1;
-    if (cpu_reg.y == 0)
-        cpu_reg.status.zero = 1;
+    set_negative(cpu_reg.y);
+    set_zero(cpu_reg.y);
 
     exec_done = TRUE;
     return TRUE;
@@ -994,10 +1050,8 @@ int func_TAY(void) {
 int func_TSX(void) {
     cpu_reg.x = cpu_reg.sp;
 
-    if (cpu_reg.x & N_BIT)
-        cpu_reg.status.negative = 1;
-    if (cpu_reg.x == 0)
-        cpu_reg.status.zero = 1;
+    set_negative(cpu_reg.x);
+    set_zero(cpu_reg.x);
 
     exec_done = TRUE;
     return TRUE;
@@ -1011,10 +1065,8 @@ int func_TSX(void) {
 int func_TXA(void) {
     cpu_reg.acc = cpu_reg.x;
 
-    if (cpu_reg.acc & N_BIT)
-        cpu_reg.status.negative = 1;
-    if (cpu_reg.acc == 0)
-        cpu_reg.status.zero = 1;
+    set_negative(cpu_reg.acc);
+    set_zero(cpu_reg.acc);
 
     exec_done = TRUE;
     return TRUE;
@@ -1028,10 +1080,8 @@ int func_TXA(void) {
 int func_TXS(void) {
     cpu_reg.sp = cpu_reg.x;
 
-    if (cpu_reg.sp & N_BIT)
-        cpu_reg.status.negative = 1;
-    if (cpu_reg.sp == 0)
-        cpu_reg.status.zero = 1;
+    set_negative(cpu_reg.sp);
+    set_zero(cpu_reg.sp);
 
     exec_done = TRUE;
     return TRUE;
@@ -1045,10 +1095,8 @@ int func_TXS(void) {
 int func_TYA(void) {
     cpu_reg.acc = cpu_reg.y;
 
-    if (cpu_reg.acc & N_BIT)
-        cpu_reg.status.negative = 1;
-    if (cpu_reg.acc == 0)
-        cpu_reg.status.zero = 1;
+    set_negative(cpu_reg.y);
+    set_zero(cpu_reg.y);
 
     exec_done = TRUE;
     return TRUE;
