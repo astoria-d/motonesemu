@@ -1,6 +1,8 @@
 #ifndef __rom_h__
 #define __rom_h__
 
+#include <stdio.h>
+
 void set_rom_addr(unsigned short addr);
 unsigned char get_rom_data(void);
 void set_rom_ce_pin(int ce);

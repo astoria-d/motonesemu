@@ -46,7 +46,8 @@ unsigned char get_rom_data(void) {
 void set_rom_ce_pin(int ce) {
     rom_pin_status.ce = ce;
     //let rom write the value on the bus.
-    sem_post(&rom_sem_id);
+    if (ce)
+        sem_post(&rom_sem_id);
 }
 
 static void *rom_loop(void* arg) {

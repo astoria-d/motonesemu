@@ -2,6 +2,8 @@
 #include <string.h>
 #include "tools.h"
 #include "bus.h"
+#include "rom.h"
+#include "ram.h"
 
 struct cpu_pin {
     unsigned int rw     :1;     /*assert on write.*/
@@ -19,6 +21,7 @@ static struct cpu_pin pin_status;
 /*
  * NES memory map
  * 0x0000   -   0x07FF      RAM
+ * 0x0800   -   0x1FFF      mirror RAM
  * 0x2000   -   0x2007      I/O PPU
  * 0x4000   -   0x401F      I/O APU
  * 0x6000   -   0x7FFF      battery backup ram
@@ -36,6 +39,7 @@ static struct cpu_pin pin_status;
 
 void set_bus_addr(unsigned short addr) {
     if (addr & ROM_BIT) {
+        /*case rom*/
         set_rom_addr(addr & ROM_MASK);
         set_rom_ce_pin(TRUE);
     }
@@ -45,16 +49,36 @@ void set_bus_addr(unsigned short addr) {
     }
     else {
         /*case ram*/
+        set_ram_addr(addr & RAM_MASK);
+        if (pin_status.rw) {
+            set_ram_oe_pin(FALSE);
+            set_ram_we_pin(TRUE);
+        }
+        else {
+            set_ram_oe_pin(TRUE);
+            set_ram_we_pin(FALSE);
+        }
+        set_ram_ce_pin(TRUE);
     }
     addr_bus = addr;
 }
 
 void set_bus_data(unsigned char data){
-#warning write memory not worked yet!!
+    if (addr_bus & ROM_BIT) {
+    }
+    else if (addr_bus & IO_APU_BIT) {
+    }
+    else if (addr_bus & IO_PPU_BIT) {
+    }
+    else {
+        /*case ram*/
+        set_ram_data(data);
+        set_ram_ce_pin(FALSE);
+    }
     data_bus = data;
 }
 
-char get_bus_data(void){
+char get_bus_data(void) {
     if (addr_bus & ROM_BIT) {
         data_bus = get_rom_data();
         set_rom_ce_pin(FALSE);
@@ -65,6 +89,8 @@ char get_bus_data(void){
     }
     else {
         /*case ram*/
+        data_bus = get_ram_data();
+        set_ram_ce_pin(FALSE);
     }
     return data_bus;
 }

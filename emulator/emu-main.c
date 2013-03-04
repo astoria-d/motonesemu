@@ -6,6 +6,7 @@
 #include "tools.h"
 #include "clock.h"
 #include "rom.h"
+#include "ram.h"
 
 int init_cpu(void);
 int init_bus(void);
@@ -46,6 +47,12 @@ static int init_datas(void) {
     ret = init_rom();
     if (!ret) {
         fprintf(stderr, "rom init err.\n");
+        return FALSE;
+    }
+
+    ret = init_ram();
+    if (!ret) {
+        fprintf(stderr, "ram init err.\n");
         return FALSE;
     }
 

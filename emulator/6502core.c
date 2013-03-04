@@ -18,7 +18,7 @@ struct cpu_6502 {
     unsigned char acc;
     unsigned char x;
     unsigned char y;
-    unsigned short sp;
+    unsigned char sp;
     struct status_reg status;
     unsigned short pc;
 };
@@ -59,7 +59,8 @@ typedef int (handler_6502_t) (void);
 #define ADDR_MODE_INDEX_INDIR       11
 #define ADDR_MODE_INDIR_INDEX       12
 
-#define N_BIT   0x80
+#define N_BIT8      0x80
+#define N_BIT16     0x8000
 
 struct opcode_map {
     unsigned char   opcode;
@@ -466,12 +467,19 @@ int func_JSR(void) {
     return FALSE;
 }
 
+/*
+ * Load Accumulator with Memory: LDA
+ * M -> A
+ * Flags: N, Z
+ * */
 int func_LDA(void) {
     return FALSE;
 }
 
 /*
- * Load Index X with Memory
+ * Load Index X with Memory: LDX
+ * M -> X
+ * Flags: N, Z
  * */
 int func_LDX(void) {
     int done = FALSE;
@@ -488,14 +496,16 @@ int func_LDX(void) {
     //ldx N/Z flags set.
     if (cpu_reg.x == 0)
         cpu_reg.status.zero = 1;
-    if (cpu_reg.x & N_BIT)
+    if (cpu_reg.x & N_BIT8)
         cpu_reg.status.negative = 1;
     exec_done = TRUE;
     return TRUE;
 }
 
 /*
- * Load Index Y with Memory
+ * Load Index Y with Memory: LDY
+ * M -> Y
+ * Flags: N, Z
  * */
 int func_LDY(void) {
     int done = FALSE;
@@ -512,7 +522,7 @@ int func_LDY(void) {
     //ldx N/Z flags set.
     if (cpu_reg.y == 0)
         cpu_reg.status.zero = 1;
-    if (cpu_reg.y & N_BIT)
+    if (cpu_reg.y & N_BIT8)
         cpu_reg.status.negative = 1;
     exec_done = TRUE;
     return TRUE;
@@ -603,16 +613,42 @@ int func_TAY(void) {
     return FALSE;
 }
 
+/*
+ * Transfer Stack Pointer to Index X: TSX
+ * S -> X
+ * Flags: N, Z
+ * */
 int func_TSX(void) {
-    return FALSE;
+    cpu_reg.x = cpu_reg.sp;
+
+    if (cpu_reg.x & N_BIT8)
+        cpu_reg.status.negative = 1;
+    if (cpu_reg.x == 0)
+        cpu_reg.status.zero = 1;
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
 int func_TXA(void) {
     return FALSE;
 }
 
+/*
+ * Transfer Index X to Stack Pointer: TXS
+ * X -> S
+ * Flags: N, Z
+ * */
 int func_TXS(void) {
-    return FALSE;
+    cpu_reg.sp = cpu_reg.x;
+
+    if (cpu_reg.sp & N_BIT8)
+        cpu_reg.status.negative = 1;
+    if (cpu_reg.sp == 0)
+        cpu_reg.status.zero = 1;
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
 int func_TYA(void) {
@@ -674,7 +710,7 @@ void dump_6502(int full) {
         printf("acc:    %02x\n", cpu_reg.acc);
         printf("x:      %02x\n", cpu_reg.x);
         printf("y:      %02x\n", cpu_reg.y);
-        printf("sp:     %04x\n", cpu_reg.sp);
+        printf("sp:     %02x\n", cpu_reg.sp);
         printf("status:\n");
         printf(" negative:   %d\n", cpu_reg.status.negative);
         printf(" overflow:   %d\n", cpu_reg.status.overflow);
