@@ -24,12 +24,14 @@ static void* cpu_clock_loop(void* arg) {
     struct timespec begin;
     struct timespec end;
 
+    dprint("cpu clock started.\n");
+
     while (!exit_loop) {
         long sec;
         long nsec;
 
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &begin);
-        dprint("clock...\n");
+        dprint("-----------------\nclock ");
         ch = handler_list;
         while (ch != NULL) {
             if (!ch->handler())

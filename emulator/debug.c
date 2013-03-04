@@ -5,7 +5,7 @@
 #define MAXBUF  1024
 
 extern int debug_mode;
-void dump_cpu(int full);
+void dump_6502(int full);
 
 static print_debug(void) {
     printf("command:\n");
@@ -20,6 +20,8 @@ int emu_debug(void) {
 
     //pause_cpu_clock();
     while (TRUE) {
+        fflush(stdin);
+        fflush(stdout);
         printf("motonesemu: ");
         scanf("%s", buf);
 
@@ -41,7 +43,7 @@ int emu_debug(void) {
             break;
         }
         else if (!strcmp(buf, "show")){
-            dump_cpu(TRUE);
+            dump_6502(TRUE);
         }
         else {
             printf("unknown command.\n");
