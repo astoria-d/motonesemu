@@ -958,7 +958,7 @@ int func_STY(void) {
  * Flags: N, Z
  * */
 int func_TAX(void) {
-    cpu_reg.x = cpu_reg.a;
+    cpu_reg.x = cpu_reg.acc;
 
     if (cpu_reg.x & N_BIT)
         cpu_reg.status.negative = 1;
@@ -975,7 +975,7 @@ int func_TAX(void) {
  * Flags: N, Z
  * */
 int func_TAY(void) {
-    cpu_reg.y = cpu_reg.a;
+    cpu_reg.y = cpu_reg.acc;
 
     if (cpu_reg.y & N_BIT)
         cpu_reg.status.negative = 1;
@@ -1009,11 +1009,11 @@ int func_TSX(void) {
  * Flags: N, Z
  * */
 int func_TXA(void) {
-    cpu_reg.a = cpu_reg.x;
+    cpu_reg.acc = cpu_reg.x;
 
-    if (cpu_reg.a & N_BIT)
+    if (cpu_reg.acc & N_BIT)
         cpu_reg.status.negative = 1;
-    if (cpu_reg.a == 0)
+    if (cpu_reg.acc == 0)
         cpu_reg.status.zero = 1;
 
     exec_done = TRUE;
@@ -1043,11 +1043,11 @@ int func_TXS(void) {
  * Flags: N, Z
  * */
 int func_TYA(void) {
-    cpu_reg.a = cpu_reg.y;
+    cpu_reg.acc = cpu_reg.y;
 
-    if (cpu_reg.a & N_BIT)
+    if (cpu_reg.acc & N_BIT)
         cpu_reg.status.negative = 1;
-    if (cpu_reg.a == 0)
+    if (cpu_reg.acc == 0)
         cpu_reg.status.zero = 1;
 
     exec_done = TRUE;
