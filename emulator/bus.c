@@ -37,11 +37,40 @@ static struct cpu_pin pin_status;
 #define IO_APU_MASK 0x001F
 #define ROM_MASK    0x7FFF
 
+void start_bus(void) {
+    if (addr_bus & ROM_BIT) {
+        /*case rom*/
+        set_rom_ce_pin(TRUE);
+    }
+    else if (addr_bus & IO_APU_BIT) {
+    }
+    else if (addr_bus & IO_PPU_BIT) {
+    }
+    else {
+        /*case ram*/
+        set_ram_ce_pin(TRUE);
+    }
+}
+
+void end_bus(void) {
+    if (addr_bus & ROM_BIT) {
+        /*case rom*/
+        set_rom_ce_pin(FALSE);
+    }
+    else if (addr_bus & IO_APU_BIT) {
+    }
+    else if (addr_bus & IO_PPU_BIT) {
+    }
+    else {
+        /*case ram*/
+        set_ram_ce_pin(FALSE);
+    }
+}
+
 void set_bus_addr(unsigned short addr) {
     if (addr & ROM_BIT) {
         /*case rom*/
         set_rom_addr(addr & ROM_MASK);
-        set_rom_ce_pin(TRUE);
     }
     else if (addr & IO_APU_BIT) {
     }
@@ -58,7 +87,6 @@ void set_bus_addr(unsigned short addr) {
             set_ram_oe_pin(TRUE);
             set_ram_we_pin(FALSE);
         }
-        set_ram_ce_pin(TRUE);
     }
     addr_bus = addr;
 }
@@ -73,7 +101,6 @@ void set_bus_data(unsigned char data){
     else {
         /*case ram*/
         set_ram_data(data);
-        set_ram_ce_pin(FALSE);
     }
     data_bus = data;
 }
@@ -81,7 +108,6 @@ void set_bus_data(unsigned char data){
 char get_bus_data(void) {
     if (addr_bus & ROM_BIT) {
         data_bus = get_rom_data();
-        set_rom_ce_pin(FALSE);
     }
     else if (addr_bus & IO_APU_BIT) {
     }
@@ -90,7 +116,6 @@ char get_bus_data(void) {
     else {
         /*case ram*/
         data_bus = get_ram_data();
-        set_ram_ce_pin(FALSE);
     }
     return data_bus;
 }

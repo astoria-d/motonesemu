@@ -10,7 +10,9 @@
 
 int init_cpu(void);
 int init_bus(void);
+int init_debug(void);
 void clean_bus(void);
+void clean_debug(void);
 void reset_cpu(void);
 int load_cartridge(const char* cartridge);
 
@@ -56,6 +58,12 @@ static int init_datas(void) {
         return FALSE;
     }
 
+    ret = init_debug();
+    if (!ret) {
+        fprintf(stderr, "debug init err.\n");
+        return FALSE;
+    }
+
     return TRUE;
 }
 
@@ -64,6 +72,8 @@ static void clean_datas(void) {
     clean_clock();
     clean_bus();
     clear_rom();
+    clear_ram();
+    clean_debug();
 }
 
 static void sig_handler(int sig) {

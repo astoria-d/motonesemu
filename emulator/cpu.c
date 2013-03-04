@@ -28,6 +28,8 @@ int init_6502core(void);
 void pc_set(unsigned short addr);
 unsigned short pc_get(void);
 void pc_move(int offset);
+void start_bus(void);
+void end_bus(void);
 
 static unsigned char cpu_data_buffer;
 static unsigned short cpu_addr_buffer;
@@ -56,16 +58,35 @@ int clock_cpu(void) {
 }
 
 unsigned char load_memory(unsigned short addr) {
-    int rw = 0;
     struct timespec ts = {CPU_CLOCK_SEC, CPU_CLOCK_NSEC / 2};
 
-    set_rw_pin(rw);
+    set_rw_pin(0);
     set_bus_addr(addr);
+    start_bus();
+
     //must wait half cycle for the bus ready
     nanosleep(&ts, NULL);
 
     cpu_data_buffer = get_bus_data();
+    end_bus();
+
     return cpu_data_buffer;
+}
+
+void store_memory(unsigned short addr, unsigned char data) {
+    struct timespec ts = {CPU_CLOCK_SEC, CPU_CLOCK_NSEC / 2};
+
+    set_rw_pin(1);
+    set_bus_addr(addr);
+    set_bus_data(data);
+    start_bus();
+
+    //must wait half cycle for the bus ready
+    nanosleep(&ts, NULL);
+    end_bus();
+
+    cpu_addr_buffer = addr;
+    cpu_data_buffer = data;
 }
 
 /*
@@ -114,12 +135,12 @@ static int fetch_and_decode_inst(void) {
     extern int debug_mode;
 
 
-    dprint("fetch\n");
     if (debug_mode) {
         int ret = emu_debug();
         if (!ret)
             return FALSE;
     }
+    dprint("fetch\n");
     load_memory(pc_get());
     dump_6502(FALSE);
 

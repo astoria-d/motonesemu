@@ -5,6 +5,7 @@ OBJS=emu-main.o clock.o tools.o bus.o cpu.o \
 	 rom.o cartridge.o 6502core.o debug.o ram.o
 
 
+#LIBS=-L../libs -pthread -lrt -lncurses
 LIBS=-L../libs -pthread -lrt
 
 INCLUDE=-I../include

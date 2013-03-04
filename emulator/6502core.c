@@ -59,8 +59,7 @@ typedef int (handler_6502_t) (void);
 #define ADDR_MODE_INDEX_INDIR       11
 #define ADDR_MODE_INDIR_INDEX       12
 
-#define N_BIT8      0x80
-#define N_BIT16     0x8000
+#define N_BIT      0x80
 
 struct opcode_map {
     unsigned char   opcode;
@@ -79,6 +78,7 @@ static int exec_done;
 
 unsigned char load_memory(unsigned short addr);
 unsigned short load_addr(unsigned short addr, int cycle);
+void store_memory(unsigned short addr, unsigned char data);
 
 unsigned char get_cpu_data_buf(void);
 void set_cpu_data_buf(unsigned char data);
@@ -154,16 +154,20 @@ struct opcode_map opcode_list [255] = {
 
 
 
-static int addr_mode_exec(int *done) {
+/*
+ * load from memory in various addressing mode.
+ * cpu_data_buf has the output value.
+ * */
+static int load_addr_mode(int *done) {
     switch (current_inst->addr_mode) {
         case ADDR_MODE_ACC:
         case ADDR_MODE_IMP:
-            //accumulator/implied doesn't need memory operation.
+        case ADDR_MODE_REL:
+            //not supported.
             return FALSE;
 
         case ADDR_MODE_IMM:
-        case ADDR_MODE_REL:
-            //load immediate/relative value takes 1 cycle.
+            //load immediate value takes 1 cycle.
             if (current_exec_index == 0) {
                 load_memory(cpu_reg.pc);
                 cpu_reg.pc++;
@@ -338,8 +342,286 @@ static int addr_mode_exec(int *done) {
             break;
 
         case ADDR_MODE_INDEX_INDIR:
+            //Zero Page Indexed Indirect: (zp,x) takes 5 cycles
+            if (current_exec_index == 0) {
+                load_memory(cpu_reg.pc);
+                cpu_reg.pc++;
+                return TRUE;
+            }
+            else if (current_exec_index == 1) {
+                unsigned char zp = get_cpu_data_buf();
+                zp += cpu_reg.x;
+                set_cpu_data_buf(zp);
+                return TRUE;
+            }
+            else if (current_exec_index == 2) {
+                unsigned short addr = get_cpu_data_buf();
+                load_addr(addr, 1);
+                return TRUE;
+            }
+            else if (current_exec_index == 3) {
+                unsigned short addr = get_cpu_data_buf();
+                load_addr(addr + 1, 2);
+                return TRUE;
+            }
+            else if (current_exec_index == 4) {
+                load_memory(get_cpu_addr_buf());
+                goto addr_mode_done;
+            }
+            break;
+
         case ADDR_MODE_INDIR_INDEX:
-#warning zp indexed indirect, zp indirect indexed must be reworked!!
+            //Zero Page Indirect Indexed with Y: (zp),y takes 4 cycles.
+            if (current_exec_index == 0) {
+                load_memory(cpu_reg.pc);
+                cpu_reg.pc++;
+                return TRUE;
+            }
+            else if (current_exec_index == 1) {
+                unsigned short addr = get_cpu_data_buf();
+                load_addr(addr, 1);
+                return TRUE;
+            }
+            else if (current_exec_index == 2) {
+                unsigned short addr = get_cpu_data_buf();
+                load_addr(addr + 1, 2);
+                return TRUE;
+            }
+            else if (current_exec_index == 3) {
+                if (current_inst->cycle_aux) {
+                    //Add one cycle if indexing across page boundary
+                    unsigned short addr = get_cpu_data_buf();
+                    unsigned short hi_8, added_hi_8;
+
+                    hi_8 = addr >> 8;
+                    addr += cpu_reg.y;
+                    added_hi_8 = addr >> 8;
+
+                    if (hi_8 == added_hi_8) {
+                        load_memory(addr);
+                        goto addr_mode_done;
+                    }
+
+                    //load value in the next cycle.
+                    set_cpu_data_buf(addr);
+                    return TRUE;
+                }
+                else {
+                    unsigned short addr = get_cpu_data_buf();
+                    addr += cpu_reg.y;
+                    load_memory(addr);
+                    goto addr_mode_done;
+                }
+            }
+            else if (current_exec_index == 4) {
+                if (current_inst->cycle_aux) {
+                    unsigned short addr = get_cpu_data_buf();
+                    load_memory(addr);
+                    goto addr_mode_done;
+                }
+            }
+            break;
+
+        default:
+            return FALSE;
+    }
+    return FALSE;
+
+addr_mode_done:
+    *done = TRUE;
+    return TRUE;
+}
+
+/*
+ * store into memory in various addressing mode.
+ * */
+static int store_addr_mode(unsigned char data, int *done) {
+    switch (current_inst->addr_mode) {
+        case ADDR_MODE_ACC:
+        case ADDR_MODE_IMP:
+        case ADDR_MODE_IMM:
+        case ADDR_MODE_REL:
+            //not supported.
+            return FALSE;
+
+        case ADDR_MODE_ZP:
+            //zp takes two cycles.
+            if (current_exec_index == 0) {
+                load_memory(cpu_reg.pc);
+                cpu_reg.pc++;
+                return TRUE;
+            }
+            else if (current_exec_index == 1) {
+                unsigned short zp = get_cpu_data_buf();
+                store_memory(zp, data);
+                goto addr_mode_done;
+            }
+            break;
+
+        case ADDR_MODE_ZP_X:
+            //zp indexed with x takes three cycles.
+            if (current_exec_index == 0) {
+                load_memory(cpu_reg.pc);
+                cpu_reg.pc++;
+                return TRUE;
+            }
+            else if (current_exec_index == 1) {
+                unsigned char imm = get_cpu_data_buf();
+                set_cpu_data_buf(imm + cpu_reg.x);
+                return TRUE;
+            }
+            else if (current_exec_index == 2) {
+                unsigned short zp = get_cpu_data_buf();
+                store_memory(zp, data);
+                goto addr_mode_done;
+            }
+            break;
+
+        case ADDR_MODE_ZP_Y:
+            //zp indexed with y takes three cycles.
+            if (current_exec_index == 0) {
+                load_memory(cpu_reg.pc);
+                cpu_reg.pc++;
+                return TRUE;
+            }
+            else if (current_exec_index == 1) {
+                unsigned char imm = get_cpu_data_buf();
+                set_cpu_data_buf(imm + cpu_reg.y);
+                return TRUE;
+            }
+            else if (current_exec_index == 2) {
+                unsigned short zp = get_cpu_data_buf();
+                store_memory(zp, data);
+                goto addr_mode_done;
+            }
+            break;
+
+        case ADDR_MODE_ABS:
+            //takes three cycles.
+            if (current_exec_index == 0) {
+                load_addr(cpu_reg.pc, 1);
+                cpu_reg.pc++;
+                return TRUE;
+            }
+            else if (current_exec_index == 1) {
+                load_addr(cpu_reg.pc, 2);
+                cpu_reg.pc++;
+                return TRUE;
+            }
+            else if (current_exec_index == 2) {
+                unsigned short addr = get_cpu_addr_buf();
+                store_memory(addr, data);
+                goto addr_mode_done;
+            }
+            break;
+
+        case ADDR_MODE_ABS_X:
+            //abs indexed with x takes 4 cycles.
+            if (current_exec_index == 0) {
+                load_addr(cpu_reg.pc, 1);
+                cpu_reg.pc++;
+                return TRUE;
+            }
+            else if (current_exec_index == 1) {
+                load_addr(cpu_reg.pc, 2);
+                cpu_reg.pc++;
+                return TRUE;
+            }
+            else if (current_exec_index == 2) {
+                unsigned short addr = get_cpu_addr_buf();
+                addr += cpu_reg.x;
+                set_cpu_data_buf(addr);
+                return TRUE;
+            }
+            else if (current_exec_index == 3) {
+                unsigned short addr = get_cpu_data_buf();
+                store_memory(addr, data);
+                goto addr_mode_done;
+            }
+            break;
+
+        case ADDR_MODE_ABS_Y:
+            if (current_exec_index == 0) {
+                load_addr(cpu_reg.pc, 1);
+                cpu_reg.pc++;
+                return TRUE;
+            }
+            else if (current_exec_index == 1) {
+                load_addr(cpu_reg.pc, 2);
+                cpu_reg.pc++;
+                return TRUE;
+            }
+            else if (current_exec_index == 2) {
+                unsigned short addr = get_cpu_addr_buf();
+                addr += cpu_reg.y;
+                set_cpu_data_buf(addr);
+                return TRUE;
+            }
+            else if (current_exec_index == 3) {
+                unsigned short addr = get_cpu_data_buf();
+                store_memory(addr, data);
+                goto addr_mode_done;
+            }
+            break;
+
+        case ADDR_MODE_INDEX_INDIR:
+            //Zero Page Indexed Indirect: (zp,x) takes 5 cycles
+            if (current_exec_index == 0) {
+                load_memory(cpu_reg.pc);
+                cpu_reg.pc++;
+                return TRUE;
+            }
+            else if (current_exec_index == 1) {
+                unsigned char zp = get_cpu_data_buf();
+                zp += cpu_reg.x;
+                set_cpu_data_buf(zp);
+                return TRUE;
+            }
+            else if (current_exec_index == 2) {
+                unsigned short addr = get_cpu_data_buf();
+                load_addr(addr, 1);
+                return TRUE;
+            }
+            else if (current_exec_index == 3) {
+                unsigned short addr = get_cpu_data_buf();
+                load_addr(addr + 1, 2);
+                return TRUE;
+            }
+            else if (current_exec_index == 4) {
+                store_memory(get_cpu_addr_buf(), data);
+                goto addr_mode_done;
+            }
+            break;
+
+        case ADDR_MODE_INDIR_INDEX:
+            //Zero Page Indirect Indexed with Y: (zp),y takes 5 cycles.
+            if (current_exec_index == 0) {
+                load_memory(cpu_reg.pc);
+                cpu_reg.pc++;
+                return TRUE;
+            }
+            else if (current_exec_index == 1) {
+                unsigned short addr = get_cpu_data_buf();
+                load_addr(addr, 1);
+                return TRUE;
+            }
+            else if (current_exec_index == 2) {
+                unsigned short addr = get_cpu_data_buf();
+                load_addr(addr + 1, 2);
+                return TRUE;
+            }
+            else if (current_exec_index == 3) {
+                unsigned short addr = get_cpu_data_buf();
+                addr += cpu_reg.y;
+                set_cpu_data_buf(addr);
+                return TRUE;
+            }
+            else if (current_exec_index == 4) {
+                unsigned short addr = get_cpu_data_buf();
+                store_memory(addr, data);
+                goto addr_mode_done;
+            }
+            break;
 
         default:
             return FALSE;
@@ -473,7 +755,24 @@ int func_JSR(void) {
  * Flags: N, Z
  * */
 int func_LDA(void) {
-    return FALSE;
+    int done = FALSE;
+    int ret;
+
+    ret = load_addr_mode(&done);
+    if (!ret)
+        return FALSE;
+
+    if (!done) 
+        return TRUE;
+
+    cpu_reg.acc = get_cpu_data_buf();
+    //ldx N/Z flags set.
+    if (cpu_reg.acc == 0)
+        cpu_reg.status.zero = 1;
+    if (cpu_reg.acc & N_BIT)
+        cpu_reg.status.negative = 1;
+    exec_done = TRUE;
+    return TRUE;
 }
 
 /*
@@ -485,7 +784,7 @@ int func_LDX(void) {
     int done = FALSE;
     int ret;
 
-    ret = addr_mode_exec(&done);
+    ret = load_addr_mode(&done);
     if (!ret)
         return FALSE;
 
@@ -496,7 +795,7 @@ int func_LDX(void) {
     //ldx N/Z flags set.
     if (cpu_reg.x == 0)
         cpu_reg.status.zero = 1;
-    if (cpu_reg.x & N_BIT8)
+    if (cpu_reg.x & N_BIT)
         cpu_reg.status.negative = 1;
     exec_done = TRUE;
     return TRUE;
@@ -511,7 +810,7 @@ int func_LDY(void) {
     int done = FALSE;
     int ret;
 
-    ret = addr_mode_exec(&done);
+    ret = load_addr_mode(&done);
     if (!ret)
         return FALSE;
 
@@ -522,7 +821,7 @@ int func_LDY(void) {
     //ldx N/Z flags set.
     if (cpu_reg.y == 0)
         cpu_reg.status.zero = 1;
-    if (cpu_reg.y & N_BIT8)
+    if (cpu_reg.y & N_BIT)
         cpu_reg.status.negative = 1;
     exec_done = TRUE;
     return TRUE;
@@ -593,16 +892,64 @@ int func_SEI(void) {
     return TRUE;
 }
 
+/*
+ * Store Accumulator in Memory: STA
+ * A -> M
+ * Flags: none
+ * */
 int func_STA(void) {
-    return FALSE;
+    int done = FALSE;
+    int ret;
+
+    ret = store_addr_mode(cpu_reg.acc, &done);
+    if (!ret)
+        return FALSE;
+
+    if (!done) 
+        return TRUE;
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
+/*
+ * Store Index X in Memory: STX
+ * X -> M
+ * Flags: none
+ * */
 int func_STX(void) {
-    return FALSE;
+    int done = FALSE;
+    int ret;
+
+    ret = store_addr_mode(cpu_reg.x, &done);
+    if (!ret)
+        return FALSE;
+
+    if (!done) 
+        return TRUE;
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
+/*
+ * Store Index Y in Memory: STY
+ * Y -> M
+ * Flags: none
+ * */
 int func_STY(void) {
-    return FALSE;
+    int done = FALSE;
+    int ret;
+
+    ret = store_addr_mode(cpu_reg.y, &done);
+    if (!ret)
+        return FALSE;
+
+    if (!done) 
+        return TRUE;
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
 int func_TAX(void) {
@@ -621,7 +968,7 @@ int func_TAY(void) {
 int func_TSX(void) {
     cpu_reg.x = cpu_reg.sp;
 
-    if (cpu_reg.x & N_BIT8)
+    if (cpu_reg.x & N_BIT)
         cpu_reg.status.negative = 1;
     if (cpu_reg.x == 0)
         cpu_reg.status.zero = 1;
@@ -642,7 +989,7 @@ int func_TXA(void) {
 int func_TXS(void) {
     cpu_reg.sp = cpu_reg.x;
 
-    if (cpu_reg.sp & N_BIT8)
+    if (cpu_reg.sp & N_BIT)
         cpu_reg.status.negative = 1;
     if (cpu_reg.sp == 0)
         cpu_reg.status.zero = 1;
@@ -674,6 +1021,7 @@ int decode6502(unsigned char inst) {
 
     return TRUE;
 }
+
 int test_and_set_exec(void) {
     int ret;
     ret = exec_done;
