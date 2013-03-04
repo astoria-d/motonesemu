@@ -18,9 +18,10 @@ int start_cpu_clock(void);
         __sighandler_t func, int signum, timer_t *timerid);*/
 
 #define DEB_SLOW
+//#undef DEB_SLOW
 
 #ifdef DEB_SLOW
-#define CPU_CLOCK_FREQ  10L
+#define CPU_CLOCK_FREQ  100L
 #else
 #define CPU_CLOCK_FREQ  1789773L
 #endif

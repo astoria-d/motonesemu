@@ -149,7 +149,7 @@ static int fetch_and_decode_inst(void) {
         extern int critical_error;
         fprintf(stderr, "cpu decode instruction failure.\n");
         critical_error = TRUE;
-        raise(SIGINT);
+        //raise(SIGINT);
         //abort();
         return FALSE;
     }
@@ -173,7 +173,7 @@ static int execute_inst(void) {
     if (!ret) {
         fprintf(stderr, "cpu execute instruction failure.\n");
         critical_error = TRUE;
-        raise(SIGINT);
+        //raise(SIGINT);
         return ret;
     }
 

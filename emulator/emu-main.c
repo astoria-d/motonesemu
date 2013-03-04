@@ -165,6 +165,8 @@ int main(int argc, char* argv[]) {
 
     while (!main_loop_done) {
         sleep(1);
+        if (critical_error)
+            break;
     }
 
     clean_datas();

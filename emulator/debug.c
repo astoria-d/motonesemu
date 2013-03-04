@@ -61,9 +61,8 @@ int emu_debug(void) {
             printf("quit...\n");
             debug_mode = FALSE;
             critical_error = TRUE;
-            raise(SIGINT);
+            //raise(SIGINT);
             return FALSE;
-            break;
         }
         else if (!strcmp(buf, "c")){
             debug_mode = FALSE;

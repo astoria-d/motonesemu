@@ -162,12 +162,12 @@ static int load_addr_mode(int *done) {
     switch (current_inst->addr_mode) {
         case ADDR_MODE_ACC:
         case ADDR_MODE_IMP:
-        case ADDR_MODE_REL:
             //not supported.
             return FALSE;
 
         case ADDR_MODE_IMM:
-            //load immediate value takes 1 cycle.
+        case ADDR_MODE_REL:
+            //load immediate/relative value takes 1 cycle.
             if (current_exec_index == 0) {
                 load_memory(cpu_reg.pc);
                 cpu_reg.pc++;
@@ -665,44 +665,125 @@ int func_ASL(void) {
     return FALSE;
 }
 
+static int branch(unsigned char condition) {
+
+    if (current_exec_index == 0) {
+        int done = FALSE;
+        int ret;
+        ret = load_addr_mode(&done);
+        if (!ret)
+            return FALSE;
+
+        if (!condition) {
+            exec_done = TRUE;
+        }
+        return TRUE;
+    }
+    else if (current_exec_index == 1) {
+        //case branch
+        char rel = get_cpu_data_buf();
+        unsigned short addr = cpu_reg.pc;
+        unsigned short br_addr = cpu_reg.pc + rel;
+
+        if (addr >> 8 == br_addr >> 8) {
+            //in page branch.
+            cpu_reg.pc = br_addr;
+            exec_done = TRUE;
+        }
+        else {
+            set_cpu_addr_buf(br_addr);
+        }
+        return TRUE;
+    }
+    else if (current_exec_index == 2) {
+        //cross page branch.
+        unsigned short br_addr = get_cpu_addr_buf();
+        cpu_reg.pc = br_addr;
+        exec_done = TRUE;
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+/*
+ * Branch on Carry Clear: BCC
+ * Branch if C = 0
+ * Flags: none
+ * */
 int func_BCC(void) {
-    return FALSE;
+    return branch(cpu_reg.status.carry == 0);
 }
 
+/*
+ *  Branch on Carry Set: BCS
+ *  Branch if C = 1
+ *  Flags: none
+ * */
 int func_BCS(void) {
-    return FALSE;
+    return branch(cpu_reg.status.carry == 1);
 }
 
+/*
+ *  Branch on Result Zero: BEQ
+ *  Branch if Z = 1
+ *  Flags: none
+ * */
 int func_BEQ(void) {
-    return FALSE;
+    return branch(cpu_reg.status.zero == 1);
 }
 
 int func_BIT(void) {
     return FALSE;
 }
 
+/*
+ *  Branch on Result Minus: BMI
+ *  Branch if N = 1
+ *  Flags: none
+ * */
 int func_BMI(void) {
-    return FALSE;
+    return branch(cpu_reg.status.negative == 1);
 }
 
+/*
+ * Branch on Result not Zero: BNE
+ * Branch if Z = 0
+ * Flags: none
+ * */
 int func_BNE(void) {
-    return FALSE;
+    return branch(cpu_reg.status.zero == 0);
 }
 
+/*
+ * Branch on Result Plus: BPL
+ * Branch if N = 0
+ * Flags: none
+ * */
 int func_BPL(void) {
-    return FALSE;
+    return branch(cpu_reg.status.negative == 0);
 }
 
 int func_BRK(void) {
     return FALSE;
 }
 
+/*
+ * Branch on Overflow Clear: BVC
+ * Branch if V = 0
+ * Flags: none
+ * */
 int func_BVC(void) {
-    return FALSE;
+    return branch(cpu_reg.status.overflow == 0);
 }
 
+/*
+ * Branch on Overflow Set: BVS
+ * Branch if V = 1
+ * Flags: none
+ * */
 int func_BVS(void) {
-    return FALSE;
+    return branch(cpu_reg.status.overflow == 1);
 }
 
 int func_CLC(void) {
