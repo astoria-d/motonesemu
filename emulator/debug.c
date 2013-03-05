@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <curses.h>
 #include "tools.h"
 #include "clock.h"
 
@@ -29,10 +30,20 @@ static print_debug(void) {
 static int read_cmd(char* buf) {
     char ch, *p;
     p = buf;
-    while( (ch = getch()) != '\n') {
-        dprint("ch:%d\n", ch);
-        *p = ch;
-        p++;
+            
+    while(1) {
+        if (kbhit()) {
+            ch = getchar();
+            if ( ch  != '\n') {
+                *p = ch;
+                p++;
+                printf("%c", ch);
+            }
+            else {
+                printf("\n");
+                break;
+            }
+        }
     }
     return strlen(buf);
 }
@@ -72,7 +83,7 @@ int emu_debug(void) {
             dump_6502(TRUE);
         }
         else {
-            printf("unknown command.\n");
+            printf("unknown command [%s].\n", buf);
             print_debug();
         }
     }

@@ -77,6 +77,7 @@ static void *ram_loop(void* arg) {
 int init_ram(void) {
     int ret;
     pthread_attr_t attr;
+    //struct sched_param sched;
 
     ram_buffer = malloc(RAM_2K);
     if (!ram_buffer)
@@ -90,11 +91,28 @@ int init_ram(void) {
 
     ram_end_loop = FALSE;
 
+    ret = sem_init(&ram_sem_id, 0, 0);
+    if (ret != RT_OK) {
+        free(ram_buffer);
+        return FALSE;
+    }
+
     ret = pthread_attr_init(&attr);
     if (ret != RT_OK) {
         free(ram_buffer);
         return FALSE;
     }
+
+#if 0
+    dprint("priority min:%d, max:%d\n", 
+            sched_get_priority_min(SCHED_OTHER), sched_get_priority_max(SCHED_OTHER));
+    sched.sched_priority = 0;
+    ret = pthread_attr_setschedparam(&attr, &sched);
+    if (ret != RT_OK) {
+        free(ram_buffer);
+        return FALSE;
+    }
+#endif
 
     ram_thread_id = 0;
     ret = pthread_create(&ram_thread_id, &attr, ram_loop, NULL);
@@ -103,16 +121,10 @@ int init_ram(void) {
         return FALSE;
     }
 
-    ret = sem_init(&ram_sem_id, 0, 0);
-    if (ret != RT_OK) {
-        free(ram_buffer);
-        return FALSE;
-    }
-
     return TRUE;
 }
 
-void clear_ram(void) {
+void clean_ram(void) {
     void* ret;
     ram_end_loop = TRUE;
     //join the running thread.

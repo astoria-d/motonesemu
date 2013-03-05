@@ -2,7 +2,10 @@
 BIN=motonesemu
 
 OBJS=emu-main.o clock.o tools.o bus.o cpu.o \
-	 rom.o cartridge.o 6502core.o debug.o ram.o
+	 rom.o cartridge.o 6502core.o debug.o ram.o \
+	 ppu.o
+	 
+#	 kbhit.o
 
 
 #LIBS=-L../libs -pthread -lrt -lncurses

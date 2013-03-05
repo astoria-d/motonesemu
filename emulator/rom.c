@@ -76,6 +76,10 @@ int init_rom(void) {
 
     rom_end_loop = FALSE;
 
+    ret = sem_init(&rom_sem_id, 0, 0);
+    if (ret != RT_OK)
+        return FALSE;
+
     ret = pthread_attr_init(&attr);
     if (ret != RT_OK)
         return FALSE;
@@ -85,14 +89,10 @@ int init_rom(void) {
     if (ret != RT_OK)
         return FALSE;
 
-    ret = sem_init(&rom_sem_id, 0, 0);
-    if (ret != RT_OK)
-        return FALSE;
-
     return TRUE;
 }
 
-void clear_rom(void) {
+void clean_rom(void) {
     void* ret;
     rom_end_loop = TRUE;
     //join the running thread.

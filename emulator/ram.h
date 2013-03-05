@@ -10,7 +10,7 @@ void set_ram_oe_pin(int oe);
 void set_ram_we_pin(int we);
 
 int init_ram(void);
-void clear_ram(void);
+void clean_ram(void);
 
 #endif /*__ram_h__*/
 

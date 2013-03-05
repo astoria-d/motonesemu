@@ -11,8 +11,12 @@
 int init_cpu(void);
 int init_bus(void);
 int init_debug(void);
+int init_ppu(void);
+
 void clean_bus(void);
 void clean_debug(void);
+void clean_ppu(void);
+
 void reset_cpu(void);
 int load_cartridge(const char* cartridge);
 
@@ -28,21 +32,15 @@ static int init_datas(void) {
     debug_mode = FALSE;
     critical_error = FALSE;
 
-    ret = init_bus();
-    if (!ret) {
-        fprintf(stderr, "bus init err.\n");
-        return FALSE;
-    }
-
     ret = init_clock();
     if (!ret) {
         fprintf(stderr, "clock init err.\n");
         return FALSE;
     }
 
-    ret = init_cpu();
+    ret = init_bus();
     if (!ret) {
-        fprintf(stderr, "cpu init err.\n");
+        fprintf(stderr, "bus init err.\n");
         return FALSE;
     }
 
@@ -58,6 +56,18 @@ static int init_datas(void) {
         return FALSE;
     }
 
+    ret = init_ppu();
+    if (!ret) {
+        fprintf(stderr, "ppu init err.\n");
+        return FALSE;
+    }
+
+    ret = init_cpu();
+    if (!ret) {
+        fprintf(stderr, "cpu init err.\n");
+        return FALSE;
+    }
+
     ret = init_debug();
     if (!ret) {
         fprintf(stderr, "debug init err.\n");
@@ -69,10 +79,12 @@ static int init_datas(void) {
 
 static void clean_datas(void) {
     dprint("clean data...\n");
-    clean_clock();
+    clean_rom();
+    clean_ram();
+    clean_ppu();
     clean_bus();
-    clear_rom();
-    clear_ram();
+    clean_clock();
+
     clean_debug();
 }
 
