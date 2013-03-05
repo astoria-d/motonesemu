@@ -61,6 +61,10 @@ typedef int (handler_6502_t) (void);
 
 #define N_BIT      0x80
 
+
+/* cycle check must be cleared on release  */
+#define cycle_check
+
 struct opcode_map {
     unsigned char   opcode;
     char            mnemonic[4];
@@ -650,6 +654,15 @@ static void set_negative(unsigned char data) {
         cpu_reg.status.negative = 0;
 }
 
+/*-------------   stack operation..  ---------------------*/
+//stack operation takes two cycles.
+static void push(unsigned char data) {
+    store_memory(cpu_reg.sp--, data);
+}
+
+static unsigned char pop(void) {
+    return load_memory(--cpu_reg.sp);
+}
 
 /*---------- instruction implementations.   -----------------*/
 
@@ -885,11 +898,110 @@ int func_INY(void) {
     return TRUE;
 }
 
-int func_JMP(void) {
+static int jmp(int cycle, int *done) {
+    switch (current_inst->addr_mode) {
+        case ADDR_MODE_ABS:
+            //takes 2 cycles.
+            if (cycle == 0) {
+                load_addr(cpu_reg.pc, 1);
+                cpu_reg.pc++;
+                return TRUE;
+            }
+            else if (cycle == 1) {
+                load_addr(cpu_reg.pc, 2);
+                cpu_reg.pc++;
+                *done = TRUE;
+                return TRUE;
+            }
+            break;
+
+        case ADDR_MODE_IND:
+            //takes 4 cycles.
+            if (cycle == 0) {
+                load_addr(cpu_reg.pc, 1);
+                cpu_reg.pc++;
+                return TRUE;
+            }
+            else if (cycle == 1) {
+                load_addr(cpu_reg.pc, 2);
+                cpu_reg.pc++;
+                return TRUE;
+            }
+            else if (cycle == 2) {
+                load_memory(get_cpu_addr_buf());
+                return TRUE;
+            }
+            else if (cycle == 3) {
+                unsigned char low, hi;
+                unsigned short addr;
+                low = get_cpu_data_buf();
+                hi = load_memory(get_cpu_addr_buf() + 1);
+                addr = (hi << 8) | low;
+                set_cpu_addr_buf(addr);
+                *done = TRUE;
+                return TRUE;
+            }
+            break;
+
+        default:
+            return FALSE;
+    }
     return FALSE;
 }
 
+/*
+ * Jump to New Location: JMP
+ * Jump to new location
+ * Flags: none
+ * */
+int func_JMP(void) {
+    int done = FALSE;
+    int ret;
+
+    ret = jmp(current_exec_index, &done);
+    if (!ret)
+        return FALSE;
+
+    if (!done) 
+        return TRUE;
+
+    cpu_reg.pc = get_cpu_addr_buf();
+
+    exec_done = TRUE;
+    return TRUE;
+}
+
+/*
+ * Jump to New Location Saving Return Address: JSR
+ * Jump to Subroutine
+ * Flags: none
+ * */
 int func_JSR(void) {
+    int done = FALSE;
+    int ret;
+
+    //cycle 1,2
+    if (current_exec_index < 2) {
+        return jmp(current_exec_index, &done);
+    }
+    //cycle 3
+    else if (current_exec_index == 3) {
+        //save return addr(-1) hi.
+        push((cpu_reg.pc - 1) >> 8);
+        return TRUE;
+    }
+    //cycle 4
+    else if (current_exec_index == 4) {
+        //save return addr(-1) low.
+        push(cpu_reg.pc - 1);
+        return TRUE;
+    }
+    //cycle 5
+    else if (current_exec_index == 5) {
+        cpu_reg.pc = get_cpu_addr_buf();
+        exec_done = TRUE;
+        return TRUE;
+    }
     return FALSE;
 }
 
@@ -1008,7 +1120,52 @@ int func_RTI(void) {
     return FALSE;
 }
 
+/*
+ * Return from Subroutine: RTS
+ * Return from Subroutine
+ * Flags: none
+ * */
 int func_RTS(void) {
+    int done = FALSE;
+    int ret;
+
+    //cycle 1
+    if (current_exec_index == 0) {
+        //pop return addr low.
+        pop();
+        return TRUE;
+    }
+    //cycle 2 
+    if (current_exec_index == 0) {
+        //set return addr low.
+        set_cpu_addr_buf(get_cpu_data_buf());
+        return TRUE;
+    }
+    //cycle 3
+    else if (current_exec_index == 1) {
+        //pop return addr hi.
+        pop();
+        return TRUE;
+    }
+    //cycle 4
+    else if (current_exec_index == 1) {
+        unsigned char hi, lo;
+        unsigned short addr;
+
+        //set return addr hi
+        lo = get_cpu_addr_buf();
+        hi = get_cpu_data_buf();
+        addr = (hi << 8) | lo;
+        set_cpu_addr_buf(addr);
+        return TRUE;
+    }
+    //cycle 5
+    else if (current_exec_index == 2) {
+        //set pc = addr + 1
+        cpu_reg.pc = get_cpu_addr_buf() + 1;
+        exec_done = TRUE;
+        return TRUE;
+    }
     return FALSE;
 }
 
@@ -1215,6 +1372,29 @@ int execute6502(void) {
     int ret;
     ret = current_inst->func();
     current_exec_index++;
+
+#ifdef cycle_check
+    if (exec_done && (current_inst->cycle - 1 != current_exec_index)) {
+        if (current_inst->cycle_aux && (
+                    current_inst->addr_mode == ADDR_MODE_ABS_X ||
+                    current_inst->addr_mode == ADDR_MODE_ABS_Y ||
+                    current_inst->addr_mode == ADDR_MODE_INDIR_INDEX ) && 
+                (current_inst->cycle == current_exec_index)) {
+            ;
+        }
+        else if ((current_inst->addr_mode == ADDR_MODE_REL) && 
+                ((current_inst->cycle == current_exec_index) ||
+                (current_inst->cycle + 1 == current_exec_index ))) {
+            ;
+        }
+        else {
+            fprintf(stderr, "instruction cycle check error!!\n");
+            return FALSE;
+        }
+    }
+
+#endif
+
     return ret;
 }
 
