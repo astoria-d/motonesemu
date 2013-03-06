@@ -21,8 +21,10 @@ int dlist_remove (struct dlist* node) ;
 int dlist_count (struct dlist* head);
 
 
+#ifndef TRUE
 #define TRUE 1
 #define FALSE 0
+#endif
 
 #define RT_OK 0
 #define RT_ERROR -1
