@@ -27,6 +27,7 @@ $(DRIVER): $(DRIVER).o
 clean:
 	-rm $(OBJS) $(BIN) $(DRIVER) $(DRIVER).o
 		
-
+tag:
+	cd .. && make tag
 
 

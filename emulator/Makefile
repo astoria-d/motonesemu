@@ -1,7 +1,7 @@
 
 BIN=motonesemu
 
-OBJS=emu-main.o clock.o tools.o bus.o cpu.o \
+OBJS=emu-main.o clock.o bus.o cpu.o \
 	 rom.o cartridge.o 6502core.o debug.o ram.o \
 	 ppu.o
 	 
@@ -9,7 +9,7 @@ OBJS=emu-main.o clock.o tools.o bus.o cpu.o \
 
 
 #LIBS=-L../libs -pthread -lrt -lncurses
-LIBS=-L../libs -pthread -lrt
+LIBS=-L../libs -lmotones -pthread -lrt
 
 INCLUDE=-I../include
 
@@ -34,6 +34,7 @@ test:
 clean:
 	-rm $(OBJS) $(BIN) opcode \
 		
-
+tag:
+	cd .. && make tag
 
 
