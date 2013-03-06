@@ -11,7 +11,7 @@ int window_ready(void);
 static pthread_t com_thread_id;
 
 static void *com_loop(void* arg) {
-    struct timespec ts = {0, 1000};
+    //struct timespec ts = {0, 1};
     int x, y;
     char r, g, b;
 
@@ -20,9 +20,18 @@ static void *com_loop(void* arg) {
     while (!window_ready());
 
     while (1) {
-        nanosleep(&ts, NULL);
-        draw_point(x++ % (VGA_WIDTH - 10) + 5, y++ % (VGA_HEIGHT - 10) + 5, 
-                r++, g++, b++);
+        //nanosleep(&ts, NULL);
+        draw_point(x % VGA_WIDTH, y % VGA_HEIGHT, 
+                r, g, b);
+        if (++x % VGA_WIDTH == 0) {
+            x = 0;
+            if (++y % VGA_HEIGHT == 0) {
+                y = 0;
+            }
+        }
+        r++;
+        g += 2;
+        b += 3;
     }
     return NULL;
 }
