@@ -1,5 +1,8 @@
 
 #include <stdio.h>
+
+#define DPRINT_IMPL
+
 #include "tools.h"
 
 void dprint(char* s, char* arg1, unsigned int arg2, unsigned int arg3, 

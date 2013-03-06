@@ -1,6 +1,10 @@
 #ifndef __tools_h__
 #define __tools_h__
 
+#ifndef DPRINT_IMPL
+void dprint(const char* fmt, ...);
+#endif
+
 struct slist {
     struct slist *next;
 } ;
