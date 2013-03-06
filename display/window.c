@@ -5,6 +5,7 @@
 #include "vga.h"
 
 static GtkWidget *main_window;
+cairo_t *wnd_cairo;
 static int wnd_ready;
 
 int window_ready(void) {
@@ -12,27 +13,22 @@ int window_ready(void) {
 }
 
 void draw_point(int x, int y, char r, char g, char b) {
-    GtkWidget *widget = main_window;
-    cairo_t *cr;
 
     if (!wnd_ready)
         return;
 
     //aquire thread lock
     gdk_threads_enter ();
-    cr = gdk_cairo_create(widget->window);
 
-    cairo_set_source_rgb(cr, r, g, b);
+    cairo_set_source_rgb(wnd_cairo, r, g, b);
     //cairo_set_line_width (cr, 0.5);
-    /*
-    cairo_rectangle(cr, x, y, 3, 3);
-    cairo_fill(cr);
-    */
-    cairo_move_to(cr, x, y);
-    cairo_line_to(cr, x + 1, y);
-    cairo_stroke(cr);
 
-    cairo_destroy(cr);
+    cairo_move_to(wnd_cairo, x, y);
+    cairo_line_to(wnd_cairo, x + 1, y);
+
+    //if (x == VGA_WIDTH - 1)
+    cairo_stroke(wnd_cairo);
+
     //leave thread.
     gdk_threads_leave ();
 
@@ -61,7 +57,9 @@ int window_start(int argc, char** argv)
 
     //get thread lock
     gdk_threads_enter();
+    wnd_cairo = gdk_cairo_create(main_window->window);
     gtk_main ();
+    cairo_destroy(wnd_cairo);
     gdk_threads_leave();
 
     return 0;
