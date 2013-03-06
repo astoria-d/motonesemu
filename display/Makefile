@@ -7,7 +7,7 @@ OBJS=display.o
 	 
 
 
-LIBS=-L../libs -pthread
+LIBS=-L../libs -lmotones -pthread
 
 INCLUDE=-I../include
 
@@ -19,7 +19,7 @@ $(BIN): $(OBJS) ../libs
 	gcc -o $(BIN) $(OBJS) $(LIBS)
 
 $(DRIVER): $(DRIVER).o
-	gcc -o $(DRIVER) $(DRIVER).c
+	gcc -o $(DRIVER) $(CFLAGS) $(DRIVER).c
 
 .c.o: 
 	gcc $(CFLAGS) -c $<
