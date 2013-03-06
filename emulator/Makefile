@@ -13,7 +13,7 @@ LIBS=-L../libs -lmotones -pthread -lrt
 
 INCLUDE=-I../include
 
-CFLAGS=-g $(INCLUDE)
+CFLAGS=-g $(INCLUDE) -Wall
 
 all:	$(BIN)
 

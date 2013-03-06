@@ -97,7 +97,6 @@ static void sig_handler(int sig) {
 }
 
 static int prepare_sig(void) {
-    int ret;
     struct sigaction sigact;
 
     memset(&sigact, 0, sizeof(struct sigaction));

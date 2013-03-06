@@ -64,7 +64,7 @@ void set_ppu_data(unsigned char data) {
 }
 
 static void *ppu_loop(void* arg) {
-    struct timespec ts = {CPU_CLOCK_SEC, CPU_CLOCK_NSEC / 10};
+    //struct timespec ts = {CPU_CLOCK_SEC, CPU_CLOCK_NSEC / 10};
 
     while (!ppu_end_loop) {
         sem_wait(&ppu_sem_id);

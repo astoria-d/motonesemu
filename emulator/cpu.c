@@ -30,6 +30,7 @@ unsigned short pc_get(void);
 void pc_move(int offset);
 void start_bus(void);
 void end_bus(void);
+void set_rw_pin(int rw);
 
 static unsigned char cpu_data_buffer;
 static unsigned short cpu_addr_buffer;

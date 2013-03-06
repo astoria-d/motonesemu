@@ -978,7 +978,6 @@ int func_JMP(void) {
  * */
 int func_JSR(void) {
     int done = FALSE;
-    int ret;
 
     //cycle 1,2
     if (current_exec_index < 2) {
@@ -1126,8 +1125,6 @@ int func_RTI(void) {
  * Flags: none
  * */
 int func_RTS(void) {
-    int done = FALSE;
-    int ret;
 
     //cycle 1
     if (current_exec_index == 0) {

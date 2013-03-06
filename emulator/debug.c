@@ -18,7 +18,7 @@ struct cmd_list {
 
 struct cmd_list* debug_history;
 
-static print_debug(void) {
+static void print_debug(void) {
     printf("command:\n");
     printf(" s: step\n");
     printf(" c: continue\n");
