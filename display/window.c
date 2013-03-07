@@ -1,73 +1,202 @@
 #include <gtk/gtk.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "tools.h"
 #include "vga.h"
 
-static GtkWidget *main_window;
-cairo_t *wnd_cairo;
-static int wnd_ready;
+int pix_buf[VGA_WIDTH][VGA_HEIGHT][3];
 
-int window_ready(void) {
-    return wnd_ready;
+void set_pixel_color(int x, int y, int r, int g, int b) {
+    //g_print ("set pix...\n");
+    pix_buf[x][y][0] = r;
+    pix_buf[x][y][1] = g;
+    pix_buf[x][y][2] = b;
 }
 
-void draw_point(int x, int y, char r, char g, char b) {
+GdkGC *gc = NULL;
+GdkGC *set_color(gushort r, gushort g, gushort b)
+{
+    GdkColor color;
 
-    if (!wnd_ready)
-        return;
+    color.red = r;
+    color.green = g;
+    color.blue = b;
+    gdk_color_alloc(gdk_colormap_get_system(), &color);
+    gdk_gc_set_foreground(gc, &color);
+    return gc;
+}
 
-    //aquire thread lock
+#if 0
+void expose_event(GtkWidget *widget, GdkEventExpose *event, gpointer data){
+    GdkDrawable *drawable = widget->window;
+
+    int x, y;
+
+    //g_print ("draw...\n");
+    x = y = 0;
+    for (y = 0; y < VGA_HEIGHT; y++) {
+        for (x = 0; x < VGA_WIDTH; x++) {
+            set_color(pix_buf[x][y][0],
+                    pix_buf[x][y][1],
+                    pix_buf[x][y][2]); 
+            gdk_draw_point (drawable, gc, x, y);
+        }
+
+    }
+}
+
+static gboolean wnd_timer_func(GtkWidget *widget)
+{
+    if (widget->window == NULL)
+    {
+        return FALSE;
+    }
+
     gdk_threads_enter ();
-
-    cairo_set_source_rgb(wnd_cairo, r, g, b);
-    //cairo_set_line_width (cr, 0.5);
-
-    cairo_move_to(wnd_cairo, x, y);
-    cairo_line_to(wnd_cairo, x + 1, y);
-
-    //if (x == VGA_WIDTH - 1)
-    cairo_stroke(wnd_cairo);
-
-    //leave thread.
+    //g_print ("timer...\n");
+    //repaint buffer.
+    gtk_widget_queue_draw(widget);
+    //cairo_stroke(wnd_cairo);
     gdk_threads_leave ();
 
+    return (TRUE);
 }
 
+
+//int main(int argc, char *argv[]){
 int window_start(int argc, char** argv) 
 {
-    //init thread and gtk lib.
+    GtkWidget *window;
+    GtkWidget *drawing_area;
+
+    //init thread 
     g_thread_init (NULL);
     gdk_threads_init ();
-    gtk_init (&argc, &argv);
-
-    //create window
-    main_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-
-    //set pos
-    gtk_widget_set_size_request(main_window, VGA_WIDTH, VGA_HEIGHT);
-    gtk_window_set_position (GTK_WINDOW(main_window), GTK_WIN_POS_CENTER);
-
-    //connect destructor
-    g_signal_connect (G_OBJECT(main_window), "destroy", G_CALLBACK (gtk_main_quit), NULL);
-
-    //show
-    gtk_widget_show (main_window);
-    wnd_ready = TRUE;
 
     //get thread lock
     gdk_threads_enter();
-    wnd_cairo = gdk_cairo_create(main_window->window);
-    gtk_main ();
-    cairo_destroy(wnd_cairo);
+
+    //init.
+    gtk_init(&argc, &argv);
+
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_signal_connect (GTK_OBJECT (window), "delete_event",
+            GTK_SIGNAL_FUNC (gtk_main_quit), NULL);
+
+    //get GDK drawing area.
+    drawing_area = gtk_drawing_area_new();
+    gtk_drawing_area_size(GTK_DRAWING_AREA(drawing_area), VGA_WIDTH, VGA_HEIGHT);
+    gtk_window_set_position (GTK_WINDOW(window), GTK_WIN_POS_CENTER);
+
+    gtk_container_add (GTK_CONTAINER (window), drawing_area);
+    gtk_signal_connect (GTK_OBJECT (drawing_area), "expose_event",
+            GTK_SIGNAL_FUNC(expose_event), NULL);
+
+    //connect timer.
+    g_timeout_add(1, (GSourceFunc)wnd_timer_func, window);
+
+    gtk_widget_show_all(window);
+
+    gc = gdk_gc_new(window->window);
+
+    gtk_main();
     gdk_threads_leave();
 
     return 0;
 }
 
+#else
+
+GdkPixmap *pixmap = NULL;
+gint repaint(gpointer data){
+    GtkWidget *drawing_area = GTK_WIDGET (data);
+
+    int x, y;
+
+    //g_print ("draw...\n");
+    x = y = 0;
+    for (y = 0; y < VGA_HEIGHT; y++) {
+        for (x = 0; x < VGA_WIDTH; x++) {
+
+            if (x%2 || y%2)
+                continue;
+
+            set_color(pix_buf[x][y][0],
+                    pix_buf[x][y][1],
+                    pix_buf[x][y][2]); 
+            gdk_draw_point (pixmap, gc, x, y);
+        }
+    }
+    //copy pixmap to window
+    gtk_widget_draw(drawing_area, NULL);
+
+    return TRUE;
+}
+
+void configure_event(GtkWidget *widget, GdkEventConfigure *event, gpointer data){
+    if (pixmap)
+        gdk_pixmap_unref(pixmap);
+
+    pixmap = gdk_pixmap_new(widget->window,
+            widget->allocation.width,
+            widget->allocation.height,
+            -1);
+}
+
+void expose_event(GtkWidget *widget, GdkEventExpose *event, gpointer data){
+    gdk_draw_pixmap(widget->window,
+            widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
+            pixmap,
+            event->area.x, event->area.y,
+            event->area.x, event->area.y,
+            event->area.width, event->area.height);
+}
+
+int window_start(int argc, char** argv) 
+{
+    GtkWidget *window;
+    GtkWidget *drawing_area;
+
+    //init thread 
+    g_thread_init (NULL);
+    gdk_threads_init ();
+
+    //get thread lock
+    gdk_threads_enter();
+
+    //init.
+    gtk_init(&argc, &argv);
+
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_signal_connect (GTK_OBJECT (window), "delete_event",
+            GTK_SIGNAL_FUNC (gtk_main_quit), NULL);
+
+    drawing_area = gtk_drawing_area_new();
+    gtk_drawing_area_size(GTK_DRAWING_AREA(drawing_area), VGA_WIDTH, VGA_HEIGHT);
+    gtk_window_set_position (GTK_WINDOW(window), GTK_WIN_POS_CENTER);
+    gtk_container_add (GTK_CONTAINER (window), drawing_area);
+
+    gtk_signal_connect (GTK_OBJECT (drawing_area), "expose_event",
+            GTK_SIGNAL_FUNC(expose_event), NULL);
+    gtk_signal_connect (GTK_OBJECT (drawing_area), "configure_event",
+            GTK_SIGNAL_FUNC(configure_event), NULL);
+
+    gtk_widget_show_all(window);
+
+    gc = gdk_gc_new(window->window);
+
+    gtk_timeout_add(1, repaint, (gpointer) drawing_area);
+
+    gtk_main();
+    gdk_threads_leave();
+
+    return 0;
+}
+#endif
+
 int window_init(void) {
-    main_window = NULL;
-    wnd_ready = FALSE;
+    memset(pix_buf, 0, sizeof(pix_buf));
     return TRUE;
 }
 
