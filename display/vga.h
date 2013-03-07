@@ -1,6 +1,4 @@
 
-#define VGA_FIFO    "vga-comm"
-
 #define VGA_WIDTH   640
 #define VGA_HEIGHT  480
 
@@ -29,4 +27,8 @@ struct rgb15 {
 #define to16bit(col5) col5 * 0xFFFF / 0x1F
 
 #define DISPLAY_PORT    9999
+
+#define VGA_SHM             "vgadisp"
+#define VGA_SHM_PRJ_ID      'm'
+#define VGA_SHM_SIZE        VGA_WIDTH * VGA_HEIGHT * sizeof (struct rgb15)
 

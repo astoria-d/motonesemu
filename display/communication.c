@@ -7,85 +7,38 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 
 #include "tools.h"
 #include "vga.h"
 
 void draw_point(int x, int y, char r, char g, char b);
 void set_pixel_color(int x, int y, int r, int g, int b);
-int window_ready(void);
+static struct rgb15 *disp_data;
 
 static pthread_t com_thread_id;
 
-static int fifo_init(void) {
-    int ret;
-
-    //create named fifo.
-    ret = mknod(VGA_FIFO, S_IFIFO | 0666, 0);
-    if (ret != RT_OK && errno != EEXIST) {
-        fprintf(stderr, "error creating pipe!\n");
-        return FALSE;
-    }
-
-    return TRUE;
-}
-
 static void *com_loop(void* arg) {
-    int posx, posy, old_x, old_y;
-    int sock;
-
-
-    posx = posy = old_x = old_y = 0;
-
-    sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sock == -1) {
-        fprintf(stderr, "error socket!\n");
-        return NULL;
-    }
-    struct sockaddr_in addr;
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(DISPLAY_PORT);
-    addr.sin_addr.s_addr = INADDR_ANY;
-    bind(sock, (struct sockaddr *)&addr, sizeof(addr));
+    int posx, posy;
 
     while (1) {
-        //FILE* fifo;
-        int ret;
-        //struct vga_pulse data;
-        struct rgb15 disp_data[VGA_WIDTH][VGA_HEIGHT];
-        
-        //ret = fread (&data, 1, sizeof(data), fifo);
-        ret = recv(sock, &disp_data, sizeof(disp_data), 0);
-        dprint("received...\n");
-        fflush(stdout);
-        if (ret == sizeof(disp_data)) {
-            //fclose(fifo);
-            continue;
-        }
-        dprint("ok...\n");
-
-
-            //dprint("[%d, %d] rgb=%d:%d:%d\n", posx, posy, data.r, data.g, data.b);
-            //fflush(stdout);
-
+        struct timespec ts = {0, 100};
         for (posy = 0; posy < VGA_HEIGHT; posy++) {
             for (posx = 0; posx < VGA_WIDTH; posx++) {
+                int pos = posx + VGA_WIDTH * posy;
                 set_pixel_color(posx, posy, 
-                        to16bit(disp_data[posx][posy].r), 
-                        to16bit(disp_data[posx][posy].g), 
-                        to16bit(disp_data[posx][posy].b));
+                        to16bit(disp_data[pos].r), 
+                        to16bit(disp_data[pos].g), 
+                        to16bit(disp_data[pos].b));
             }
         }
+        nanosleep(&ts, NULL);
     }
-    close(sock);
     /*
     */
 
     /*
-    */
     while (1) {
         int x, y;
         int r,g,b;
@@ -102,16 +55,48 @@ static void *com_loop(void* arg) {
         //dprint("sleep while...\n");
         nanosleep(&ts, NULL);
     }
+    */
 
     return NULL;
 }
 
+static int shm_init(void) {
+    key_t key;
+    int   shmid;
+
+    //create shared memory
+    key = ftok(VGA_SHM, VGA_SHM_PRJ_ID);
+    if (key == -1) {
+        fprintf(stderr, "error preparing shared memory.\n");
+        return FALSE;
+    }
+
+    if((shmid = shmget(key, VGA_SHM_SIZE, IPC_CREAT|IPC_EXCL|0666)) == -1) 
+    {
+        printf("Shared memory segment exists - opening as client\n");
+
+        /* Segment probably already exists - try as a client */
+        if((shmid = shmget(key, VGA_SHM_SIZE, 0)) == -1) 
+        {
+            fprintf(stderr, "error opening shared memory.\n");
+            return FALSE;
+        }
+    }
+
+    /* Attach (map) the shared memory segment into the current process */
+    if((disp_data = (struct rgb15 *)shmat(shmid, 0, 0)) == (struct rgb15*)-1)
+    {
+        fprintf(stderr, "error attaching shared memory.\n");
+        return FALSE;
+    }
+    return TRUE;
+}
 
 int comm_init(void) {
     int ret;
     pthread_attr_t attr;
 
-    ret = fifo_init();
+    ret = shm_init();
     if (!ret)
         return FALSE;
 
