@@ -7,6 +7,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "tools.h"
 #include "vga.h"
@@ -32,57 +35,54 @@ static int fifo_init(void) {
 
 static void *com_loop(void* arg) {
     int posx, posy, old_x, old_y;
+    int sock;
 
 
     posx = posy = old_x = old_y = 0;
-    /*
-    while (1) {
-        FILE* fifo;
-        int ret;
-        struct vga_pulse data;
-        
-        //dprint("fifo open...");
-        fifo= fopen(VGA_FIFO, "r");
-        if (fifo == NULL) {
-            fprintf(stderr, "error opening fifo!\n");
-            return NULL;
-        }
 
-        ret = fread (&data, 1, sizeof(data), fifo);
-        if (ret == 0) {
-            fclose(fifo);
+    sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock == -1) {
+        fprintf(stderr, "error socket!\n");
+        return NULL;
+    }
+    struct sockaddr_in addr;
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(DISPLAY_PORT);
+    addr.sin_addr.s_addr = INADDR_ANY;
+    bind(sock, (struct sockaddr *)&addr, sizeof(addr));
+
+    while (1) {
+        //FILE* fifo;
+        int ret;
+        //struct vga_pulse data;
+        struct rgb15 disp_data[VGA_WIDTH][VGA_HEIGHT];
+        
+        //ret = fread (&data, 1, sizeof(data), fifo);
+        ret = recv(sock, &disp_data, sizeof(disp_data), 0);
+        dprint("received...\n");
+        fflush(stdout);
+        if (ret == sizeof(disp_data)) {
+            //fclose(fifo);
             continue;
         }
+        dprint("ok...\n");
 
-        if (data.h_sync ==0) {
-            posx=0;
-            if (posx != old_x)
-                posy++;
-            dprint("h_sync=0\n");
+
+            //dprint("[%d, %d] rgb=%d:%d:%d\n", posx, posy, data.r, data.g, data.b);
+            //fflush(stdout);
+
+        for (posy = 0; posy < VGA_HEIGHT; posy++) {
+            for (posx = 0; posx < VGA_WIDTH; posx++) {
+                set_pixel_color(posx, posy, 
+                        to16bit(disp_data[posx][posy].r), 
+                        to16bit(disp_data[posx][posy].g), 
+                        to16bit(disp_data[posx][posy].b));
+            }
         }
-        if (data.v_sync ==0) {
-            posx=0;
-            posy=0;
-            dprint("v_sync=0\n");
-        }
-        if (data.h_sync && data.v_sync) {
-
-            dprint("[%d, %d] rgb=%d:%d:%d\n", posx, posy, data.r, data.g, data.b);
-            fflush(stdout);
-
-            set_pixel_color(posx, posy, 
-                    to16bit(data.r), to16bit(data.g), to16bit(data.b));
-            posx++;
-        }
-        old_x = posx;
-        old_y = posy;
-        if (posx == VGA_WIDTH)
-            posx = 0;
-        if (posy == VGA_HEIGHT)
-            posy = 0;
-
-        fclose(fifo);
-    }*/
+    }
+    close(sock);
+    /*
+    */
 
     /*
     */

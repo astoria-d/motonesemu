@@ -18,6 +18,15 @@ struct vga_pulse {
 
 };
 
+struct rgb15 {
+    unsigned int r   :5;
+    unsigned int g   :5;
+    unsigned int b   :5;
+};
+
+
 #define to5bit(col16) col16 * 0x1F / 0xFFFF
 #define to16bit(col5) col5 * 0xFFFF / 0x1F
+
+#define DISPLAY_PORT    9999
 

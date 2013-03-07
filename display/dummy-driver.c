@@ -7,15 +7,12 @@
 #include <signal.h>
 #include <string.h>
 #include <time.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "tools.h"
 #include "vga.h"
-
-struct rgb15 {
-    unsigned int r   :5;
-    unsigned int g   :5;
-    unsigned int b   :5;
-};
 
 static struct rgb15 disp_data[VGA_WIDTH][VGA_HEIGHT];
 
@@ -25,42 +22,53 @@ static void pipe_sig_handler(int p) {
     printf("sigpipe!\n");
 }
 
+static void send_data (int fd, const void* buf, size_t size) {
+    //write(fd, buf, size);
+    struct sockaddr_in addr;
+
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(DISPLAY_PORT);
+    addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+    sendto(fd, buf, size, 0, (struct sockaddr *)&addr, sizeof(addr));
+}
+
 static void send_line(int fd, int line) {
-    struct vga_pulse send_data;
+    struct vga_pulse data;
     int x;
 
     //send preamble
-    send_data.h_sync = 0;
-    send_data.v_sync = 1;
-    write (fd, &send_data, sizeof(send_data));
+    data.h_sync = 0;
+    data.v_sync = 1;
+    send_data (fd, &data, sizeof(data));
     nanosleep(&sleep_inteval, NULL);
     for (x = 0; x < VGA_WIDTH; x++) {
-        send_data.h_sync = 1;
-        send_data.v_sync = 1;
-        send_data.r = disp_data[x][line].r;
-        send_data.g = disp_data[x][line].g;
-        send_data.b = disp_data[x][line].b;
+        data.h_sync = 1;
+        data.v_sync = 1;
+        data.r = disp_data[x][line].r;
+        data.g = disp_data[x][line].g;
+        data.b = disp_data[x][line].b;
 
-        write (fd, &send_data, sizeof(send_data));
+        send_data (fd, &data, sizeof(data));
         nanosleep(&sleep_inteval, NULL);
     }
 
     //send postamble
-    send_data.h_sync = 0;
-    send_data.v_sync = 1;
-    write (fd, &send_data, sizeof(send_data));
+    data.h_sync = 0;
+    data.v_sync = 1;
+    send_data (fd, &data, sizeof(data));
     nanosleep(&sleep_inteval, NULL);
 }
 
 static void send_vsync_line(int fd, int cnt) {
-    struct vga_pulse send_data;
+    struct vga_pulse data;
     int x;
 
     //vsync blank data.
-    send_data.h_sync = 0;
-    send_data.v_sync = 0;
+    data.h_sync = 0;
+    data.v_sync = 0;
     for (x = 0; x < cnt; x++) {
-        write (fd, &send_data, sizeof(send_data));
+        send_data (fd, &data, sizeof(data));
         nanosleep(&sleep_inteval, NULL);
     }
 }
@@ -136,7 +144,8 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    fd = open(VGA_FIFO, O_RDWR | O_NONBLOCK );
+    //fd = open(VGA_FIFO, O_RDWR | O_NONBLOCK );
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd == -1) {
         fprintf(stderr, "error opening fifo!\n");
         return -1;
@@ -144,13 +153,20 @@ int main(int argc, char** argv) {
     while (1) {
         int i;
         printf("send...\n");
+        /*
         send_vsync_line(fd, 10);
         for (i = 0; i < VGA_HEIGHT; i++) {
             send_line(fd, i);
         }
         send_vsync_line(fd, 10);
+        */
+        //max udp size is 64k!!
+        //bug disp_data has 650k bytes!!
+        send_data(fd, &disp_data, sizeof(disp_data));
+        //send_data(fd, &disp_data, 10);
+        //send_data (fd, &data, sizeof(data));
 
-        //sleep(1);
+        sleep(1);
     }
     close(fd);
 
