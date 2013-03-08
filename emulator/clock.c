@@ -30,7 +30,7 @@ static void* cpu_clock_loop(void* arg) {
         long sec;
         long nsec;
 
-        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &begin);
+        clock_gettime(CLOCK_REALTIME, &begin);
         dprint("-----------------\nclock ");
         ch = handler_list;
         while (ch != NULL) {
@@ -39,7 +39,7 @@ static void* cpu_clock_loop(void* arg) {
             ch = (struct clock_handler*)ch->l.next;
         }
         
-        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
+        clock_gettime(CLOCK_REALTIME, &end);
         //calcurate sleep time.
         if (end.tv_sec < begin.tv_sec )
             sec = LONG_MAX - begin.tv_sec + end.tv_sec + 1;

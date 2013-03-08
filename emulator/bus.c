@@ -1,5 +1,6 @@
-
 #include <string.h>
+#include <semaphore.h>
+
 #include "tools.h"
 #include "bus.h"
 #include "rom.h"
@@ -17,6 +18,7 @@ struct cpu_pin {
 static unsigned short addr_bus;
 static unsigned char data_bus;
 static struct cpu_pin pin_status;
+static sem_t sem_bus_wait;
 
 /*
  * NES memory map
@@ -37,10 +39,19 @@ static struct cpu_pin pin_status;
 #define IO_APU_MASK 0x001F
 #define ROM_MASK    0x7FFF
 
+void release_bus(void) {
+    pin_status.ready = 1;
+    sem_post(&sem_bus_wait);
+}
+
 void start_bus(void) {
     if (addr_bus & ROM_BIT) {
         /*case rom*/
+        pin_status.ready = 0;
         set_rom_ce_pin(TRUE);
+
+        //wait for the bus ready.
+        sem_wait(&sem_bus_wait);
     }
     else if (addr_bus & IO_APU_BIT) {
     }
@@ -48,7 +59,11 @@ void start_bus(void) {
     }
     else {
         /*case ram*/
+        pin_status.ready = 0;
         set_ram_ce_pin(TRUE);
+
+        //wait for the bus ready.
+        sem_wait(&sem_bus_wait);
     }
 }
 
@@ -68,6 +83,9 @@ void end_bus(void) {
 }
 
 void set_bus_addr(unsigned short addr) {
+    if (!pin_status.ready)
+        return;
+
     if (addr & ROM_BIT) {
         /*case rom*/
         set_rom_addr(addr & ROM_MASK);
@@ -92,6 +110,9 @@ void set_bus_addr(unsigned short addr) {
 }
 
 void set_bus_data(unsigned char data){
+    if (!pin_status.ready)
+        return;
+
     if (addr_bus & ROM_BIT) {
     }
     else if (addr_bus & IO_APU_BIT) {
@@ -106,6 +127,9 @@ void set_bus_data(unsigned char data){
 }
 
 char get_bus_data(void) {
+    if (!pin_status.ready)
+        return 0;
+
     if (addr_bus & ROM_BIT) {
         data_bus = get_rom_data();
     }
@@ -128,12 +152,21 @@ void set_rw_pin(int rw) {
 }
 
 int init_bus(void) {
+    int ret;
+
     addr_bus = 0;
     data_bus = 0;
     memset(&pin_status, 0, sizeof(struct cpu_pin));
+    pin_status.ready = 1;
+
+    ret = sem_init(&sem_bus_wait, 0, 0);
+    if (ret != RT_OK)
+        return FALSE;
+
     return TRUE;
 }
 
 void clean_bus(void){
+    sem_destroy(&sem_bus_wait);
 }
 

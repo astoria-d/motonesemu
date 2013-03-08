@@ -59,15 +59,10 @@ int clock_cpu(void) {
 }
 
 unsigned char load_memory(unsigned short addr) {
-    struct timespec ts = {CPU_CLOCK_SEC, CPU_CLOCK_NSEC / 2};
 
     set_rw_pin(0);
     set_bus_addr(addr);
     start_bus();
-
-    //must wait half cycle for the bus ready
-    nanosleep(&ts, NULL);
-
     cpu_data_buffer = get_bus_data();
     end_bus();
 
@@ -75,15 +70,11 @@ unsigned char load_memory(unsigned short addr) {
 }
 
 void store_memory(unsigned short addr, unsigned char data) {
-    struct timespec ts = {CPU_CLOCK_SEC, CPU_CLOCK_NSEC / 2};
 
     set_rw_pin(1);
     set_bus_addr(addr);
     set_bus_data(data);
     start_bus();
-
-    //must wait half cycle for the bus ready
-    nanosleep(&ts, NULL);
     end_bus();
 
     cpu_addr_buffer = addr;

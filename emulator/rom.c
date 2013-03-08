@@ -7,6 +7,8 @@
 #include "tools.h"
 #include "clock.h"
 
+void release_bus(void);
+
 struct rom_pin {
     unsigned int rw     :1;     /*assert on write.*/
     unsigned int ce     :1;     /*chip enable*/
@@ -59,6 +61,7 @@ static void *rom_loop(void* arg) {
         if (rom_pin_status.ce) {
             nanosleep(&ts, NULL);
             rom_data = rom_buffer[rom_addr];
+            release_bus();
         }
     }
     return NULL;

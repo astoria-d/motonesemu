@@ -7,6 +7,8 @@
 #include "tools.h"
 #include "clock.h"
 
+void release_bus(void);
+
 struct ram_pin {
     unsigned int ce     :1;     /*chip enable*/
     unsigned int oe     :1;     /*assert on read ready.*/
@@ -69,6 +71,7 @@ static void *ram_loop(void* arg) {
                 nanosleep(&ts, NULL);
                 ram_buffer[ram_addr] = ram_data;
             }
+            release_bus();
         }
     }
     return NULL;
