@@ -10,6 +10,7 @@ void *vga_shm_get(void);
 static struct rgb15 *disp_data;
 static GdkPixmap *pixmap = NULL;
 static GdkGC *gc = NULL;
+static int first_draw;
 
 GdkGC *set_color(gushort r, gushort g, gushort b)
 {
@@ -28,6 +29,13 @@ gint repaint(gpointer data){
 
     int x, y;
 
+    if (first_draw) {
+        //on first paint event, fill bgcolor with black.
+        first_draw = FALSE;
+        set_color(0, 0, 0);
+        gdk_draw_rectangle (pixmap, gc, TRUE, 0, 0, VGA_WIDTH, VGA_HEIGHT);
+    }
+
     //g_print ("draw...\n");
     x = y = 0;
     for (y = 0; y < VGA_HEIGHT; y++) {
@@ -35,8 +43,8 @@ gint repaint(gpointer data){
 
             int pos = x + VGA_WIDTH * y;
 
-            //if (x%2 || y%2)
-             //   continue;
+            if (x%2 || y%2)
+                continue;
 
             set_color( to16bit(disp_data[pos].r), 
                     to16bit(disp_data[pos].g),
@@ -74,10 +82,6 @@ int window_start(int argc, char** argv)
 {
     GtkWidget *window;
     GtkWidget *drawing_area;
-
-    //init thread 
-    g_thread_init (NULL);
-    gdk_threads_init ();
 
     //get thread lock
     gdk_threads_enter();
@@ -125,10 +129,18 @@ static int shm_init(void) {
 int window_init(void) {
     int ret;
     disp_data = NULL;
+    first_draw = TRUE;
+
     ret = shm_init();
     if (!ret)
         return FALSE;
    
+    memset(disp_data, 0, sizeof(VGA_SHM_SIZE));
+
+    //init thread 
+    g_thread_init (NULL);
+    gdk_threads_init ();
+
     return TRUE;
 }
 

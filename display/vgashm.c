@@ -20,7 +20,7 @@ void *vga_shm_get(void) {
 
     if((shmid = shmget(key, VGA_SHM_SIZE, IPC_CREAT|IPC_EXCL|0666)) == -1) 
     {
-        printf("Shared memory segment exists - opening as client\n");
+        //printf("Shared memory segment exists - opening as client\n");
 
         /* Segment probably already exists - try as a client */
         if((shmid = shmget(key, VGA_SHM_SIZE, 0)) == -1) 
@@ -38,5 +38,9 @@ void *vga_shm_get(void) {
     }
 
     return ret;
+}
+
+void vga_shm_free(void* addr) {
+    shmdt(addr);
 }
 
