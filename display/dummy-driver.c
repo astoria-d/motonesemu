@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <unistd.h>
-#include <signal.h>
 #include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -15,11 +14,6 @@ void *vga_shm_get(void);
 void vga_shm_free(void* addr);
 
 struct timespec sleep_inteval = {0, 1000000 / VGA_REFRESH_RATE};
-
-static void pipe_sig_handler(int p) {
-    printf("sigpipe!\n");
-}
-
 
 static void init_color1(void) {
     int x,y;
@@ -171,10 +165,6 @@ static void print_usage(void) {
 }
 
 int main(int argc, char** argv) {
-    //register signal handler
-    //signal(SIGPIPE, SIG_IGN);
-    signal(SIGPIPE, pipe_sig_handler);
-
     print_usage();
     
     /* get vga shared memory */
