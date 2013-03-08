@@ -4,9 +4,6 @@
 #include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
 #include <ctype.h>
 #include <string.h>
 
@@ -14,6 +11,7 @@
 #include "vga.h"
 
 static struct rgb15 *disp_data;
+void *vga_shm_get(void);
 
 //struct timespec sleep_inteval = {0, 1};
 
@@ -70,43 +68,17 @@ static void init_color1(void) {
                 disp_data[pos].b = to5bit(0xffff);
             }
 
-            /*
-            disp_data[pos].r = to5bit(0xffff);
-            disp_data[pos].g = to5bit(0);
-            disp_data[pos].b = to5bit(0xffff);
-             */
         }
     }
 }
 
 int main(int argc, char** argv) {
-    key_t key;
-    int   shmid;
-
+    //register signal handler
     //signal(SIGPIPE, SIG_IGN);
     signal(SIGPIPE, pipe_sig_handler);
-
-    //create shared memory
-    key = ftok(VGA_SHM, VGA_SHM_PRJ_ID);
-    if (key == -1) {
-        fprintf(stderr, "error preparing shared memory.\n");
-        return -1;
-    }
-
-    if((shmid = shmget(key, VGA_SHM_SIZE, IPC_CREAT|IPC_EXCL|0666)) == -1) 
-    {
-        printf("Shared memory segment exists - opening as client\n");
-
-        /* Segment probably already exists - try as a client */
-        if((shmid = shmget(key, VGA_SHM_SIZE, 0)) == -1) 
-        {
-            fprintf(stderr, "error opening shared memory.\n");
-            return -1;
-        }
-    }
-
-    /* Attach (map) the shared memory segment into the current process */
-    if((disp_data = (struct rgb15 *)shmat(shmid, 0, 0)) == (struct rgb15*)-1)
+    
+    /* get vga shared memory */
+    if((disp_data = (struct rgb15 *)vga_shm_get()) == NULL)
     {
         fprintf(stderr, "error attaching shared memory.\n");
         return -1;
@@ -115,10 +87,6 @@ int main(int argc, char** argv) {
     memset(disp_data, 0, sizeof(VGA_SHM_SIZE));
     init_color1();
     
-    while (1) {
-        sleep(1);
-    }
-
     return 0;
 }
 

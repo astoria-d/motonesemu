@@ -5,16 +5,11 @@
 #include "tools.h"
 #include "vga.h"
 
-int pix_buf[VGA_WIDTH][VGA_HEIGHT][3];
-GdkPixmap *pixmap = NULL;
-GdkGC *gc = NULL;
+void *vga_shm_get(void);
 
-void set_pixel_color(int x, int y, int r, int g, int b) {
-    //g_print ("set pix...\n");
-    pix_buf[x][y][0] = r;
-    pix_buf[x][y][1] = g;
-    pix_buf[x][y][2] = b;
-}
+static struct rgb15 *disp_data;
+static GdkPixmap *pixmap = NULL;
+static GdkGC *gc = NULL;
 
 GdkGC *set_color(gushort r, gushort g, gushort b)
 {
@@ -38,12 +33,14 @@ gint repaint(gpointer data){
     for (y = 0; y < VGA_HEIGHT; y++) {
         for (x = 0; x < VGA_WIDTH; x++) {
 
-            if (x%2 || y%2)
-                continue;
+            int pos = x + VGA_WIDTH * y;
 
-            set_color(pix_buf[x][y][0],
-                    pix_buf[x][y][1],
-                    pix_buf[x][y][2]); 
+            //if (x%2 || y%2)
+             //   continue;
+
+            set_color( to16bit(disp_data[pos].r), 
+                    to16bit(disp_data[pos].g),
+                    to16bit(disp_data[pos].b)); 
             gdk_draw_point (pixmap, gc, x, y);
         }
     }
@@ -64,6 +61,7 @@ void configure_event(GtkWidget *widget, GdkEventConfigure *event, gpointer data)
 }
 
 void expose_event(GtkWidget *widget, GdkEventExpose *event, gpointer data){
+    //copy pixmap to the window
     gdk_draw_pixmap(widget->window,
             widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
             pixmap,
@@ -105,7 +103,7 @@ int window_start(int argc, char** argv)
 
     gc = gdk_gc_new(window->window);
 
-    gtk_timeout_add(1, repaint, (gpointer) drawing_area);
+    gtk_timeout_add(1000 / VGA_REFRESH_RATE, repaint, (gpointer) drawing_area);
 
     gtk_main();
     gdk_threads_leave();
@@ -113,8 +111,24 @@ int window_start(int argc, char** argv)
     return 0;
 }
 
+static int shm_init(void) {
+
+    /* get vga shared memory */
+    if((disp_data = (struct rgb15 *)vga_shm_get()) == NULL)
+    {
+        fprintf(stderr, "error attaching shared memory.\n");
+        return FALSE;
+    }
+    return TRUE;
+}
+
 int window_init(void) {
-    memset(pix_buf, 0, sizeof(pix_buf));
+    int ret;
+    disp_data = NULL;
+    ret = shm_init();
+    if (!ret)
+        return FALSE;
+   
     return TRUE;
 }
 
