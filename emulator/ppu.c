@@ -40,7 +40,7 @@ static int ppu_end_loop;
 static sem_t ppu_sem_id;
 
 /*
- * JAPAN/US is NTSC standard.
+ * JAPAN/US uses NTSC standard.
  * 
  * NTSC: 
  * ---------------------------------------------------------

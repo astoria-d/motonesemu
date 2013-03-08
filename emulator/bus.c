@@ -44,6 +44,9 @@ void release_bus(void) {
     sem_post(&sem_bus_wait);
 }
 
+/*
+ * this function blocks when accessing rom/ram device.
+ * */
 void start_bus(void) {
     if (addr_bus & ROM_BIT) {
         /*case rom*/
