@@ -12,7 +12,7 @@ static GdkPixmap *pixmap = NULL;
 static GdkGC *gc = NULL;
 static int first_draw;
 
-GdkGC *set_color(gushort r, gushort g, gushort b)
+static GdkGC *set_color(gushort r, gushort g, gushort b)
 {
     GdkColor color;
 
@@ -24,7 +24,7 @@ GdkGC *set_color(gushort r, gushort g, gushort b)
     return gc;
 }
 
-gint repaint(gpointer data){
+static gint repaint(gpointer data){
     GtkWidget *drawing_area = GTK_WIDGET (data);
 
     int x, y;
@@ -58,7 +58,7 @@ gint repaint(gpointer data){
     return TRUE;
 }
 
-void configure_event(GtkWidget *widget, GdkEventConfigure *event, gpointer data){
+static void configure_event(GtkWidget *widget, GdkEventConfigure *event, gpointer data){
     if (pixmap)
         gdk_pixmap_unref(pixmap);
 
@@ -68,7 +68,7 @@ void configure_event(GtkWidget *widget, GdkEventConfigure *event, gpointer data)
             -1);
 }
 
-void expose_event(GtkWidget *widget, GdkEventExpose *event, gpointer data){
+static void expose_event(GtkWidget *widget, GdkEventExpose *event, gpointer data){
     //copy pixmap to the window
     gdk_draw_pixmap(widget->window,
             widget->style->fg_gc[GTK_WIDGET_STATE (widget)],

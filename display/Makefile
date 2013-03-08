@@ -3,9 +3,9 @@ BIN=vgadisp
 
 DRIVER=dummy-driver
 
-OBJS=display.o window.o vgashm.o
+OBJS=display.o window.o
 	 
-DRIVER_OBJS=vgashm.o dummy-driver.o
+DRIVER_OBJS=dummy-driver.o
 
 
 LIBS=-L../libs -lmotones -pthread
@@ -22,7 +22,7 @@ $(BIN): $(OBJS) ../libs
 	gcc -o $(BIN) $(OBJS) $(LFLAGS)
 
 $(DRIVER): $(DRIVER_OBJS)
-	gcc -o $(DRIVER) $(DRIVER_OBJS)
+	gcc -o $(DRIVER) $(DRIVER_OBJS) $(LIBS)
 
 .c.o: 
 	gcc $(CFLAGS) -c $<

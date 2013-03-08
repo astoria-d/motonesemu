@@ -1,7 +1,7 @@
 
 BIN=libmotones.a
 
-OBJS=tools.o
+OBJS=tools.o vgashm.o
 
 INCLUDE=-I../include
 
