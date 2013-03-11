@@ -1,3 +1,5 @@
+#ifndef __vga_h__
+#define __vga_h__
 
 #define VGA_WIDTH   640
 #define VGA_HEIGHT  480
@@ -34,3 +36,5 @@ struct rgb15 {
 #define VGA_SHM_SIZE        VGA_WIDTH * VGA_HEIGHT * sizeof (struct rgb15)
 
 #define VGA_REFRESH_RATE    60
+
+#endif /*__vga_h__*/

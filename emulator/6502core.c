@@ -12,7 +12,7 @@ struct status_reg {
     unsigned int irq_disable    :1;
     unsigned int zero           :1;
     unsigned int carry          :1;
-};
+} __attribute__ ((packed));
 
 struct cpu_6502 {
     unsigned char acc;

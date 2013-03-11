@@ -23,9 +23,9 @@ static sem_t rom_sem_id;
 
 #define ROM_32K 0x8000
 
-unsigned char * rom_buffer;
+static unsigned char * rom_buffer;
 
-int load_rom_file(FILE* cartridge, int num_rom_bank) {
+int load_prg_rom(FILE* cartridge, int num_rom_bank) {
     int len;
 
     rom_buffer = malloc(ROM_32K);

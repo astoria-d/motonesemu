@@ -2,7 +2,8 @@
 #BIN=ppucore
 BIN=dummy-driver2
 
-OBJS=dummy-driver2.o ppucore.o
+OBJS=dummy-driver2.o ppucore.o vram.o cartridge.o vscreen.o palette.o \
+	 vga_xfer.o
 	 
 LIBS=-L../../libs -lmotones -pthread
 
@@ -24,6 +25,6 @@ clean:
 	-rm $(OBJS) $(BIN)
 		
 tag:
-	cd .. && make tag
+	cd ../.. && make tag
 
 

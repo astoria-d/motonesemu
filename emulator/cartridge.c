@@ -22,7 +22,8 @@ static unsigned char has_trainer;
 #define TRAINER(X)                  ((0x4 & X) > 0)
 #define FOUR_SCRN_MIRROR(X)         ((0x8 & X) > 0)
 
-int load_rom_file(FILE* cartridge, int num_rom_bank);
+int load_prg_rom(FILE* cartridge, int num_rom_bank);
+int load_chr_rom(FILE* cartridge, int num_rom_bank);
 
 int check_cart_file(FILE* fp) {
     struct nes_cart_header cf;
@@ -52,10 +53,15 @@ int check_cart_file(FILE* fp) {
         }
     }
 
-    ret = load_rom_file(fp, num_prom_banks);
+    ret = load_prg_rom(fp, num_prom_banks);
     if (!ret) {
         fprintf(stderr, "rom load err.\n");
-        fclose(fp);
+        return FALSE;
+    }
+    
+    ret = load_chr_rom(fp, num_prom_banks);
+    if (!ret) {
+        fprintf(stderr, "rom load err.\n");
         return FALSE;
     }
     
