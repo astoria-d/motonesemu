@@ -2,8 +2,10 @@
 #BIN=ppucore
 BIN=dummy-driver2
 
-OBJS=dummy-driver2.o ppucore.o vram.o cartridge.o vscreen.o palette.o \
-	 vga_xfer.o
+DUMMY_OBJS=dummy-driver2.o debug.o cartridge.o 
+
+OBJS=ppucore.o vram.o vscreen.o palette.o \
+	 vga_xfer.o $(DUMMY_OBJS)
 	 
 LIBS=-L../../libs -lmotones -pthread
 

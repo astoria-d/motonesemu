@@ -32,6 +32,11 @@ void vga_xfer(void) {
                 else {
                     *col = *col_old;
                 }
+                /*
+                col->r = to5bit(0xffff);
+                col->g = 0;
+                col->b = 0;
+                */
 
                 vscrn_x_old = vscrn_x;
                 col_old = col;

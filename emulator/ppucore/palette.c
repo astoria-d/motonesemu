@@ -6,6 +6,11 @@
 static struct rgb15 NES_PALETTE_SPR[PALETTE_SIZE];
 static struct rgb15 NES_PALETTE_BG[PALETTE_SIZE];
 
+#define colto5bit(col8) col8 * 0x1F / 0xFF
+
+//copied from 
+//http://hlc6502.web.fc2.com/NesPal2.htm
+//
 static unsigned int RGB24_SPR[PALETTE_SIZE] = {
     0x787878, 0x2000B0, 0x2800B8, 0x6010A0, 0x982078, 0xB01030, 0xA03000, 0x784000, 
     0x485800, 0x386800, 0x386C00, 0x306040, 0x305080, 0x000000, 0x000000, 0x000000,
@@ -21,9 +26,9 @@ static unsigned int RGB24_BG[PALETTE_SIZE] = {
 };
 
 static void from_rgb24(unsigned int rgb24, struct rgb15* rgb) {
-    rgb->r = rgb24 && 0xFF;
-    rgb->g = (rgb24 >> 8) && 0xFF;
-    rgb->b = (rgb24 >> 16) && 0xFF;
+    rgb->r = colto5bit(rgb24 & 0xFF);
+    rgb->g = colto5bit((rgb24 >> 8) & 0xFF);
+    rgb->b = colto5bit((rgb24 >> 16) & 0xFF);
 }
 
 /*
