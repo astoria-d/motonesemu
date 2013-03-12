@@ -7,7 +7,7 @@
 #include "ppucore.h"
 #include "vram.h"
 
-void palette_index_to_rgb15(int bank, unsigned char index, struct rgb15* rgb);
+void palette_index_to_rgb15(unsigned char index, struct rgb15* rgb);
 void dump_mem(const char* msg, unsigned short base, 
         unsigned short offset, unsigned char* buf, int size);
 
@@ -19,7 +19,6 @@ void dump_mem(const char* msg, unsigned short base,
 #define SPRITE_RAM_SIZE     0xff
 
 #define PATTERN_ADDR_MASK       (PATTERN_TBL_SIZE - 1)
-#define NAME_TBL_ADDR_MASK      (NAME_TBL_SIZE - 1)
 #define ATTR_TBL_ADDR_MASK      (ATTR_TBL_SIZE - 1)
 #define PALETTE_TBL_ADDR_MASK   (PALETTE_TBL_SIZE - 1)
 #define SPR_RAM_ADDR_MASK       (SPRITE_RAM_SIZE - 1)
@@ -57,7 +56,6 @@ unsigned char pattern_tbl_get(unsigned char bank, unsigned short addr) {
 }
 
 unsigned char name_tbl_get(unsigned char bank, unsigned short addr) {
-    addr = addr & NAME_TBL_ADDR_MASK;
     if (bank == 0)
         return name_tbl0[addr];
     else if (bank == 1)
@@ -69,7 +67,6 @@ unsigned char name_tbl_get(unsigned char bank, unsigned short addr) {
 }
 
 void name_tbl_set(unsigned char bank, unsigned short addr, unsigned char data) {
-    addr = addr & NAME_TBL_ADDR_MASK;
     if (bank == 0)
         name_tbl0[addr] = data;
     else if (bank == 1)
@@ -139,47 +136,89 @@ void spr_ram_tbl_set(unsigned short addr, unsigned char data) {
 
 /* VRAM manipulation... */
 
+static int attr_index_to_gp(int tile_index) {
+    int tile_x, tile_y, gp_x, gp_y;
+
+    tile_x = tile_index % H_SCREEN_TILE_SIZE;
+    tile_y = tile_index / H_SCREEN_TILE_SIZE;
+
+    gp_x = tile_x / ATTR_GROUP_UNIT;
+    gp_y = tile_y / ATTR_GROUP_UNIT;
+    //dprint("tile_x:%d, y:%d, gp_x:%d, y:%d\n", tile_x, tile_y, gp_x, gp_y);
+
+    return gp_x + gp_y * 8;
+}
+
 void load_attribute(unsigned char bank, int tile_index, struct palette *plt) {
     int gp_index;
-    int unit_index;
     unsigned char data;
     struct palette_unit pu;
     int palette_group;
     unsigned short palette_addr;
     unsigned char pi;
+    int tile_x, tile_y;
+    int in_x, in_y;
 
-    gp_index = tile_index / ATTR_GROUP_UNIT / ATTR_UNIT_PER_BYTE;
-    unit_index = tile_index / ATTR_GROUP_UNIT;
+    gp_index = attr_index_to_gp(tile_index);
     data = attr_tbl_get(bank, gp_index);
-    pu = *(struct palette_unit*)&data;
     memcpy(&pu, &data, sizeof(pu));
-    //dprint("attr data:%1x, pu size:%d\n", data, sizeof(pu));
 
-    switch(unit_index) {
-        case 0:
+    tile_x = tile_index % H_SCREEN_TILE_SIZE;
+    tile_y = tile_index / H_SCREEN_TILE_SIZE;
+    in_x = tile_x % (ATTR_GROUP_UNIT);
+    in_y = tile_y % (ATTR_GROUP_UNIT);
+    if (in_y < 2) {
+        if (in_x < 2) {
             palette_group = pu.bit01;
-            break;
-        case 1:
+        }
+        else {
             palette_group = pu.bit23;
-            break;
-        case 2:
-            palette_group = pu.bit45;
-            break;
-        default:
-            palette_group = pu.bit67;
-            break;
+        }
     }
+    else {
+        if (in_x < 2) {
+            palette_group = pu.bit45;
+        }
+        else {
+            palette_group = pu.bit67;
+        }
+    }
+    /*
+    dprint("tile_index: %d, gp_index: %d\n", tile_index, gp_index);
+    dprint("in_x: %d, in_y: %d\n", in_x, in_y);
+    dprint("pu bit01:%d, bit23:%d, bit45:%d, bit67:%d\n", pu.bit01, pu.bit23, pu.bit45, pu.bit67);
+    dprint("palette_gp: %d\n", palette_group);
+    */
 
     /*load bg rgb palette color*/
     palette_addr = palette_group * 4;
     pi = bg_palette_tbl_get(palette_addr++);
-    palette_index_to_rgb15(0, pi, &plt->col[0]);
+    palette_index_to_rgb15(pi, &plt->col[0]);
+    /*
+    dprint("palette 0: index:%02d, %02x %02x %02x\n", pi, 
+            colto8bit(plt->col[0].r), colto8bit(plt->col[0].g), colto8bit(plt->col[0].b));
+            */
+
     pi = bg_palette_tbl_get(palette_addr++);
-    palette_index_to_rgb15(0, pi, &plt->col[1]);
+    palette_index_to_rgb15(pi, &plt->col[1]);
+    /*
+    dprint("palette 1: index:%02d, %02x %02x %02x\n", pi, 
+            colto8bit(plt->col[1].r), colto8bit(plt->col[1].g), colto8bit(plt->col[1].b));
+            */
+
     pi = bg_palette_tbl_get(palette_addr++);
-    palette_index_to_rgb15(0, pi, &plt->col[2]);
+    palette_index_to_rgb15(pi, &plt->col[2]);
+    /*
+    dprint("palette 2: index:%02d, %02x %02x %02x\n", pi, 
+            colto8bit(plt->col[2].r), colto8bit(plt->col[2].g), colto8bit(plt->col[2].b));
+            */
+
     pi = bg_palette_tbl_get(palette_addr);
-    palette_index_to_rgb15(0, pi, &plt->col[3]);
+    palette_index_to_rgb15(pi, &plt->col[3]);
+    /*
+    dprint("palette 3: index:%02d, %02x %02x %02x\n", pi, 
+            colto8bit(plt->col[3].r), colto8bit(plt->col[3].g), colto8bit(plt->col[3].b));
+            */
 
 }
 
@@ -199,6 +238,7 @@ void load_pattern(unsigned char bank, unsigned char ptn_index, struct tile_2* pa
         data = pattern_tbl_get(bank, addr);
         *p = data;
         p++;
+        addr++;
     }
 }
 
@@ -216,13 +256,13 @@ void dump_vram(int type, int bank, unsigned short addr, int size) {
     unsigned char *mem;
 
     switch(type) {
-        case 0:
+        case VRAM_DUMP_TYPE_PTN:
             sprintf(buf, "pattern table %d:\n", bank);
             base = (bank == 0 ? 0 : 0x1000);
             mem = (bank == 0 ? pattern_tbl0 : pattern_tbl1);
             break;
 
-        case 1:
+        case VRAM_DUMP_TYPE_NAME:
             sprintf(buf, "name table %d:\n", bank);
             base = 0x2000 + bank * 0x400;
             switch (bank) {
@@ -242,7 +282,7 @@ void dump_vram(int type, int bank, unsigned short addr, int size) {
             }
             break;
 
-        case 2:
+        case VRAM_DUMP_TYPE_ATTR:
             sprintf(buf, "attribute table %d:\n", bank);
             base = 0x23c0 + bank * 0x400;
             switch (bank) {
@@ -262,7 +302,7 @@ void dump_vram(int type, int bank, unsigned short addr, int size) {
             }
             break;
 
-        case 3:
+        case VRAM_DUMP_TYPE_PLT:
             switch (bank) {
                 case 0:
                     base = 0x3f00;
@@ -278,7 +318,7 @@ void dump_vram(int type, int bank, unsigned short addr, int size) {
             }
             break;
 
-        case 4:
+        case VRAM_DUMP_TYPE_SPR:
         default:
             sprintf(buf, "sprite ram:\n");
             base = 0;

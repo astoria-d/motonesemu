@@ -78,7 +78,7 @@ void vscreenn_dot_get(int x, int y, struct rgb15 *col) {
 
     tile_id_x = x / TILE_DOT_SIZE;
     tile_id_y = y / TILE_DOT_SIZE;
-    tile_id = tile_id_x + tile_id_y * V_SCREEN_TILE_SIZE;
+    tile_id = tile_id_x + tile_id_y * H_SCREEN_TILE_SIZE;
     tile = vscreen + tile_id;
 
     inner_x = x % TILE_DOT_SIZE;

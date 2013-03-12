@@ -66,22 +66,31 @@ static void test_ppu(void) {
     for (i = 0; i < 16; i++)
         spr_palette_tbl_set(i, plt[i + 16]);
 
-    for (i = 0; i < 64; i++) 
-        name_tbl_set(0, i, i % 4);
+    for (i = 0; i < 960; i++) 
+        name_tbl_set(0, i, 0);
 
     for (i = 0; i < 64; i++) 
         attr_tbl_set(0, i, 0);
 
+    name_tbl_set(0, 205, 2);
+    name_tbl_set(0, 300, 1);
+    name_tbl_set(0, 400, 3);
+    //205 = palette gp2 01100101b
+    //205 = 11
+    attr_tbl_set(0, 0, 0x65);
+    attr_tbl_set(0, 11, 0x65);
+
     for (i = 0; i < 960; i++) 
         set_bgtile(i);
+
     vga_xfer();
 
 //void dump_vram(int type, int bank, unsigned short addr, int size);
 /*
-    dump_vram(0, 0, 0, 0x100);
-    dump_vram(1, 0, 0, 100);
-    dump_vram(2, 0, 0, 64);
-    dump_vram(3, 0, 0, 16);
+    dump_vram(VRAM_DUMP_TYPE_PTN, 0, 0, 0x100);
+    dump_vram(VRAM_DUMP_TYPE_NAME, 0, 0, 300);
+    dump_vram(VRAM_DUMP_TYPE_ATTR, 0, 0, 64);
+    dump_vram(VRAM_DUMP_TYPE_PLT, 0, 0, 16);
 */
 }
 

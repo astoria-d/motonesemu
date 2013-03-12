@@ -25,14 +25,14 @@ int vram_init(void);
 void clean_vram(void);
 
 struct tile_1_line{
-    unsigned int dot7   :1;
-    unsigned int dot6   :1;
-    unsigned int dot5   :1;
-    unsigned int dot4   :1;
-    unsigned int dot3   :1;
-    unsigned int dot2   :1;
-    unsigned int dot1   :1;
     unsigned int dot0   :1;
+    unsigned int dot1   :1;
+    unsigned int dot2   :1;
+    unsigned int dot3   :1;
+    unsigned int dot4   :1;
+    unsigned int dot5   :1;
+    unsigned int dot6   :1;
+    unsigned int dot7   :1;
 } __attribute__ ((packed));
 
 struct tile_1 {
@@ -49,11 +49,22 @@ struct palette {
 };
 
 struct palette_unit {
-    unsigned int    bit67   :2;
-    unsigned int    bit45   :2;
-    unsigned int    bit23   :2;
     unsigned int    bit01   :2;
+    unsigned int    bit23   :2;
+    unsigned int    bit45   :2;
+    unsigned int    bit67   :2;
 } __attribute__ ((packed));
+
+#define VRAM_DUMP_TYPE_PTN  0
+#define VRAM_DUMP_TYPE_NAME 1
+#define VRAM_DUMP_TYPE_ATTR 2
+#define VRAM_DUMP_TYPE_PLT  3
+#define VRAM_DUMP_TYPE_SPR  4
+
+
+#define colto5bit(col8) ((col8) * 0x1F / 0xFF)
+#define colto8bit(col5) (((unsigned int)(col5)) * 0xFF / 0x1F)
+
 
 #endif /*__vram_h__*/
 
