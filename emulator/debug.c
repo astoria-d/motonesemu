@@ -2,9 +2,9 @@
 #include <string.h>
 #include <curses.h>
 #include "tools.h"
-#include "clock.h"
 
 #define MAXBUF  1024
+#define BYTES_PER_LINE 16
 
 extern int debug_mode;
 void dump_6502(int full);
@@ -89,6 +89,35 @@ int emu_debug(void) {
     }
     //start_cpu_clock();
     return TRUE;
+}
+
+void dump_mem(const char* msg, unsigned short base, 
+        unsigned short offset, unsigned char* buf, int size) {
+    int i;
+
+    printf(msg);
+    if (offset % BYTES_PER_LINE)
+        printf("%04x: ", base + offset % BYTES_PER_LINE);
+
+    for (i = 0; i < offset % BYTES_PER_LINE; i++) {
+        printf("   ");
+    }
+    for (i = 0; i < size; i++) {
+        if (offset % BYTES_PER_LINE == 0)
+            printf("%04x: ", base + offset);
+
+        printf("%02x ", *buf);
+
+        if (offset % BYTES_PER_LINE == (BYTES_PER_LINE / 2) - 1)
+            printf("  ");
+
+        if (offset % BYTES_PER_LINE == (BYTES_PER_LINE - 1))
+            printf("\n");
+
+        buf++;
+        offset++;
+    }
+    printf("\n");
 }
 
 

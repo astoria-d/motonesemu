@@ -67,14 +67,18 @@ static void test_ppu(void) {
         spr_palette_tbl_set(i, plt[i + 16]);
 
     for (i = 0; i < 960; i++) 
-        name_tbl_set(0, i, 0);
+        name_tbl_set(0, i, 2);
 
     for (i = 0; i < 64; i++) 
         attr_tbl_set(0, i, 0);
 
-    name_tbl_set(0, 205, 2);
+    //name_tbl_set(0, 205, 2);
     name_tbl_set(0, 300, 1);
-    name_tbl_set(0, 400, 3);
+    name_tbl_set(0, 205, 'D');
+    name_tbl_set(0, 206, 'e');
+    name_tbl_set(0, 207, 'e');
+    name_tbl_set(0, 208, '!');
+    name_tbl_set(0, 209, '!');
     //205 = palette gp2 01100101b
     //205 = 11
     attr_tbl_set(0, 0, 0x65);
