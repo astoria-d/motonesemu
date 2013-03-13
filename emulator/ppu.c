@@ -51,6 +51,7 @@ static sem_t ppu_sem_id;
  * Resolution                                   256 x 224 
  * CPU speed                                    1.79 MHz 
  *
+ * PPU clock                                    21.48 Mhz
  * */
 
 void set_ppu_addr(unsigned char data) {
@@ -84,6 +85,11 @@ int init_ppu(void) {
     ppu_pin.rw = 0;
     cart_pin.rd = 0;
     cart_pin.wr = 0;
+
+    ret = ppucore_init();
+    if (ret == FALSE) {
+        return FALSE;
+    }
 
     ret = sem_init(&ppu_sem_id, 0, 0);
     if (ret != RT_OK) {

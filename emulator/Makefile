@@ -9,7 +9,7 @@ OBJS=emu-main.o clock.o bus.o cpu.o \
 
 
 #LIBS=-L../libs -pthread -lrt -lncurses
-LIBS=-L../libs -lmotones -pthread -lrt
+LIBS=-L../libs -L./ppucore -lmotones -lppucore -pthread -lrt
 
 INCLUDE=-I../include
 
@@ -17,7 +17,7 @@ CFLAGS=-g $(INCLUDE) -Wall
 
 all:	$(BIN)
 
-$(BIN): $(OBJS) ../libs
+$(BIN): $(OBJS) ../libs ./ppucore
 	gcc -o $(BIN) $(OBJS) $(LIBS)
 
 .c.o: 
