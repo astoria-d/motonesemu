@@ -7,7 +7,7 @@ DUMMY_OBJS=dummy-driver2.o debug.o cartridge.o
 OBJS=ppucore.o vram.o vscreen.o palette.o \
 	 vga_xfer.o $(DUMMY_OBJS)
 	 
-LIBS=-L../../libs -lmotones -pthread
+LIBS=-L../../libs -lmotones -pthread -lrt
 
 INCLUDE=-I../../include
 

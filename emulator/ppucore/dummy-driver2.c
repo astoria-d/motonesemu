@@ -22,6 +22,7 @@ void vga_xfer(void);
 void dump_vram(int type, int bank, unsigned short addr, int size);
 void set_bgtile(int tile_id);
 void set_sprite(int x, int y, int tile_id, struct sprite_attr sa);
+void set_monocolor (int mono);
 
 struct timespec sleep_inteval = {0, 1000000 / VGA_REFRESH_RATE};
 
@@ -99,6 +100,8 @@ static void test_ppu(void) {
     name_tbl_set(0, 300, 1);
     attr_tbl_set(0, 0, 0x65);
 
+    set_monocolor(FALSE);
+
     for (i = 0; i < 960; i++) 
         set_bgtile(i);
 
@@ -114,7 +117,16 @@ static void test_ppu(void) {
     sa.flip_v = 1;
     set_sprite(70, 105, 'd', sa);
 
+    struct timespec begin, end;
+    clock_gettime(CLOCK_REALTIME, &begin);
     vga_xfer();
+    clock_gettime(CLOCK_REALTIME, &end);
+
+    dprint("vga_xfer elapsed time: %d.%09d, vga frame rate:0.%09d\n", 
+            end.tv_sec - begin.tv_sec, 
+            end.tv_nsec - begin.tv_nsec, 
+            1000000000 / 60);
+    fflush(stdout);
 
 //void dump_vram(int type, int bank, unsigned short addr, int size);
 /*

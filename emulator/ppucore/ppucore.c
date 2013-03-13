@@ -4,6 +4,7 @@
 #include "tools.h"
 #include "vram.h"
 #include "ppucore.h"
+#include "vga_xfer.h"
 
 int vscreen_init(void);
 void clean_vscreen(void);
@@ -127,6 +128,10 @@ int ppucore_init(void) {
     vram_dma_reg = 0;
 
     ret = vram_init();
+    if (!ret)
+        return FALSE;
+
+    ret = vga_xfer_init();
     if (!ret)
         return FALSE;
 
