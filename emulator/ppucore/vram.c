@@ -6,6 +6,7 @@
 #include "tools.h"
 #include "ppucore.h"
 #include "vram.h"
+#include "sprite.h"
 
 void palette_index_to_rgb15(unsigned char index, struct rgb15* rgb);
 void dump_mem(const char* msg, unsigned short base, 
@@ -222,12 +223,30 @@ void load_attribute(unsigned char bank, int tile_index, struct palette *plt) {
 
 }
 
+void load_spr_attribute(struct sprite_attr sa, struct palette *plt) {
+    unsigned short palette_addr;
+    unsigned char pi;
+
+    /*load bg rgb palette color*/
+    palette_addr = sa.palette * 4;
+    pi = bg_palette_tbl_get(palette_addr++);
+    palette_index_to_rgb15(pi, &plt->col[0]);
+
+    pi = bg_palette_tbl_get(palette_addr++);
+    palette_index_to_rgb15(pi, &plt->col[1]);
+
+    pi = bg_palette_tbl_get(palette_addr++);
+    palette_index_to_rgb15(pi, &plt->col[2]);
+
+    pi = bg_palette_tbl_get(palette_addr);
+    palette_index_to_rgb15(pi, &plt->col[3]);
+}
+
 /*
  * pattern index: 0 - 255
  * */
 void load_pattern(unsigned char bank, unsigned char ptn_index, struct tile_2* pattern) {
     int i;
-    unsigned char data;
     unsigned char *p;
     unsigned short addr;
 
@@ -235,8 +254,7 @@ void load_pattern(unsigned char bank, unsigned char ptn_index, struct tile_2* pa
     p = (unsigned char*)pattern;
     addr = ptn_index * sizeof(struct tile_2);
     for (i = 0; i < sizeof(struct tile_2); i++) {
-        data = pattern_tbl_get(bank, addr);
-        *p = data;
+        *p = pattern_tbl_get(bank, addr);
         p++;
         addr++;
     }

@@ -24,6 +24,12 @@ void spr_ram_tbl_set(unsigned short addr, unsigned char data);
 int vram_init(void);
 void clean_vram(void);
 
+/*
+ * NES is little endian.
+ * low bit comes first.
+ * high bit follows.
+ *
+ * */
 struct tile_1_line{
     unsigned int dot0   :1;
     unsigned int dot1   :1;

@@ -9,6 +9,7 @@
 #include "tools.h"
 #include "vga.h"
 #include "vram.h"
+#include "sprite.h"
 
 static struct rgb15 *disp_data;
 void *vga_shm_get(void);
@@ -20,6 +21,7 @@ void set_vga_base(unsigned char* base);
 void vga_xfer(void);
 void dump_vram(int type, int bank, unsigned short addr, int size);
 void set_bgtile(int tile_id);
+void set_sprite(int x, int y, int tile_id, struct sprite_attr sa);
 
 struct timespec sleep_inteval = {0, 1000000 / VGA_REFRESH_RATE};
 
@@ -67,13 +69,12 @@ static void test_ppu(void) {
         spr_palette_tbl_set(i, plt[i + 16]);
 
     for (i = 0; i < 960; i++) 
-        name_tbl_set(0, i, 2);
+        name_tbl_set(0, i, 0);
 
     for (i = 0; i < 64; i++) 
         attr_tbl_set(0, i, 0);
 
     //name_tbl_set(0, 205, 2);
-    name_tbl_set(0, 300, 1);
     name_tbl_set(0, 205, 'D');
     name_tbl_set(0, 206, 'e');
     name_tbl_set(0, 207, 'e');
@@ -81,11 +82,26 @@ static void test_ppu(void) {
     name_tbl_set(0, 209, '!');
     //205 = palette gp2 01100101b
     //205 = 11
-    attr_tbl_set(0, 0, 0x65);
     attr_tbl_set(0, 11, 0x65);
+
+    //other test.
+    name_tbl_set(0, 300, 1);
+    attr_tbl_set(0, 0, 0x65);
 
     for (i = 0; i < 960; i++) 
         set_bgtile(i);
+
+    //sprite test
+    struct sprite_attr sa;
+    sa.palette = 2;
+    sa.priority = 1;
+    sa.flip_h = 0;
+    sa.flip_v = 0;
+    set_sprite(30, 100, 'd', sa);
+    sa.flip_h = 1;
+    set_sprite(50, 100, 'd', sa);
+    sa.flip_v = 1;
+    set_sprite(70, 105, 'd', sa);
 
     vga_xfer();
 

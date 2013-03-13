@@ -88,6 +88,8 @@ void store_memory(unsigned short addr, unsigned char data) {
  * */
 unsigned short load_addr(unsigned short addr, int cycle) {
     unsigned char byte = load_memory(addr);
+
+    ///NES=little endian. lower byte first, higher byte second.
     if (cycle == 1)
         cpu_addr_buffer = byte;
     else
