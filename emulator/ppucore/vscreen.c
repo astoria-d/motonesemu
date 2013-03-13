@@ -52,13 +52,34 @@ void vscreenn_dot_set(int x, int y, struct rgb15 *col) {
     tile->l[inner_y].d[inner_x] = *col;
 }
 
+static int pal_index(struct tile_2 *ptn, int l, int dot_x) {
+    switch (dot_x) {
+        case 0:
+            return ptn->b0.l[l].dot0 * 2 + ptn->b1.l[l].dot0;
+        case 1:
+            return ptn->b0.l[l].dot1 * 2 + ptn->b1.l[l].dot1;
+        case 2:
+            return ptn->b0.l[l].dot2 * 2 + ptn->b1.l[l].dot2;
+        case 3:
+            return ptn->b0.l[l].dot3 * 2 + ptn->b1.l[l].dot3;
+        case 4:
+            return ptn->b0.l[l].dot4 * 2 + ptn->b1.l[l].dot4;
+        case 5:
+            return ptn->b0.l[l].dot5 * 2 + ptn->b1.l[l].dot5;
+        case 6:
+            return ptn->b0.l[l].dot6 * 2 + ptn->b1.l[l].dot6;
+        case 7:
+        default:
+            return ptn->b0.l[l].dot7 * 2 + ptn->b1.l[l].dot7;
+    }
+}
 
 void set_bgtile(int tile_id) {
     struct palette plt;
     struct tile_2 ptn;
     unsigned char name_index;
     struct tile_rgb15* set_data;
-    int i;
+    int i,j;
 
     load_attribute(0, tile_id, &plt);
 
@@ -68,14 +89,13 @@ void set_bgtile(int tile_id) {
     set_data = vscreen + tile_id;
     for (i = 0; i < TILE_DOT_SIZE; i++) {
         //display shows left to right with high bit to low bit
-        set_data->l[i].d[7] = plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot0];
-        set_data->l[i].d[6] = plt.col[ptn.b0.l[i].dot1 + ptn.b1.l[i].dot1];
-        set_data->l[i].d[5] = plt.col[ptn.b0.l[i].dot2 + ptn.b1.l[i].dot2];
-        set_data->l[i].d[4] = plt.col[ptn.b0.l[i].dot3 + ptn.b1.l[i].dot3];
-        set_data->l[i].d[3] = plt.col[ptn.b0.l[i].dot4 + ptn.b1.l[i].dot4];
-        set_data->l[i].d[2] = plt.col[ptn.b0.l[i].dot5 + ptn.b1.l[i].dot5];
-        set_data->l[i].d[1] = plt.col[ptn.b0.l[i].dot6 + ptn.b1.l[i].dot6];
-        set_data->l[i].d[0] = plt.col[ptn.b0.l[i].dot7 + ptn.b1.l[i].dot7];
+        for (j = 0; j < 8; j++) {
+            int pi = pal_index(&ptn, i, j);
+            if (pi) {
+                //dprint("%d, %d, colind:%d\n", j, i, pi);
+                set_data->l[i].d[7 - j] = plt.col[pi];
+            }
+        }
     }
 
 }
@@ -83,7 +103,7 @@ void set_bgtile(int tile_id) {
 void set_sprite(int x, int y, int tile_id, struct sprite_attr sa) {
     struct palette plt;
     struct tile_2 ptn;
-    int i;
+    int i, j;
 
     load_spr_attribute(sa, &plt);
 
@@ -93,46 +113,34 @@ void set_sprite(int x, int y, int tile_id, struct sprite_attr sa) {
     for (i = 0; i < TILE_DOT_SIZE; i++) {
         if (sa.flip_h) {
             if (sa.flip_v) {
-                vscreenn_dot_set(x + 0, y + 7 - i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot0]);
-                vscreenn_dot_set(x + 1, y + 7 - i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot1]);
-                vscreenn_dot_set(x + 2, y + 7 - i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot2]);
-                vscreenn_dot_set(x + 3, y + 7 - i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot3]);
-                vscreenn_dot_set(x + 4, y + 7 - i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot4]);
-                vscreenn_dot_set(x + 5, y + 7 - i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot5]);
-                vscreenn_dot_set(x + 6, y + 7 - i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot6]);
-                vscreenn_dot_set(x + 7, y + 7 - i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot7]);
+                for (j = 0; j < 8; j++) {
+                    int pi = pal_index(&ptn, i, j);
+                    if (pi)
+                        vscreenn_dot_set(x + j, y + 7 - i, &plt.col[pi]);
+                }
             }
             else {
-                vscreenn_dot_set(x + 0, y + i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot0]);
-                vscreenn_dot_set(x + 1, y + i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot1]);
-                vscreenn_dot_set(x + 2, y + i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot2]);
-                vscreenn_dot_set(x + 3, y + i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot3]);
-                vscreenn_dot_set(x + 4, y + i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot4]);
-                vscreenn_dot_set(x + 5, y + i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot5]);
-                vscreenn_dot_set(x + 6, y + i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot6]);
-                vscreenn_dot_set(x + 7, y + i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot7]);
+                for (j = 0; j < 8; j++) {
+                    int pi = pal_index(&ptn, i, j);
+                    if (pi)
+                        vscreenn_dot_set(x + j, y + i, &plt.col[pi]);
+                }
             }
         }
         else {
             if (sa.flip_v) {
-                vscreenn_dot_set(x + 7, y + 7 - i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot0]);
-                vscreenn_dot_set(x + 6, y + 7 - i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot1]);
-                vscreenn_dot_set(x + 5, y + 7 - i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot2]);
-                vscreenn_dot_set(x + 4, y + 7 - i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot3]);
-                vscreenn_dot_set(x + 3, y + 7 - i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot4]);
-                vscreenn_dot_set(x + 2, y + 7 - i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot5]);
-                vscreenn_dot_set(x + 1, y + 7 - i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot6]);
-                vscreenn_dot_set(x + 0, y + 7 - i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot7]);
+                for (j = 0; j < 8; j++) {
+                    int pi = pal_index(&ptn, i, j);
+                    if (pi)
+                        vscreenn_dot_set(x + 7 - j, y + 7 - i, &plt.col[pi]);
+                }
             }
             else {
-                vscreenn_dot_set(x + 7, y + i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot0]);
-                vscreenn_dot_set(x + 6, y + i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot1]);
-                vscreenn_dot_set(x + 5, y + i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot2]);
-                vscreenn_dot_set(x + 4, y + i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot3]);
-                vscreenn_dot_set(x + 3, y + i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot4]);
-                vscreenn_dot_set(x + 2, y + i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot5]);
-                vscreenn_dot_set(x + 1, y + i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot6]);
-                vscreenn_dot_set(x + 0, y + i, &plt.col[ptn.b0.l[i].dot0 + ptn.b1.l[i].dot7]);
+                for (j = 0; j < 8; j++) {
+                    int pi = pal_index(&ptn, i, j);
+                    if (pi)
+                        vscreenn_dot_set(x + 7 - j, y + i, &plt.col[pi]);
+                }
             }
         }
     }

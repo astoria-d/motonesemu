@@ -57,10 +57,21 @@ void dump_6502(int full) {
 static void test_ppu(void) {
     int i;
     unsigned char plt[32] = {
-        0, 1, 2,  3,  0, 5,  6,  7, 
+            0x0f, 0x00, 0x10, 0x20,
+            0x0f, 0x06, 0x16, 0x26,
+            0x0f, 0x08, 0x18, 0x28,
+            0x0f, 0x0a, 0x1a, 0x2a,
+
+            0x0f, 0x00, 0x10, 0x20,
+            0x0f, 0x06, 0x16, 0x26,
+            0x0f, 0x08, 0x18, 0x28,
+            0x0f, 0x0a, 0x1a, 0x2a,
+/*
+        0, 5, 1,  0x28,  0, 6,  0xb,  0x36, 
         0, 9, 10, 11, 0, 13, 14, 15,
         0, 30, 31, 32, 0, 40, 41, 42,
         0, 20, 21, 22, 0, 11, 12, 13
+*/
     };
 
     for (i = 0; i < 16; i++)
@@ -80,9 +91,9 @@ static void test_ppu(void) {
     name_tbl_set(0, 207, 'e');
     name_tbl_set(0, 208, '!');
     name_tbl_set(0, 209, '!');
-    //205 = palette gp2 01100101b
+    //205 = palette gp2 00011011b 
     //205 = 11
-    attr_tbl_set(0, 11, 0x65);
+    attr_tbl_set(0, 11, 0x1b);
 
     //other test.
     name_tbl_set(0, 300, 1);
