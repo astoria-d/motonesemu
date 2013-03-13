@@ -22,17 +22,16 @@ static int rom_end_loop;
 static sem_t rom_sem_id;
 
 #define ROM_32K 0x8000
-#define ROM_START   0x8000
 
 static unsigned char * rom_buffer;
 
-unsigned char dbg_rom_get_byte(unsigned short addr) {
-    return rom_buffer[addr - ROM_START];
+unsigned char dbg_rom_get_byte(unsigned short offset) {
+    return rom_buffer[offset];
 }
-unsigned short dbg_rom_get_short(unsigned short addr) {
+unsigned short dbg_rom_get_short(unsigned short offset) {
     unsigned short ret;
-    ret = rom_buffer[addr - ROM_START];
-    ret |= (rom_buffer[addr + 1 - ROM_START]) << 8;
+    ret = rom_buffer[offset];
+    ret |= (rom_buffer[offset + 1] << 8);
     return ret;
 }
 

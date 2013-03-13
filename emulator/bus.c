@@ -6,6 +6,11 @@
 #include "rom.h"
 #include "ram.h"
 
+unsigned char dbg_rom_get_byte(unsigned short offset);
+unsigned short dbg_rom_get_short(unsigned short offset);
+unsigned char dbg_ram_get_byte(unsigned short offset);
+unsigned short dbg_ram_get_short(unsigned short offset);
+
 struct cpu_pin {
     unsigned int rw     :1;     /*assert on write.*/
     unsigned int nmi    :1;     /*input*/
@@ -38,6 +43,36 @@ static sem_t sem_bus_wait;
 #define IO_PPU_MASK 0x0007
 #define IO_APU_MASK 0x001F
 #define ROM_MASK    0x7FFF
+
+unsigned char dbg_get_byte(unsigned short addr) {
+    if (addr & ROM_BIT) {
+        return dbg_rom_get_byte(addr & ROM_MASK);
+    }
+    else if (addr & IO_APU_BIT) {
+        return 0;
+    }
+    else if (addr & IO_PPU_BIT) {
+        return 0;
+    }
+    else {
+        return dbg_ram_get_byte(addr & ROM_MASK);
+    }
+}
+unsigned short dbg_get_short(unsigned short addr) {
+    if (addr & ROM_BIT) {
+        return dbg_rom_get_short(addr & ROM_MASK);
+    }
+    else if (addr & IO_APU_BIT) {
+        return 0;
+    }
+    else if (addr & IO_PPU_BIT) {
+        return 0;
+    }
+    else {
+        return dbg_ram_get_short(addr & ROM_MASK);
+    }
+}
+
 
 void release_bus(void) {
     pin_status.ready = 1;

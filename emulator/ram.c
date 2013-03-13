@@ -27,6 +27,16 @@ static sem_t ram_sem_id;
 
 unsigned char * ram_buffer;
 
+unsigned char dbg_ram_get_byte(unsigned short offset) {
+    return ram_buffer[offset];
+}
+unsigned short dbg_ram_get_short(unsigned short offset) {
+    unsigned short ret;
+    ret = ram_buffer[offset];
+    ret |= (ram_buffer[offset + 1] << 8);
+    return ret;
+}
+
 void set_ram_addr(unsigned short addr) {
     ram_addr = addr;
 }
