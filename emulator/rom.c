@@ -22,8 +22,19 @@ static int rom_end_loop;
 static sem_t rom_sem_id;
 
 #define ROM_32K 0x8000
+#define ROM_START   0x8000
 
 static unsigned char * rom_buffer;
+
+unsigned char dbg_rom_get_byte(unsigned short addr) {
+    return rom_buffer[addr - ROM_START];
+}
+unsigned short dbg_rom_get_short(unsigned short addr) {
+    unsigned short ret;
+    ret = rom_buffer[addr - ROM_START];
+    ret |= (rom_buffer[addr + 1 - ROM_START]) << 8;
+    return ret;
+}
 
 int load_prg_rom(FILE* cartridge, int num_rom_bank) {
     int len;

@@ -79,11 +79,11 @@ static int init_datas(void) {
 
 static void clean_datas(void) {
     dprint("clean data...\n");
+    clean_clock();
     clean_rom();
     clean_ram();
     clean_ppu();
     clean_bus();
-    clean_clock();
 
     clean_debug();
 }

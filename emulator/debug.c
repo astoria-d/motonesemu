@@ -2,6 +2,7 @@
 #include <string.h>
 #include <curses.h>
 #include "tools.h"
+#include "6502core.h"
 
 #define MAXBUF  1024
 #define BYTES_PER_LINE 16
@@ -89,6 +90,49 @@ int emu_debug(void) {
     }
     //start_cpu_clock();
     return TRUE;
+}
+
+void disasm(const char* mnemonic, int addr_mode, unsigned short pc) {
+    unsigned char dbg_rom_get_byte(unsigned short addr);
+    unsigned short dbg_rom_get_short(unsigned short addr);
+
+    switch(addr_mode) {
+        case ADDR_MODE_ZP:
+            printf("%04x: %-5s $%02x\n", pc, mnemonic, dbg_rom_get_byte(pc + 1));
+            break;
+        case ADDR_MODE_ZP_X:
+            printf("%04x: %-5s $%02x, x\n", pc, mnemonic, dbg_rom_get_byte(pc + 1));
+            break;
+        case ADDR_MODE_ZP_Y:
+            printf("%04x: %-5s $%02x, y\n", pc, mnemonic, dbg_rom_get_byte(pc + 1));
+            break;
+        case ADDR_MODE_ABS:
+            printf("%04x: %-5s $%04x\n", pc, mnemonic, dbg_rom_get_short(pc + 1));
+            break;
+        case ADDR_MODE_ABS_X:
+            printf("%04x: %-5s $%04x, x\n", pc, mnemonic, dbg_rom_get_short(pc + 1));
+            break;
+        case ADDR_MODE_ABS_Y:
+            printf("%04x: %-5s $%04x, y\n", pc, mnemonic, dbg_rom_get_short(pc + 1));
+            break;
+        case ADDR_MODE_IND:
+            printf("%04x: %-5s ($%04x), y\n", pc, mnemonic, dbg_rom_get_short(pc + 1));
+            break;
+        case ADDR_MODE_IMP:
+        case ADDR_MODE_ACC:
+            printf("%04x: %s\n", pc, mnemonic);
+            break;
+        case ADDR_MODE_IMM:
+        case ADDR_MODE_REL:
+            printf("%04x: %-5s #$%02x\n", pc, mnemonic, dbg_rom_get_byte(pc + 1));
+            break;
+        case ADDR_MODE_INDEX_INDIR:
+            printf("%04x: %-5s ($%02x, x), y\n", pc, mnemonic, dbg_rom_get_byte(pc + 1));
+            break;
+        case ADDR_MODE_INDIR_INDEX:
+            printf("%04x: %-5s ($%02x), y\n", pc, mnemonic, dbg_rom_get_byte(pc + 1));
+            break;
+    }
 }
 
 void dump_mem(const char* msg, unsigned short base, 

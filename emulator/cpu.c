@@ -44,13 +44,19 @@ clock_func_t *execute_func;
 
 static unsigned long clock_cnt;
 
+/*for debug purpos*/
+int get_clock_cnt(void) {
+    return clock_cnt;
+}
+
+
 /*
  * clock handler.
  * */
 int clock_cpu(void) {
     int ret;
 
-    dprint("%d\n", clock_cnt);
+    //dprint("%d\n", clock_cnt);
     clock_cnt++;
 
     ret = execute_func();
@@ -134,9 +140,9 @@ static int fetch_and_decode_inst(void) {
         if (!ret)
             return FALSE;
     }
-    dprint("fetch\n");
+    //dprint("fetch\n");
     load_memory(pc_get());
-    dump_6502(FALSE);
+    //dump_6502(FALSE);
 
     ret = decode_inst();
     if (!ret) {
@@ -158,7 +164,7 @@ static int execute_inst(void) {
     int ret;
     extern int critical_error;
 
-    dprint("execute\n");
+    //dprint("execute\n");
 
     //execute the instruction
     ret = execute6502();

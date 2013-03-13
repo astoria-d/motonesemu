@@ -2,6 +2,7 @@
 #include <string.h>
 #include <libio.h>
 #include "tools.h"
+#include "6502core.h"
 
 struct status_reg {
     unsigned int negative       :1;
@@ -45,20 +46,6 @@ typedef int (handler_6502_t) (void);
  * 
  **/
 
-#define ADDR_MODE_ZP        0
-#define ADDR_MODE_ZP_X      1
-#define ADDR_MODE_ZP_Y      2
-#define ADDR_MODE_ABS       3
-#define ADDR_MODE_ABS_X     4
-#define ADDR_MODE_ABS_Y     5
-#define ADDR_MODE_IND       6
-#define ADDR_MODE_IMP       7
-#define ADDR_MODE_ACC       8
-#define ADDR_MODE_IMM       9
-#define ADDR_MODE_REL       10
-#define ADDR_MODE_INDEX_INDIR       11
-#define ADDR_MODE_INDIR_INDEX       12
-
 #define N_BIT      0x80
 
 
@@ -88,6 +75,8 @@ unsigned char get_cpu_data_buf(void);
 void set_cpu_data_buf(unsigned char data);
 unsigned short get_cpu_addr_buf(void);
 void set_cpu_addr_buf(unsigned short addr);
+void disasm(const char* mnemonic, int addr_mode, unsigned short pc);
+int get_clock_cnt(void);
 
 int func_ADC(void);
 int func_AND(void);
@@ -1348,8 +1337,10 @@ int decode6502(unsigned char inst) {
         return FALSE;
     }
 
-    dprint("decode inst: %02x > %s, %d cycle, %d len\n", 
+    /*dprint("decode inst: %02x > %s, %d cycle, %d len\n", 
             inst, omap->mnemonic, omap->cycle, omap->inst_len);
+*/
+    disasm(omap->mnemonic, omap->addr_mode, cpu_reg.pc);
 
     current_inst = omap;
     current_exec_index = 0;
@@ -1408,23 +1399,24 @@ void pc_move(int offset) {
 }
 
 void dump_6502(int full) {
+    printf("\nclock: %09d\n", get_clock_cnt());
     if (full) 
         printf("6502 CPU registers:\n");
 
-    printf("pc:     %04x\n", cpu_reg.pc);
+    printf(" pc:     %04x\n", cpu_reg.pc);
     if (full) {
-        printf("acc:    %02x\n", cpu_reg.acc);
-        printf("x:      %02x\n", cpu_reg.x);
-        printf("y:      %02x\n", cpu_reg.y);
-        printf("sp:     %02x\n", cpu_reg.sp);
-        printf("status:\n");
-        printf(" negative:   %d\n", cpu_reg.status.negative);
-        printf(" overflow:   %d\n", cpu_reg.status.overflow);
-        printf(" break:      %d\n", cpu_reg.status.break_mode);
-        printf(" decimal:    %d\n", cpu_reg.status.decimal);
-        printf(" irq:        %d\n", cpu_reg.status.irq_disable);
-        printf(" zero:       %d\n", cpu_reg.status.zero);
-        printf(" carry:      %d\n", cpu_reg.status.carry);
+        printf(" acc:    %02x\n", cpu_reg.acc);
+        printf(" x:      %02x\n", cpu_reg.x);
+        printf(" y:      %02x\n", cpu_reg.y);
+        printf(" sp:     %02x\n", cpu_reg.sp);
+        printf(" status:\n");
+        printf("  negative:   %d\n", cpu_reg.status.negative);
+        printf("  overflow:   %d\n", cpu_reg.status.overflow);
+        printf("  break:      %d\n", cpu_reg.status.break_mode);
+        printf("  decimal:    %d\n", cpu_reg.status.decimal);
+        printf("  irq:        %d\n", cpu_reg.status.irq_disable);
+        printf("  zero:       %d\n", cpu_reg.status.zero);
+        printf("  carry:      %d\n", cpu_reg.status.carry);
         printf("-------------------\n");
     }
     //printf("data:     %02x\n", cpu_data_buffer);

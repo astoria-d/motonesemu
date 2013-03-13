@@ -31,7 +31,7 @@ static void* cpu_clock_loop(void* arg) {
         long nsec;
 
         clock_gettime(CLOCK_REALTIME, &begin);
-        dprint("-----------------\nclock ");
+        //dprint("-----------------\nclock ");
         ch = handler_list;
         while (ch != NULL) {
             if (!ch->handler())
