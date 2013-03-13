@@ -17,8 +17,11 @@ CFLAGS=-g $(INCLUDE) -Wall
 
 all:	$(BIN)
 
-$(BIN): $(OBJS) ../libs ./ppucore
+$(BIN): $(OBJS) ../libs ppucore/libppucore.a
 	gcc -o $(BIN) $(OBJS) $(LIBS)
+
+ppucore/libppucore.a:
+	make -C ppucore
 
 .c.o: 
 	gcc $(CFLAGS) -c $<

@@ -8,6 +8,8 @@
 #include "clock.h"
 #include "tools.h"
 
+int ppucore_init(void);
+
 struct ppu_cpu_pin {
     unsigned int ce     :1;     /*chip enable*/
     unsigned int rw     :1;     /*assert on write.*/

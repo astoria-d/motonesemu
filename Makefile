@@ -1,5 +1,5 @@
 
-DIRS=libs emulator display
+DIRS=libs emulator/ppucore emulator display
 
 ROOT_DIR=$(CURDIR)
 	
