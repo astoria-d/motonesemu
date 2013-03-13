@@ -7,8 +7,13 @@
 
 #include "clock.h"
 #include "tools.h"
+#include "vga.h"
 
+void set_vga_base(unsigned char* base);
+void *vga_shm_get(void);
+void vga_shm_free(void* addr);
 int ppucore_init(void);
+void clean_ppucore(void);
 
 struct ppu_cpu_pin {
     unsigned int ce     :1;     /*chip enable*/
@@ -40,6 +45,7 @@ struct ppu_register ppu_reg;
 static pthread_t ppu_thread_id;
 static int ppu_end_loop;
 static sem_t ppu_sem_id;
+static unsigned char* vga_shared_buf;
 
 /*
  * JAPAN/US uses NTSC standard.
@@ -88,6 +94,16 @@ int init_ppu(void) {
     cart_pin.rd = 0;
     cart_pin.wr = 0;
 
+    /* get vga shared memory */
+    if((vga_shared_buf = (unsigned char*)vga_shm_get()) == NULL)
+    {
+        fprintf(stderr, "error attaching shared memory.\n");
+        return FALSE;
+    }
+
+    memset(vga_shared_buf, 0, VGA_SHM_SIZE);
+    set_vga_base((unsigned char*)vga_shared_buf);
+
     ret = ppucore_init();
     if (ret == FALSE) {
         return FALSE;
@@ -114,6 +130,9 @@ int init_ppu(void) {
 
 void clean_ppu(void) {
     void* ret;
+
+    clean_ppucore();
+    vga_shm_free(vga_shared_buf);
 
     ppu_end_loop = TRUE;
     sem_post(&ppu_sem_id);

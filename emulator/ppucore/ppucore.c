@@ -113,8 +113,6 @@ int ppucore_init(void) {
     int ret;
     pthread_attr_t attr;
 
-
-
     memset(&ctrl_reg1, 0, sizeof(ctrl_reg1));
     memset(&ctrl_reg2, 0,  sizeof(ctrl_reg1));
     memset(&status_reg, 0, sizeof(status_reg));
