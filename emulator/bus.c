@@ -97,7 +97,7 @@ void end_bus(void) {
     if (addr_bus & ROM_BIT) {
         set_rom_ce_pin(FALSE);
     }
-    else if (addr_bus & IO_APU_BIT) {
+    else if ((addr_bus & IO_APU_BIT) == IO_APU_BIT) {
     }
     else if (addr_bus & IO_PPU_BIT) {
         set_ppu_ce_pin(FALSE);
@@ -114,7 +114,7 @@ void set_bus_addr(unsigned short addr) {
     if (addr & ROM_BIT) {
         set_rom_addr(addr & ROM_MASK);
     }
-    else if (addr & IO_APU_BIT) {
+    else if ((addr_bus & IO_APU_BIT) == IO_APU_BIT) {
     }
     else if (addr & IO_PPU_BIT) {
         set_ppu_addr(addr & IO_PPU_MASK);
@@ -141,7 +141,7 @@ void set_bus_data(unsigned char data){
     if (addr_bus & ROM_BIT) {
         //no write to ROM
     }
-    else if (addr_bus & IO_APU_BIT) {
+    else if ((addr_bus & IO_APU_BIT) == IO_APU_BIT) {
     }
     else if (addr_bus & IO_PPU_BIT) {
         set_ppu_data(data);
@@ -159,7 +159,7 @@ char get_bus_data(void) {
     if (addr_bus & ROM_BIT) {
         data_bus = get_rom_data();
     }
-    else if (addr_bus & IO_APU_BIT) {
+    else if ((addr_bus & IO_APU_BIT) == IO_APU_BIT) {
     }
     else if (addr_bus & IO_PPU_BIT) {
         data_bus = get_ppu_data();
@@ -203,7 +203,7 @@ unsigned char dbg_get_byte(unsigned short addr) {
     if (addr & ROM_BIT) {
         return dbg_rom_get_byte(addr & ROM_MASK);
     }
-    else if (addr & IO_APU_BIT) {
+    else if ((addr & IO_APU_BIT) == IO_APU_BIT) {
         return 0;
     }
     else if (addr & IO_PPU_BIT) {
@@ -217,7 +217,7 @@ unsigned short dbg_get_short(unsigned short addr) {
     if (addr & ROM_BIT) {
         return dbg_rom_get_short(addr & ROM_MASK);
     }
-    else if (addr & IO_APU_BIT) {
+    else if ((addr & IO_APU_BIT) == IO_APU_BIT) {
         return 0;
     }
     else if (addr & IO_PPU_BIT) {
