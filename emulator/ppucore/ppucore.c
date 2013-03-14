@@ -11,6 +11,7 @@ int vscreen_init(void);
 void clean_vscreen(void);
 int palette_init(void);
 void vga_xfer(void);
+void set_monocolor (int mono);
 
 /*
  * 6502 little endian
@@ -46,9 +47,14 @@ struct ppu_status_reg {
 } __attribute__ ((packed));
 
 struct ppu_vram_addr_reg {
+    union {
+        struct {
+            unsigned char low;
+            unsigned char hi;
+        } b;
+        unsigned short s;
+    } addr;
     unsigned int cnt :1;
-    unsigned char addr1;
-    unsigned char addr2;
 };
 
 /*ppu core register instances*/
@@ -69,6 +75,10 @@ static unsigned char vram_dma_reg;
 static pthread_t ppucore_thread_id;
 static int ppucore_end_loop;
 
+/*
+ * ppucore main loop.
+ * periodically update the display buffer.
+ * */
 static void *ppucore_loop(void* arg) {
     //struct timespec ts = {CPU_CLOCK_SEC, CPU_CLOCK_NSEC / 10};
     struct timespec begin, end;
@@ -77,6 +87,7 @@ static void *ppucore_loop(void* arg) {
 #define NANOMAX (1000000000 - 1)
 
     while (!ppucore_end_loop) {
+        int updated = FALSE;
 
         clock_gettime(CLOCK_REALTIME, &begin);
         if (ctrl_reg2.show_sprite) {
@@ -85,13 +96,14 @@ static void *ppucore_loop(void* arg) {
         }
         if (ctrl_reg2.show_bg) {
             //back ground image
-            show_background();
+            updated |= show_background();
         }
         if (ctrl_reg2.show_sprite) {
             //foreground sprite
             ;
         }
-        vga_xfer();
+        if (updated) 
+            vga_xfer();
         clock_gettime(CLOCK_REALTIME, &end);
 
         //sleep rest of time...
@@ -105,14 +117,13 @@ static void *ppucore_loop(void* arg) {
         else
             nsec = end.tv_nsec - begin.tv_nsec;
 
-        //dprint("sec:%d, nsec:%d\n", sec, nsec);
         if (sec < NES_VIDEO_CLK_SEC || nsec < NES_VIDEO_CLK_NSEC) {
             int ret;
             slp.tv_sec = sec > NES_VIDEO_CLK_SEC ? 0 : NES_VIDEO_CLK_SEC - sec;
             slp.tv_nsec = nsec > NES_VIDEO_CLK_NSEC ? 0 : NES_VIDEO_CLK_NSEC - nsec;
 
+            //dprint("%d.%09d sec sleep\n", slp.tv_sec, slp.tv_nsec);
             ret = nanosleep(&slp, NULL);
-            //dprint("sleep %d sec:%d, nsec:%d, err:%d\n", ret, ts.tv_sec, ts.tv_nsec, errno);
         }
     }
     return NULL;
@@ -123,8 +134,13 @@ void ppu_ctrl1_set(unsigned char data) {
 }
 
 void ppu_ctrl2_set(unsigned char data) {
+    struct ppu_ctrl_reg2 old = ctrl_reg2;
+
     memcpy(&ctrl_reg2, &data, sizeof(ctrl_reg2));
     //dprint("ppu_ctrl2_set %d, show_bg:%d\n", data, ctrl_reg2.show_bg);
+
+    if (old.color_mode != ctrl_reg2.color_mode)
+        set_monocolor(ctrl_reg2.color_mode);
 }
 
 unsigned char ppu_status_get(void) {
@@ -147,13 +163,22 @@ void ppu_scroll_set(unsigned char data) {
 
 void ppu_vram_addr_set(unsigned char data) {
     if (vram_addr_reg.cnt++ == 0)
-        vram_addr_reg.addr1 = data;
+        vram_addr_reg.addr.b.low = data;
     else
-        vram_addr_reg.addr2 = data;
+        vram_addr_reg.addr.b.hi = data;
 }
 
 void ppu_vram_data_set(unsigned char data) {
     vram_data_reg = data;
+
+    vram_data_set(vram_addr_reg.addr.s, data);
+    //vram addr increment.
+    if (ctrl_reg1.addr_inc_size) {
+        vram_addr_reg.addr.s += 32;
+    }
+    else {
+        vram_addr_reg.addr.s += 1;
+    }
 }
 
 unsigned char ppu_vram_data_get(void) {

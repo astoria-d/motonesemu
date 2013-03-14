@@ -85,29 +85,29 @@ static void test_ppu(void) {
     };
 
     for (i = 0; i < 16; i++)
-        bg_palette_tbl_set(i, plt[i]);
+        vram_data_set(0x3f00 + i, plt[i]);
     for (i = 0; i < 16; i++)
-        spr_palette_tbl_set(i, plt[i + 16]);
+        vram_data_set(0x3f10 + i, plt[i + 16]);
 
     for (i = 0; i < 960; i++) 
-        name_tbl_set(0, i, 0);
+        vram_data_set(0x2000 + i, 0);
 
     for (i = 0; i < 64; i++) 
-        attr_tbl_set(0, i, 0);
+        vram_data_set(0x23c0 + i, 0);
 
     //name_tbl_set(0, 205, 2);
-    name_tbl_set(0, 205, 'D');
-    name_tbl_set(0, 206, 'e');
-    name_tbl_set(0, 207, 'e');
-    name_tbl_set(0, 208, '!');
-    name_tbl_set(0, 209, '!');
+    vram_data_set(0x2000 + 205, 'D');
+    vram_data_set(0x2000 + 206, 'e');
+    vram_data_set(0x2000 + 207, 'e');
+    vram_data_set(0x2000 + 208, '!');
+    vram_data_set(0x2000 + 209, '!');
     //205 = palette gp2 00011011b 
     //205 = 11
-    attr_tbl_set(0, 11, 0x1b);
+    vram_data_set(0x23c0 + 11, 0x1b);
 
     //other test.
-    name_tbl_set(0, 300, 1);
-    attr_tbl_set(0, 0, 0x65);
+    vram_data_set(0x2000 + 300, 1);
+    vram_data_set(0x2000 + 0, 0x65);
 
     set_monocolor(FALSE);
 

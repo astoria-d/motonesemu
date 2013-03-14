@@ -4,6 +4,7 @@
 #include "vga.h"
 #include "ppucore.h"
 
+/*
 unsigned char pattern_tbl_get(unsigned char bank, unsigned short addr);
 
 unsigned char name_tbl_get(unsigned char bank, unsigned short addr);
@@ -20,8 +21,12 @@ void bg_palette_tbl_set(unsigned short addr, unsigned char data);
 
 unsigned char spr_ram_tbl_get(unsigned short addr);
 void spr_ram_tbl_set(unsigned short addr, unsigned char data);
+*/
 
-void show_background(void);
+unsigned char vram_data_get(unsigned short addr);
+void vram_data_set(unsigned short addr, unsigned char data);
+
+int show_background(void);
 
 int vram_init(void);
 void clean_vram(void);

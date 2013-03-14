@@ -83,7 +83,8 @@ void set_bgtile(int tile_id) {
 
     load_attribute(0, tile_id, &plt);
 
-    name_index = name_tbl_get(0, tile_id);
+#warning name tbl base addr check...
+    name_index = vram_data_get(0x2000 + tile_id);
     load_pattern(0, name_index, &ptn);
 
     set_data = vscreen + tile_id;

@@ -13,6 +13,29 @@ void dump_mem(const char* msg, unsigned short base,
         unsigned short offset, unsigned char* buf, int size);
 void set_bgtile(int tile_id);
 
+/*
+ * NES vram memory map
+ *
+ * 0x0000   -   0x0FFF      pattern table 0
+ * 0x1000   -   0x1FFF      pattern table 1
+ *
+ * 0x2000   -   0x23BF      name table 0
+ * 0x23C0   -   0x23FF      attribute table 0
+ * 0x2400   -   0x27BF      name table 1
+ * 0x27C0   -   0x27FF      attribute table 1
+ * 0x2800   -   0x2BBF      name table 2
+ * 0x2BC0   -   0x2BFF      attribute table 2
+ * 0x2C00   -   0x2FBF      name table 3
+ * 0x2FC0   -   0x2FFF      attribute table 3
+ * 0x3000   -   0x3EFF      mirror name/attr tbl
+ *
+ * 0x3F00   -   0x3F0F      bg palette tble
+ * 0x3F10   -   0x3F1F      sprite palette tble
+ * 0x3F20   -   0x3FFF      mirror palette tble
+ *
+ * 0x4000   -   0xFFFF      mirror 0x0000-0x3FFFF
+ * */
+
 #define PATTERN_TBL_SIZE    0x1000
 #define NAME_TBL_SIZE       V_SCREEN_TILE_SIZE * H_SCREEN_TILE_SIZE
 #define ATTR_TBL_SIZE       (VIRT_SCREEN_TILE_SIZE * VIRT_SCREEN_TILE_SIZE \
@@ -24,6 +47,21 @@ void set_bgtile(int tile_id);
 #define ATTR_TBL_ADDR_MASK      (ATTR_TBL_SIZE - 1)
 #define PALETTE_TBL_ADDR_MASK   (PALETTE_TBL_SIZE - 1)
 #define SPR_RAM_ADDR_MASK       (SPRITE_RAM_SIZE - 1)
+
+#define PPU_ADDR_MASK       (0x4000 - 1)
+#define PALETTE_START       0x3F00
+#define NAME_ATTR_MASK1      (0x3000 - 1)
+#define NAME_ATTR_MASK2      (0x0400 - 1)
+#define PALETTE_SPRITE_BIT  0x10
+
+#define NAME0_START         PATTERN_TBL_SIZE * 2
+#define ATTR0_START         NAME0_START + NAME_TBL_SIZE
+#define NAME1_START         ATTR0_START + ATTR_TBL_SIZE
+#define ATTR1_START         NAME1_START + NAME_TBL_SIZE
+#define NAME2_START         ATTR1_START + ATTR_TBL_SIZE
+#define ATTR2_START         NAME2_START + NAME_TBL_SIZE
+#define NAME3_START         ATTR2_START + ATTR_TBL_SIZE
+#define ATTR3_START         NAME3_START + NAME_TBL_SIZE
 
 /*vram definition*/
 static unsigned char * sprite_ram;
@@ -49,100 +87,179 @@ static unsigned char * pattern_tbl1;
  *
  * */
 
-unsigned char pattern_tbl_get(unsigned char bank, unsigned short addr) {
-    addr = addr & PATTERN_ADDR_MASK;
+static unsigned char pattern_tbl_get(unsigned char bank, unsigned short offset) {
     if (bank == 0)
-        return pattern_tbl0[addr];
+        return pattern_tbl0[offset];
     else
-        return pattern_tbl1[addr];
+        return pattern_tbl1[offset];
 }
 
-unsigned char name_tbl_get(unsigned char bank, unsigned short addr) {
+static unsigned char name_tbl_get(unsigned char bank, unsigned short offset) {
     if (bank == 0)
-        return name_tbl0[addr];
+        return name_tbl0[offset];
     else if (bank == 1)
-        return name_tbl1[addr];
+        return name_tbl1[offset];
     else if (bank == 2)
-        return name_tbl2[addr];
+        return name_tbl2[offset];
     else
-        return name_tbl3[addr];
+        return name_tbl3[offset];
 }
 
-void name_tbl_set(unsigned char bank, unsigned short addr, unsigned char data) {
+static void name_tbl_set(unsigned char bank, unsigned short offset, unsigned char data) {
     if (bank == 0)
-        name_tbl0[addr] = data;
+        name_tbl0[offset] = data;
     else if (bank == 1)
-        name_tbl1[addr] = data;
+        name_tbl1[offset] = data;
     else if (bank == 2)
-        name_tbl2[addr] = data;
+        name_tbl2[offset] = data;
     else
-        name_tbl3[addr] = data;
+        name_tbl3[offset] = data;
 }
 
 
-unsigned char attr_tbl_get(unsigned char bank, unsigned short addr) {
-    addr = addr & ATTR_TBL_ADDR_MASK;
+static unsigned char attr_tbl_get(unsigned char bank, unsigned short offset) {
     if (bank == 0)
-        return attr_tbl0[addr];
+        return attr_tbl0[offset];
     else if (bank == 1)
-        return attr_tbl1[addr];
+        return attr_tbl1[offset];
     else if (bank == 2)
-        return attr_tbl2[addr];
+        return attr_tbl2[offset];
     else
-        return attr_tbl3[addr];
+        return attr_tbl3[offset];
 }
 
-void attr_tbl_set(unsigned char bank, unsigned short addr, unsigned char data) {
-    addr = addr & ATTR_TBL_ADDR_MASK;
+static void attr_tbl_set(unsigned char bank, unsigned short offset, unsigned char data) {
     if (bank == 0)
-        attr_tbl0[addr] = data;
+        attr_tbl0[offset] = data;
     else if (bank == 1)
-        attr_tbl1[addr] = data;
+        attr_tbl1[offset] = data;
     else if (bank == 2)
-        attr_tbl2[addr] = data;
+        attr_tbl2[offset] = data;
     else
-        attr_tbl3[addr] = data;
+        attr_tbl3[offset] = data;
 }
 
 
-unsigned char spr_palette_tbl_get(unsigned short addr) {
-    addr = addr & PALETTE_TBL_ADDR_MASK;
-    return spr_palette_tbl[addr];
+static unsigned char spr_palette_tbl_get(unsigned short offset) {
+    return spr_palette_tbl[offset];
 }
 
-void spr_palette_tbl_set(unsigned short addr, unsigned char data) {
-    addr = addr & PALETTE_TBL_ADDR_MASK;
-    spr_palette_tbl[addr] = data;
+static void spr_palette_tbl_set(unsigned short offset, unsigned char data) {
+    spr_palette_tbl[offset] = data;
 }
 
-unsigned char bg_palette_tbl_get(unsigned short addr) {
-    addr = addr & PALETTE_TBL_ADDR_MASK;
-    return bg_palette_tbl[addr];
+static unsigned char bg_palette_tbl_get(unsigned short offset) {
+    return bg_palette_tbl[offset];
 }
 
-void bg_palette_tbl_set(unsigned short addr, unsigned char data) {
-    addr = addr & PALETTE_TBL_ADDR_MASK;
-    bg_palette_tbl[addr] = data;
+static void bg_palette_tbl_set(unsigned short offset, unsigned char data) {
+    bg_palette_tbl[offset] = data;
 }
 
 
-unsigned char spr_ram_tbl_get(unsigned short addr) {
-    addr = addr & SPR_RAM_ADDR_MASK;
-    return sprite_ram[addr];
+static unsigned char spr_ram_tbl_get(unsigned short offset) {
+    return sprite_ram[offset];
 }
 
-void spr_ram_tbl_set(unsigned short addr, unsigned char data) {
-    addr = addr & SPR_RAM_ADDR_MASK;
-    sprite_ram[addr] = data;
+static void spr_ram_tbl_set(unsigned short offset, unsigned char data) {
+    sprite_ram[offset] = data;
+}
+
+void vram_data_set(unsigned short addr, unsigned char data) {
+
+    addr &= PPU_ADDR_MASK;
+
+    if (addr < 2 * PATTERN_TBL_SIZE) {
+        //do nothing. pattern table is read only.
+    }
+    else if (addr >= PALETTE_START) {
+        if (addr & PALETTE_SPRITE_BIT)
+            bg_palette_tbl_set(addr & PALETTE_TBL_ADDR_MASK, data);
+        else 
+            bg_palette_tbl_set(addr & PALETTE_TBL_ADDR_MASK, data);
+    }
+    else {
+        if (addr < NAME0_START) {
+            name_tbl_set(0, addr - NAME0_START, data);
+        }
+        else if (addr < ATTR0_START) {
+            attr_tbl_set(0, addr - ATTR0_START, data);
+        }
+        else if (addr < NAME1_START) {
+            name_tbl_set(1, addr - NAME1_START, data);
+        }
+        else if (addr < ATTR1_START) {
+            attr_tbl_set(1, addr - ATTR1_START, data);
+        }
+        else if (addr < NAME2_START) {
+            name_tbl_set(2, addr - NAME2_START, data);
+        }
+        else if (addr < ATTR2_START) {
+            attr_tbl_set(2, addr - ATTR2_START, data);
+        }
+        else if (addr < NAME3_START) {
+            name_tbl_set(3, addr - NAME3_START, data);
+        }
+        else {
+            attr_tbl_set(3, addr - ATTR3_START, data);
+        }
+    }
+}
+
+unsigned char vram_data_get(unsigned short addr) {
+
+    addr &= PPU_ADDR_MASK;
+
+    if (addr < PATTERN_TBL_SIZE) {
+        return name_tbl_get(0, addr & PATTERN_ADDR_MASK);
+    }
+    if (addr < 2 * PATTERN_TBL_SIZE) {
+        return name_tbl_get(1, addr & PATTERN_ADDR_MASK);
+    }
+    else if (addr >= PALETTE_START) {
+        if (addr & PALETTE_SPRITE_BIT)
+            return bg_palette_tbl_get(addr & PALETTE_TBL_ADDR_MASK);
+        else 
+            return bg_palette_tbl_get(addr & PALETTE_TBL_ADDR_MASK);
+    }
+    else {
+        if (addr < NAME0_START) {
+            return name_tbl_get(0, addr - NAME0_START);
+        }
+        else if (addr < ATTR0_START) {
+            return attr_tbl_get(0, addr - ATTR0_START);
+        }
+        else if (addr < NAME1_START) {
+            return name_tbl_get(1, addr - NAME1_START);
+        }
+        else if (addr < ATTR1_START) {
+            return attr_tbl_get(1, addr - ATTR1_START);
+        }
+        else if (addr < NAME2_START) {
+            return name_tbl_get(2, addr - NAME2_START);
+        }
+        else if (addr < ATTR2_START) {
+            return attr_tbl_get(2, addr - ATTR2_START);
+        }
+        else if (addr < NAME3_START) {
+            return name_tbl_get(3, addr - NAME3_START);
+        }
+        else {
+            return attr_tbl_get(3, addr - ATTR3_START);
+        }
+    }
+    return 0;
 }
 
 /* VRAM manipulation... */
 
-void show_background(void) {
+int show_background(void) {
     int i;
     for (i = 0; i < H_SCREEN_TILE_SIZE * V_SCREEN_TILE_SIZE; i++) {
+#warning update bg must be more efficient. update only changed tile.
         set_bgtile(i);
     }
+    return TRUE;
 }
 
 static int attr_index_to_gp(int tile_index) {
