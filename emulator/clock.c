@@ -125,8 +125,6 @@ void clean_clock(void) {
         ch = (struct clock_handler*)ch->l.next;
         free(pp);
     }
-    dprint("clean_clock done.\n");
-    
-
+    //dprint("clean_clock done.\n");
 }
 

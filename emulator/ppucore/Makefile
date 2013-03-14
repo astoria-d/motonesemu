@@ -9,7 +9,7 @@ OBJS=ppucore.o vram.o vscreen.o palette.o \
 	 
 LIBS=-L../../libs -L./ -lmotones -pthread -lrt -lppucore
 
-INCLUDE=-I../../include
+INCLUDE=-I../../include -I../
 
 CFLAGS=-g $(INCLUDE) -Wall
 

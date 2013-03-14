@@ -25,16 +25,6 @@ static sem_t rom_sem_id;
 
 static unsigned char * rom_buffer;
 
-unsigned char dbg_rom_get_byte(unsigned short offset) {
-    return rom_buffer[offset];
-}
-unsigned short dbg_rom_get_short(unsigned short offset) {
-    unsigned short ret;
-    ret = rom_buffer[offset];
-    ret |= (rom_buffer[offset + 1] << 8);
-    return ret;
-}
-
 int load_prg_rom(FILE* cartridge, int num_rom_bank) {
     int len;
 
@@ -117,5 +107,18 @@ void clean_rom(void) {
 
     if (rom_buffer)
         free(rom_buffer);
+}
+
+/*
+ * for debug.c
+ * */
+unsigned char dbg_rom_get_byte(unsigned short offset) {
+    return rom_buffer[offset];
+}
+unsigned short dbg_rom_get_short(unsigned short offset) {
+    unsigned short ret;
+    ret = rom_buffer[offset];
+    ret |= (rom_buffer[offset + 1] << 8);
+    return ret;
 }
 

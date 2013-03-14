@@ -162,4 +162,5 @@ void clean_ppucore(void) {
     clean_vscreen();
     ppucore_end_loop = TRUE;
     pthread_join(ppucore_thread_id, &ret);
+    dprint("ppucore thread joined.\n");
 }

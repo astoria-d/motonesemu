@@ -5,6 +5,7 @@
 #include "bus.h"
 #include "rom.h"
 #include "ram.h"
+#include "ppu.h"
 
 unsigned char dbg_rom_get_byte(unsigned short offset);
 unsigned short dbg_rom_get_short(unsigned short offset);
@@ -44,37 +45,12 @@ static sem_t sem_bus_wait;
 #define IO_APU_MASK 0x001F
 #define ROM_MASK    0x7FFF
 
-unsigned char dbg_get_byte(unsigned short addr) {
-    if (addr & ROM_BIT) {
-        return dbg_rom_get_byte(addr & ROM_MASK);
-    }
-    else if (addr & IO_APU_BIT) {
-        return 0;
-    }
-    else if (addr & IO_PPU_BIT) {
-        return 0;
-    }
-    else {
-        return dbg_ram_get_byte(addr & ROM_MASK);
-    }
-}
-unsigned short dbg_get_short(unsigned short addr) {
-    if (addr & ROM_BIT) {
-        return dbg_rom_get_short(addr & ROM_MASK);
-    }
-    else if (addr & IO_APU_BIT) {
-        return 0;
-    }
-    else if (addr & IO_PPU_BIT) {
-        return 0;
-    }
-    else {
-        return dbg_ram_get_short(addr & ROM_MASK);
-    }
-}
 
-
+/*
+ * called by the periferal devices to release the bus lock.
+ * */
 void release_bus(void) {
+    //dprint("release bus\n");
     pin_status.ready = 1;
     sem_post(&sem_bus_wait);
 }
@@ -83,6 +59,7 @@ void release_bus(void) {
  * this function blocks when accessing rom/ram device.
  * */
 void start_bus(void) {
+    //dprint("start bus %04x, addr&ppu: %x\n", addr_bus, addr_bus & IO_PPU_BIT);
     if (addr_bus & ROM_BIT) {
         /*case rom*/
         pin_status.ready = 0;
@@ -91,9 +68,16 @@ void start_bus(void) {
         //wait for the bus ready.
         sem_wait(&sem_bus_wait);
     }
-    else if (addr_bus & IO_APU_BIT) {
+    else if ((addr_bus & IO_APU_BIT) == IO_APU_BIT) {
     }
     else if (addr_bus & IO_PPU_BIT) {
+        /*case ppu*/
+        pin_status.ready = 0;
+        set_ppu_ce_pin(TRUE);
+
+        //wait for the bus ready.
+        //dprint("wait for ppu done\n");
+        sem_wait(&sem_bus_wait);
     }
     else {
         /*case ram*/
@@ -106,16 +90,19 @@ void start_bus(void) {
 }
 
 void end_bus(void) {
+    if (!pin_status.ready) {
+        fprintf(stderr, "pin not ready!!!!\n");
+    }
+    //dprint("end bus\n");
     if (addr_bus & ROM_BIT) {
-        /*case rom*/
         set_rom_ce_pin(FALSE);
     }
     else if (addr_bus & IO_APU_BIT) {
     }
     else if (addr_bus & IO_PPU_BIT) {
+        set_ppu_ce_pin(FALSE);
     }
     else {
-        /*case ram*/
         set_ram_ce_pin(FALSE);
     }
 }
@@ -125,15 +112,15 @@ void set_bus_addr(unsigned short addr) {
         return;
 
     if (addr & ROM_BIT) {
-        /*case rom*/
         set_rom_addr(addr & ROM_MASK);
     }
     else if (addr & IO_APU_BIT) {
     }
     else if (addr & IO_PPU_BIT) {
+        set_ppu_addr(addr & IO_PPU_MASK);
+        set_ppu_rw_pin(pin_status.rw);
     }
     else {
-        /*case ram*/
         set_ram_addr(addr & RAM_MASK);
         if (pin_status.rw) {
             set_ram_oe_pin(FALSE);
@@ -152,13 +139,14 @@ void set_bus_data(unsigned char data){
         return;
 
     if (addr_bus & ROM_BIT) {
+        //no write to ROM
     }
     else if (addr_bus & IO_APU_BIT) {
     }
     else if (addr_bus & IO_PPU_BIT) {
+        set_ppu_data(data);
     }
     else {
-        /*case ram*/
         set_ram_data(data);
     }
     data_bus = data;
@@ -174,9 +162,9 @@ char get_bus_data(void) {
     else if (addr_bus & IO_APU_BIT) {
     }
     else if (addr_bus & IO_PPU_BIT) {
+        data_bus = get_ppu_data();
     }
     else {
-        /*case ram*/
         data_bus = get_ram_data();
     }
     return data_bus;
@@ -206,5 +194,37 @@ int init_bus(void) {
 
 void clean_bus(void){
     sem_destroy(&sem_bus_wait);
+}
+
+/*
+ * for debug.c
+ * */
+unsigned char dbg_get_byte(unsigned short addr) {
+    if (addr & ROM_BIT) {
+        return dbg_rom_get_byte(addr & ROM_MASK);
+    }
+    else if (addr & IO_APU_BIT) {
+        return 0;
+    }
+    else if (addr & IO_PPU_BIT) {
+        return 0;
+    }
+    else {
+        return dbg_ram_get_byte(addr & ROM_MASK);
+    }
+}
+unsigned short dbg_get_short(unsigned short addr) {
+    if (addr & ROM_BIT) {
+        return dbg_rom_get_short(addr & ROM_MASK);
+    }
+    else if (addr & IO_APU_BIT) {
+        return 0;
+    }
+    else if (addr & IO_PPU_BIT) {
+        return 0;
+    }
+    else {
+        return dbg_ram_get_short(addr & ROM_MASK);
+    }
 }
 

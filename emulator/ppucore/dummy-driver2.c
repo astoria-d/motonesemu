@@ -54,7 +54,16 @@ int debug_mode = TRUE;
 int critical_error = FALSE;
 void dump_6502(int full) {
 }
+unsigned char dbg_get_byte(unsigned short addr) {
+        return 0;
+}
+unsigned short dbg_get_short(unsigned short addr) {
+        return 0;
+}
 
+/*
+ * ppu test function
+ * */
 static void test_ppu(void) {
     int i;
     unsigned char plt[32] = {
