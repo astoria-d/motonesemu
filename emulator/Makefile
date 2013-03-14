@@ -11,7 +11,7 @@ OBJS=emu-main.o clock.o bus.o cpu.o \
 #LIBS=-L../libs -pthread -lrt -lncurses
 LIBS=-L../libs -L./ppucore -lmotones -lppucore -pthread -lrt
 
-INCLUDE=-I../include
+INCLUDE=-I../include -Ippucore
 
 CFLAGS=-g $(INCLUDE) -Wall
 
@@ -20,7 +20,7 @@ all:	$(BIN)
 $(BIN): $(OBJS) ../libs ppucore/libppucore.a
 	gcc -o $(BIN) $(OBJS) $(LIBS)
 
-ppucore/libppucore.a:
+ppucore/libppucore.a: ppucore/*.c
 	make -C ppucore
 
 .c.o: 
@@ -35,6 +35,7 @@ test:
 	./test.sh
 
 clean:
+	make -C ppucore clean
 	-rm $(OBJS) $(BIN) opcode \
 		
 tag:

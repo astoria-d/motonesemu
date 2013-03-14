@@ -21,6 +21,8 @@ void bg_palette_tbl_set(unsigned short addr, unsigned char data);
 unsigned char spr_ram_tbl_get(unsigned short addr);
 void spr_ram_tbl_set(unsigned short addr, unsigned char data);
 
+void show_background(void);
+
 int vram_init(void);
 void clean_vram(void);
 

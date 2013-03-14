@@ -11,6 +11,7 @@
 void palette_index_to_rgb15(unsigned char index, struct rgb15* rgb);
 void dump_mem(const char* msg, unsigned short base, 
         unsigned short offset, unsigned char* buf, int size);
+void set_bgtile(int tile_id);
 
 #define PATTERN_TBL_SIZE    0x1000
 #define NAME_TBL_SIZE       V_SCREEN_TILE_SIZE * H_SCREEN_TILE_SIZE
@@ -137,6 +138,13 @@ void spr_ram_tbl_set(unsigned short addr, unsigned char data) {
 
 /* VRAM manipulation... */
 
+void show_background(void) {
+    int i;
+    for (i = 0; i < H_SCREEN_TILE_SIZE * V_SCREEN_TILE_SIZE; i++) {
+        set_bgtile(i);
+    }
+}
+
 static int attr_index_to_gp(int tile_index) {
     int tile_x, tile_y, gp_x, gp_y;
 
@@ -260,6 +268,86 @@ void load_pattern(unsigned char bank, unsigned char ptn_index, struct tile_2* pa
     }
 }
 
+int load_chr_rom(FILE* cartridge, int num_rom_bank) {
+    int len;
+
+    len = fread(pattern_tbl0, 1, PATTERN_TBL_SIZE, cartridge);
+    if (len != PATTERN_TBL_SIZE)
+        return FALSE;
+
+    len = fread(pattern_tbl1, 1, PATTERN_TBL_SIZE, cartridge);
+    if (len != PATTERN_TBL_SIZE)
+        return FALSE;
+
+    return TRUE;
+}
+
+int vram_init(void) {
+    name_tbl2 = NULL;
+    name_tbl3 = NULL;
+
+    attr_tbl2 = NULL;
+    attr_tbl3 = NULL;
+    
+
+    pattern_tbl0 = malloc(PATTERN_TBL_SIZE);
+    if (pattern_tbl0 == NULL)
+        return FALSE;
+
+    pattern_tbl1 = malloc(PATTERN_TBL_SIZE);
+    if (pattern_tbl1 == NULL)
+        return FALSE;
+
+    sprite_ram = malloc(SPRITE_RAM_SIZE);
+    if (sprite_ram == NULL)
+        return FALSE;
+
+    name_tbl0 = malloc(NAME_TBL_SIZE);
+    if (name_tbl0 == NULL)
+        return FALSE;
+
+    name_tbl1 = malloc(NAME_TBL_SIZE);
+    if (name_tbl1 == NULL)
+        return FALSE;
+
+    attr_tbl0 = malloc(ATTR_TBL_SIZE);
+    if (attr_tbl0 == NULL)
+        return FALSE;
+
+    attr_tbl1 = malloc(ATTR_TBL_SIZE);
+    if (attr_tbl1 == NULL)
+        return FALSE;
+
+    bg_palette_tbl = malloc(PALETTE_TBL_SIZE);
+    if (bg_palette_tbl == NULL)
+        return FALSE;
+
+    spr_palette_tbl = malloc(PALETTE_TBL_SIZE);
+    if (spr_palette_tbl == NULL)
+        return FALSE;
+
+    return TRUE;
+}
+
+void clean_vram(void) {
+
+    free(pattern_tbl0);
+    free(pattern_tbl1);
+
+    free(sprite_ram);
+
+    free(name_tbl0);
+    free(name_tbl1);
+
+    free(attr_tbl0);
+    free(attr_tbl1);
+
+    free(bg_palette_tbl);
+    free(spr_palette_tbl);
+
+}
+
+
 /*
  * type 
  * 0: pattern table
@@ -345,86 +433,6 @@ void dump_vram(int type, int bank, unsigned short addr, int size) {
 
     }
     dump_mem(buf, base, addr, mem, size);
-}
-
-
-int load_chr_rom(FILE* cartridge, int num_rom_bank) {
-    int len;
-
-    len = fread(pattern_tbl0, 1, PATTERN_TBL_SIZE, cartridge);
-    if (len != PATTERN_TBL_SIZE)
-        return FALSE;
-
-    len = fread(pattern_tbl1, 1, PATTERN_TBL_SIZE, cartridge);
-    if (len != PATTERN_TBL_SIZE)
-        return FALSE;
-
-    return TRUE;
-}
-
-int vram_init(void) {
-    name_tbl2 = NULL;
-    name_tbl3 = NULL;
-
-    attr_tbl2 = NULL;
-    attr_tbl3 = NULL;
-    
-
-    pattern_tbl0 = malloc(PATTERN_TBL_SIZE);
-    if (pattern_tbl0 == NULL)
-        return FALSE;
-
-    pattern_tbl1 = malloc(PATTERN_TBL_SIZE);
-    if (pattern_tbl1 == NULL)
-        return FALSE;
-
-    sprite_ram = malloc(SPRITE_RAM_SIZE);
-    if (sprite_ram == NULL)
-        return FALSE;
-
-    name_tbl0 = malloc(NAME_TBL_SIZE);
-    if (name_tbl0 == NULL)
-        return FALSE;
-
-    name_tbl1 = malloc(NAME_TBL_SIZE);
-    if (name_tbl1 == NULL)
-        return FALSE;
-
-    attr_tbl0 = malloc(ATTR_TBL_SIZE);
-    if (attr_tbl0 == NULL)
-        return FALSE;
-
-    attr_tbl1 = malloc(ATTR_TBL_SIZE);
-    if (attr_tbl1 == NULL)
-        return FALSE;
-
-    bg_palette_tbl = malloc(PALETTE_TBL_SIZE);
-    if (bg_palette_tbl == NULL)
-        return FALSE;
-
-    spr_palette_tbl = malloc(PALETTE_TBL_SIZE);
-    if (spr_palette_tbl == NULL)
-        return FALSE;
-
-    return TRUE;
-}
-
-void clean_vram(void) {
-
-    free(pattern_tbl0);
-    free(pattern_tbl1);
-
-    free(sprite_ram);
-
-    free(name_tbl0);
-    free(name_tbl1);
-
-    free(attr_tbl0);
-    free(attr_tbl1);
-
-    free(bg_palette_tbl);
-    free(spr_palette_tbl);
-
 }
 
 

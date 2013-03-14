@@ -8,29 +8,17 @@
 #include "clock.h"
 #include "tools.h"
 #include "vga.h"
+#include "ppucore.h"
 
 void set_vga_base(unsigned char* base);
 void *vga_shm_get(void);
 void vga_shm_free(void* addr);
-int ppucore_init(void);
-void clean_ppucore(void);
 void release_bus(void);
 
 struct ppu_cpu_pin {
     unsigned int ce     :1;     /*chip enable*/
     unsigned int rw     :1;     /*assert on write.*/
     unsigned int vblank :1;     /*connected to nmi*/
-};
-
-struct ppu_register {
-    unsigned char control1;     /*write only*/
-    unsigned char control2;     /*write only*/
-    unsigned char status;       /*read only*/
-    unsigned char sprite_addr;
-    unsigned char sprite_data;
-    unsigned char scroll;
-    unsigned char vram_addr;
-    unsigned char vram_data;
 };
 
 struct ppu_cart_pin {
@@ -40,7 +28,6 @@ struct ppu_cart_pin {
 
 static struct ppu_cpu_pin  ppu_pin;
 static struct ppu_cart_pin cart_pin;
-struct ppu_register ppu_reg;
 
 static unsigned short ppu_addr;
 static unsigned char ppu_data;
@@ -49,6 +36,38 @@ static pthread_t ppu_thread_id;
 static int ppu_end_loop;
 static sem_t ppu_sem_id;
 static unsigned char* vga_shared_buf;
+
+
+/*
+ * ppucore r/w func ptr.
+ * */
+typedef void (ppu_write_t)(unsigned char);
+typedef unsigned char (ppu_read_t)(void);
+
+static void null_write(unsigned char);
+static unsigned char null_read(void);
+
+static ppu_write_t *ppucore_write_func[8] = {
+    ppu_ctrl1_set,
+    ppu_ctrl2_set,
+    null_write,
+    sprite_data_set,
+    sprite_addr_set,
+    ppu_scroll_set,
+    ppu_vram_addr_set,
+    ppu_vram_data_set
+};
+
+static ppu_read_t *ppucore_read_func[8] = {
+    null_read,
+    null_read,
+    ppu_status_get,
+    null_read,
+    null_read,
+    null_read,
+    null_read,
+    ppu_vram_data_get
+};
 
 /*
 * JAPAN/US uses NTSC standard.
@@ -92,12 +111,24 @@ void set_ppu_ce_pin(int ce) {
         sem_post(&ppu_sem_id);
 }
 
+/*dummy I/O func*/
+static void null_write(unsigned char d){}
+static unsigned char null_read(void){return 0;}
 
 static void *ppu_loop(void* arg) {
-    //struct timespec ts = {CPU_CLOCK_SEC, CPU_CLOCK_NSEC / 10};
+    struct timespec ts = {CPU_CLOCK_SEC, CPU_CLOCK_NSEC / 10};
     while (!ppu_end_loop) {
         sem_wait(&ppu_sem_id);
         if (ppu_pin.ce) {
+            if (ppu_pin.rw) {
+                //write cycle
+                ppucore_write_func[ppu_addr](ppu_data);
+            }
+            else {
+                //read cycle
+                ppu_data = ppucore_read_func[ppu_addr]();
+            }
+            nanosleep(&ts, NULL);
             release_bus();
         }
     }
@@ -110,7 +141,6 @@ int init_ppu(void) {
 
     ppu_end_loop = FALSE;
 
-    memset(&ppu_reg, 0, sizeof(ppu_reg));
     ppu_pin.ce = 0;
     ppu_pin.rw = 0;
     cart_pin.rd = 0;
@@ -156,15 +186,14 @@ int init_ppu(void) {
 void clean_ppu(void) {
     void* ret;
 
-    clean_ppucore();
-    vga_shm_free(vga_shared_buf);
-
     ppu_end_loop = TRUE;
     sem_post(&ppu_sem_id);
     pthread_join(ppu_thread_id, &ret);
-
     sem_destroy(&ppu_sem_id);
     dprint("ppu thread joined.\n");
+
+    clean_ppucore();
+    vga_shm_free(vga_shared_buf);
 
 }
 

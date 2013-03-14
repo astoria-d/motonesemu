@@ -9,34 +9,39 @@
 int vscreen_init(void);
 void clean_vscreen(void);
 int palette_init(void);
+void vga_xfer(void);
 
+/*
+ * 6502 little endian
+ * hi bit > low bit order
+ * */
 struct ppu_ctrl_reg1 {
-    unsigned int name_tbl_sel   :2;
-    unsigned int addr_inc_size  :1;
-    unsigned int sprite_ptn_sel :1;
-    unsigned int bg_ptn_addr_sel :1;
-    unsigned int sprite_size    :1;
-    unsigned int ppu_mode       :1;
     unsigned int nmi_vblank     :1;
+    unsigned int ppu_mode       :1;
+    unsigned int sprite_size    :1;
+    unsigned int bg_ptn_addr_sel :1;
+    unsigned int sprite_ptn_sel :1;
+    unsigned int addr_inc_size  :1;
+    unsigned int name_tbl_sel   :2;
 } __attribute__ ((packed));
 
 struct ppu_ctrl_reg2 {
-    unsigned int color_mode     :1;
-    unsigned int show_left_8bg  :1;
-    unsigned int show_left_8sprite  :1;
-    unsigned int show_bg        :1;
-    unsigned int show_sprite    :1;
-    unsigned int intense_r      :1;
-    unsigned int intense_g      :1;
     unsigned int intense_b      :1;
+    unsigned int intense_g      :1;
+    unsigned int intense_r      :1;
+    unsigned int show_sprite    :1;
+    unsigned int show_bg        :1;
+    unsigned int show_left_8sprite  :1;
+    unsigned int show_left_8bg  :1;
+    unsigned int color_mode     :1;
 } __attribute__ ((packed));
 
 struct ppu_status_reg {
-    unsigned int dummy          :4;
-    unsigned int vram_ignore    :1;
-    unsigned int sprite_overflow    :1;
-    unsigned int sprite_0_hit   :1;
     unsigned int vblank         :1;
+    unsigned int sprite_0_hit   :1;
+    unsigned int sprite_overflow    :1;
+    unsigned int vram_ignore    :1;
+    unsigned int nouse          :4;
 } __attribute__ ((packed));
 
 struct ppu_vram_addr_reg {
@@ -66,32 +71,50 @@ static int ppucore_end_loop;
 static void *ppucore_loop(void* arg) {
     //struct timespec ts = {CPU_CLOCK_SEC, CPU_CLOCK_NSEC / 10};
 
-    while (ppucore_end_loop) {
-        if (ctrl_reg2.show_bg) {
+    while (!ppucore_end_loop) {
+
+        if (ctrl_reg2.show_sprite) {
+            //sprite in the back
             ;
         }
+        if (ctrl_reg2.show_bg) {
+            //back ground image
+            show_background();
+        }
+        if (ctrl_reg2.show_sprite) {
+            //foreground sprite
+            ;
+        }
+        vga_xfer();
     }
     return NULL;
 }
 
 void ppu_ctrl1_set(unsigned char data) {
-    ctrl_reg1 = *(struct ppu_ctrl_reg1*)&data;
+    memcpy(&ctrl_reg1, &data, sizeof(ctrl_reg1));
 }
 
 void ppu_ctrl2_set(unsigned char data) {
-    ctrl_reg2 = *(struct ppu_ctrl_reg2*)&data;
+    memcpy(&ctrl_reg2, &data, sizeof(ctrl_reg2));
+    //dprint("ppu_ctrl2_set %d, show_bg:%d\n", data, ctrl_reg2.show_bg);
 }
 
 unsigned char ppu_status_get(void) {
-    return *(unsigned char*)&status_reg;
+    unsigned char ret;
+    memcpy(&ret, &status_reg, sizeof(status_reg));
+    return ret;
 }
 
 void sprite_addr_set(unsigned char data) {
     sprite_ram_addr_reg = data;
 }
 
-unsigned char sprite_data_get(void) {
-    return sprite_ram_data_reg;
+void sprite_data_set(unsigned char data) {
+    sprite_ram_data_reg = data;
+}
+
+void ppu_scroll_set(unsigned char data) {
+    scroll_reg = data;
 }
 
 void ppu_vram_addr_set(unsigned char data) {
@@ -158,9 +181,10 @@ int ppucore_init(void) {
 
 void clean_ppucore(void) {
     void* ret;
-    clean_vram();
-    clean_vscreen();
     ppucore_end_loop = TRUE;
     pthread_join(ppucore_thread_id, &ret);
     dprint("ppucore thread joined.\n");
+
+    clean_vram();
+    clean_vscreen();
 }
