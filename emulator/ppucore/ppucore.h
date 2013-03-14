@@ -13,6 +13,10 @@
 #define ATTR_GROUP_UNIT         4
 #define ATTR_UNIT_PER_BYTE      4
 
+#define NES_VIDEO_FREQ      30
+#define NES_VIDEO_CLK_SEC   (1L / NES_VIDEO_FREQ)
+#define NES_VIDEO_CLK_NSEC  (1000000000L / NES_VIDEO_FREQ)
+
 
 void ppu_ctrl1_set(unsigned char data);
 void ppu_ctrl2_set(unsigned char data);

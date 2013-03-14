@@ -1,5 +1,6 @@
 #include <string.h>
 #include <pthread.h>
+#include <limits.h>
 
 #include "tools.h"
 #include "vram.h"
@@ -70,9 +71,14 @@ static int ppucore_end_loop;
 
 static void *ppucore_loop(void* arg) {
     //struct timespec ts = {CPU_CLOCK_SEC, CPU_CLOCK_NSEC / 10};
+    struct timespec begin, end;
+    struct timespec slp;
+    long sec, nsec;
+#define NANOMAX (1000000000 - 1)
 
     while (!ppucore_end_loop) {
 
+        clock_gettime(CLOCK_REALTIME, &begin);
         if (ctrl_reg2.show_sprite) {
             //sprite in the back
             ;
@@ -86,6 +92,28 @@ static void *ppucore_loop(void* arg) {
             ;
         }
         vga_xfer();
+        clock_gettime(CLOCK_REALTIME, &end);
+
+        //sleep rest of time...
+        if (end.tv_sec < begin.tv_sec )
+            sec = LONG_MAX - begin.tv_sec + end.tv_sec + 1;
+        else
+            sec = end.tv_sec - begin.tv_sec;
+
+        if (end.tv_nsec < begin.tv_nsec)
+            nsec = NANOMAX - begin.tv_nsec + end.tv_nsec + 1;
+        else
+            nsec = end.tv_nsec - begin.tv_nsec;
+
+        //dprint("sec:%d, nsec:%d\n", sec, nsec);
+        if (sec < NES_VIDEO_CLK_SEC || nsec < NES_VIDEO_CLK_NSEC) {
+            int ret;
+            slp.tv_sec = sec > NES_VIDEO_CLK_SEC ? 0 : NES_VIDEO_CLK_SEC - sec;
+            slp.tv_nsec = nsec > NES_VIDEO_CLK_NSEC ? 0 : NES_VIDEO_CLK_NSEC - nsec;
+
+            ret = nanosleep(&slp, NULL);
+            //dprint("sleep %d sec:%d, nsec:%d, err:%d\n", ret, ts.tv_sec, ts.tv_nsec, errno);
+        }
     }
     return NULL;
 }
