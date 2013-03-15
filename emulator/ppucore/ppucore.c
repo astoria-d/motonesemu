@@ -1,6 +1,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <limits.h>
+#include <stdio.h>
 
 #include "tools.h"
 #include "vram.h"
@@ -12,38 +13,44 @@ void clean_vscreen(void);
 int palette_init(void);
 void vga_xfer(void);
 void set_monocolor (int mono);
+static void dump_ppu_reg(void);
 
 /*
  * 6502 little endian
  * hi bit > low bit order
+ * but gcc generates low > hi order for bit field
  * */
 struct ppu_ctrl_reg1 {
-    unsigned int nmi_vblank     :1;
-    unsigned int ppu_mode       :1;
-    unsigned int sprite_size    :1;
-    unsigned int bg_ptn_addr_sel :1;
-    unsigned int sprite_ptn_sel :1;
-    unsigned int addr_inc_size  :1;
     unsigned int name_tbl_sel   :2;
+    unsigned int addr_inc_size  :1;
+    unsigned int sprite_ptn_sel :1;
+    unsigned int bg_ptn_addr_sel :1;
+    unsigned int sprite_size    :1;
+    unsigned int ppu_mode       :1;
+    unsigned int nmi_vblank     :1;
 } __attribute__ ((packed));
 
 struct ppu_ctrl_reg2 {
+    unsigned int color_mode     :1;
+    unsigned int show_left_8bg  :1;
+    unsigned int show_left_8sprite  :1;
+    unsigned int show_bg        :1;
+    unsigned int show_sprite    :1;
     unsigned int intense_b      :1;
     unsigned int intense_g      :1;
     unsigned int intense_r      :1;
-    unsigned int show_sprite    :1;
-    unsigned int show_bg        :1;
-    unsigned int show_left_8sprite  :1;
-    unsigned int show_left_8bg  :1;
-    unsigned int color_mode     :1;
 } __attribute__ ((packed));
 
+/*
+ * 6502 little endian
+ * but gcc generates low > hi order when bit field is used??
+ * */
 struct ppu_status_reg {
-    unsigned int vblank         :1;
-    unsigned int sprite_0_hit   :1;
-    unsigned int sprite_overflow    :1;
-    unsigned int vram_ignore    :1;
     unsigned int nouse          :4;
+    unsigned int vram_ignore    :1;
+    unsigned int sprite_overflow    :1;
+    unsigned int sprite_0_hit   :1;
+    unsigned int vblank         :1;
 } __attribute__ ((packed));
 
 struct ppu_vram_addr_reg {
@@ -90,7 +97,7 @@ static void *ppucore_loop(void* arg) {
         int updated = FALSE;
 
         //start displaying
-        status_reg.vblank = 1;
+        status_reg.vblank = 0;
         status_reg.vram_ignore = 1;
 
         clock_gettime(CLOCK_REALTIME, &begin);
@@ -110,7 +117,7 @@ static void *ppucore_loop(void* arg) {
             vga_xfer();
 
         //printing display done.
-        status_reg.vblank = 0;
+        status_reg.vblank = 1;
         status_reg.vram_ignore = 0;
 
         clock_gettime(CLOCK_REALTIME, &end);
@@ -140,6 +147,8 @@ static void *ppucore_loop(void* arg) {
 
 void ppu_ctrl1_set(unsigned char data) {
     memcpy(&ctrl_reg1, &data, sizeof(ctrl_reg1));
+    //dprint("ctrl1: %x\n", data);
+    //dump_ppu_reg();
 }
 
 void ppu_ctrl2_set(unsigned char data) {
@@ -150,11 +159,15 @@ void ppu_ctrl2_set(unsigned char data) {
 
     if (old.color_mode != ctrl_reg2.color_mode)
         set_monocolor(ctrl_reg2.color_mode);
+
+    //dprint("ctrl2 %x:\n", data);
+    //dump_ppu_reg();
 }
 
 unsigned char ppu_status_get(void) {
     unsigned char ret;
     memcpy(&ret, &status_reg, sizeof(status_reg));
+    //dprint("ppu_status:%x\n", ret);
     return ret;
 }
 
@@ -256,3 +269,26 @@ void clean_ppucore(void) {
     clean_vram();
     clean_vscreen();
 }
+
+static void dump_ppu_reg(void) {
+    printf("control reg1\n");
+    printf(" nmi_vblank:%d\n", ctrl_reg1.nmi_vblank);
+    printf(" sprite_size:%d\n", ctrl_reg1.sprite_size);
+    printf(" bg_ptn:%d\n", ctrl_reg1.bg_ptn_addr_sel);
+    printf(" spr_ptn:%d\n", ctrl_reg1.sprite_ptn_sel);
+    printf(" inc size:%d\n", ctrl_reg1.addr_inc_size);
+    printf(" name tbl:%d\n", ctrl_reg1.name_tbl_sel);
+
+    printf("\ncontrol reg2\n");
+    printf(" intense r:%d\n", ctrl_reg2.intense_r);
+    printf(" intense g:%d\n", ctrl_reg2.intense_g);
+    printf(" intense b:%d\n", ctrl_reg2.intense_b);
+
+    printf(" show spr:%d\n", ctrl_reg2.show_sprite);
+    printf(" show bg:%d\n", ctrl_reg2.show_bg);
+    printf(" left 8 pix spr:%d\n", ctrl_reg2.show_left_8sprite);
+    printf(" left 8 pix bg:%d\n", ctrl_reg2.show_left_8bg);
+    printf(" col mode:%d\n", ctrl_reg2.color_mode);
+
+}
+

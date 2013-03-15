@@ -153,6 +153,8 @@ int main(int argc, char* argv[]) {
     }
 
     ///register the Ctrl-C signal handler.
+    /*
+     */
     ret = prepare_sig();
     if (!ret) {
         fprintf(stderr, "signal handling error...\n");
