@@ -795,6 +795,7 @@ int func_BVS(void) {
  * */
 int func_CLC(void) {
     cpu_reg.status.carry = 0;
+    exec_done = TRUE;
     return TRUE;
 }
 
@@ -807,11 +808,19 @@ int func_CLC(void) {
  * */
 int func_CLD(void) {
     cpu_reg.status.decimal = 0;
+    exec_done = TRUE;
     return TRUE;
 }
 
+/*
+ * Clear Interrupt Disable Status: CLI
+ * 0 -> I
+ * Flags: I = 0
+ * */
 int func_CLI(void) {
-    return FALSE;
+    cpu_reg.status.irq_disable = 0;
+    exec_done = TRUE;
+    return TRUE;
 }
 
 /*
@@ -821,6 +830,7 @@ int func_CLI(void) {
  * */
 int func_CLV(void) {
     cpu_reg.status.overflow = 0;
+    exec_done = TRUE;
     return TRUE;
 }
 
@@ -1186,6 +1196,7 @@ int func_SBC(void) {
  * */
 int func_SEC(void) {
     cpu_reg.status.carry = 1;
+    exec_done = TRUE;
     return TRUE;
 }
 
