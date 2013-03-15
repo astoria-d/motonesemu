@@ -788,20 +788,40 @@ int func_BVS(void) {
     return branch(cpu_reg.status.overflow == 1);
 }
 
+/*
+ * Clear Carry Flag: CLC
+ * 0 -> C
+ * Flags: C = 0
+ * */
 int func_CLC(void) {
-    return FALSE;
+    cpu_reg.status.carry = 0;
+    return TRUE;
 }
 
+/*
+ * Clear Decimal Mode: CLD
+ * 0 -> D
+ * Flags: D = 0
+ *
+ * NOTE: Decimal mode is not implemented on NES core.
+ * */
 int func_CLD(void) {
-    return FALSE;
+    cpu_reg.status.decimal = 0;
+    return TRUE;
 }
 
 int func_CLI(void) {
     return FALSE;
 }
 
+/*
+ * Clear Overflow Flag: CLV
+ * 0 -> V
+ * Flags: V = 0
+ * */
 int func_CLV(void) {
-    return FALSE;
+    cpu_reg.status.overflow = 0;
+    return TRUE;
 }
 
 int func_CMP(void) {
@@ -1159,11 +1179,26 @@ int func_SBC(void) {
     return FALSE;
 }
 
+/*
+ * Set Carry Flag: SEC
+ * 1 -> C
+ * Flags: C = 1
+ * */
 int func_SEC(void) {
-    return FALSE;
+    cpu_reg.status.carry = 1;
+    return TRUE;
 }
 
+/*
+ * Set Decimal Mode: SED
+ * 1 -> D
+ * Flags: D = 1
+ *
+ * NOTE: decimal mode is not supported on NES core
+ * */
 int func_SED(void) {
+    cpu_reg.status.decimal = 1;
+    fprintf(stderr, "decimal mode is not supported!!!\n");
     return FALSE;
 }
 
