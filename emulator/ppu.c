@@ -116,7 +116,6 @@ static void null_write(unsigned char d){}
 static unsigned char null_read(void){return 0;}
 
 static void *ppu_loop(void* arg) {
-    struct timespec ts = {CPU_CLOCK_SEC, CPU_CLOCK_NSEC / 10};
     while (!ppu_end_loop) {
         sem_wait(&ppu_sem_id);
         if (ppu_pin.ce) {
@@ -128,7 +127,6 @@ static void *ppu_loop(void* arg) {
                 //read cycle
                 ppu_data = ppucore_read_func[ppu_addr]();
             }
-            nanosleep(&ts, NULL);
             release_bus();
         }
     }

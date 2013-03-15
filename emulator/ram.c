@@ -56,19 +56,16 @@ void set_ram_ce_pin(int ce) {
 
 static void *ram_loop(void* arg) {
     //ram data load delay is 1/10 (dummy interval)
-    struct timespec ts = {CPU_CLOCK_SEC, CPU_CLOCK_NSEC / 10};
 
     while (!ram_end_loop) {
         sem_wait(&ram_sem_id);
         if (ram_pin_status.ce) {
             if (ram_pin_status.oe) {
                 //read cycle
-                nanosleep(&ts, NULL);
                 ram_data = ram_buffer[ram_addr];
             }
             else if (ram_pin_status.we) {
                 //write cycle
-                nanosleep(&ts, NULL);
                 ram_buffer[ram_addr] = ram_data;
             }
             release_bus();

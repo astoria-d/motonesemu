@@ -1,9 +1,6 @@
 #ifndef __clock_h__
 #define __clock_h__
 
-#include <signal.h>
-#include <time.h>
-
 typedef int (clock_func_t) (void);
 
 int init_clock(void);
@@ -21,7 +18,7 @@ int start_cpu_clock(void);
 //#undef DEB_SLOW
 
 #ifdef DEB_SLOW
-#define CPU_CLOCK_FREQ  100L
+#define CPU_CLOCK_FREQ  500000L
 #else
 #define CPU_CLOCK_FREQ  1789773L
 #endif

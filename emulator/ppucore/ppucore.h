@@ -20,10 +20,10 @@
 
 void ppu_ctrl1_set(unsigned char data);
 void ppu_ctrl2_set(unsigned char data);
-void sprite_addr_set(unsigned char data);
+void sprite_addr_set(unsigned char addr);
 void sprite_data_set(unsigned char data);
 void ppu_scroll_set(unsigned char data);
-void ppu_vram_addr_set(unsigned char data);
+void ppu_vram_addr_set(unsigned char half_addr);
 void ppu_vram_data_set(unsigned char data);
 
 unsigned char ppu_status_get(void);

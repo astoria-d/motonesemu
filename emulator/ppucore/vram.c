@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "tools.h"
 #include "ppucore.h"
@@ -40,7 +41,7 @@ void set_bgtile(int tile_id);
 #define NAME_TBL_SIZE       V_SCREEN_TILE_SIZE * H_SCREEN_TILE_SIZE
 #define ATTR_TBL_SIZE       (VIRT_SCREEN_TILE_SIZE * VIRT_SCREEN_TILE_SIZE \
                             / ATTR_GROUP_UNIT / ATTR_UNIT_PER_BYTE)
-#define PALETTE_TBL_SIZE    16
+#define PALETTE_TBL_SIZE    0x10
 #define SPRITE_RAM_SIZE     0xff
 
 #define PATTERN_ADDR_MASK       (PATTERN_TBL_SIZE - 1)
@@ -50,8 +51,7 @@ void set_bgtile(int tile_id);
 
 #define PPU_ADDR_MASK       (0x4000 - 1)
 #define PALETTE_START       0x3F00
-#define NAME_ATTR_MASK1      (0x3000 - 1)
-#define NAME_ATTR_MASK2      (0x0400 - 1)
+#define NAME_ATTR_MASK      0x2FFF
 #define PALETTE_SPRITE_BIT  0x10
 
 #define NAME0_START         PATTERN_TBL_SIZE * 2
@@ -167,37 +167,42 @@ static void spr_ram_tbl_set(unsigned short offset, unsigned char data) {
 
 void vram_data_set(unsigned short addr, unsigned char data) {
 
+    //mirror 0x4000 up addr.
     addr &= PPU_ADDR_MASK;
 
     if (addr < 2 * PATTERN_TBL_SIZE) {
         //do nothing. pattern table is read only.
     }
     else if (addr >= PALETTE_START) {
+        // bg/sprite palette table.
         if (addr & PALETTE_SPRITE_BIT)
-            bg_palette_tbl_set(addr & PALETTE_TBL_ADDR_MASK, data);
+            spr_palette_tbl_set(addr & PALETTE_TBL_ADDR_MASK, data);
         else 
             bg_palette_tbl_set(addr & PALETTE_TBL_ADDR_MASK, data);
     }
     else {
-        if (addr < NAME0_START) {
+        // name/attr table.
+        // mask 0x3000 up addr.
+        addr &= NAME_ATTR_MASK;
+        if (addr < ATTR0_START) {
             name_tbl_set(0, addr - NAME0_START, data);
         }
-        else if (addr < ATTR0_START) {
+        else if (addr < NAME1_START) {
             attr_tbl_set(0, addr - ATTR0_START, data);
         }
-        else if (addr < NAME1_START) {
+        else if (addr < ATTR1_START) {
             name_tbl_set(1, addr - NAME1_START, data);
         }
-        else if (addr < ATTR1_START) {
+        else if (addr < NAME2_START) {
             attr_tbl_set(1, addr - ATTR1_START, data);
         }
-        else if (addr < NAME2_START) {
+        else if (addr < ATTR2_START) {
             name_tbl_set(2, addr - NAME2_START, data);
         }
-        else if (addr < ATTR2_START) {
+        else if (addr < NAME3_START) {
             attr_tbl_set(2, addr - ATTR2_START, data);
         }
-        else if (addr < NAME3_START) {
+        else if (addr < ATTR3_START) {
             name_tbl_set(3, addr - NAME3_START, data);
         }
         else {
@@ -218,30 +223,31 @@ unsigned char vram_data_get(unsigned short addr) {
     }
     else if (addr >= PALETTE_START) {
         if (addr & PALETTE_SPRITE_BIT)
-            return bg_palette_tbl_get(addr & PALETTE_TBL_ADDR_MASK);
+            return spr_palette_tbl_get(addr & PALETTE_TBL_ADDR_MASK);
         else 
             return bg_palette_tbl_get(addr & PALETTE_TBL_ADDR_MASK);
     }
     else {
-        if (addr < NAME0_START) {
+        addr &= NAME_ATTR_MASK;
+        if (addr < ATTR0_START) {
             return name_tbl_get(0, addr - NAME0_START);
         }
-        else if (addr < ATTR0_START) {
+        else if (addr < NAME1_START) {
             return attr_tbl_get(0, addr - ATTR0_START);
         }
-        else if (addr < NAME1_START) {
+        else if (addr < ATTR1_START) {
             return name_tbl_get(1, addr - NAME1_START);
         }
-        else if (addr < ATTR1_START) {
+        else if (addr < NAME2_START) {
             return attr_tbl_get(1, addr - ATTR1_START);
         }
-        else if (addr < NAME2_START) {
+        else if (addr < ATTR2_START) {
             return name_tbl_get(2, addr - NAME2_START);
         }
-        else if (addr < ATTR2_START) {
+        else if (addr < NAME3_START) {
             return attr_tbl_get(2, addr - ATTR2_START);
         }
-        else if (addr < NAME3_START) {
+        else if (addr < ATTR3_START) {
             return name_tbl_get(3, addr - NAME3_START);
         }
         else {
@@ -253,8 +259,100 @@ unsigned char vram_data_get(unsigned short addr) {
 
 /* VRAM manipulation... */
 
+//#define PPU_TEST
+#ifdef PPU_TEST
+/*
+ * ppu test function
+ * */
+static void test_ppu(void) {
+    int i;
+    unsigned char plt[32] = {
+            0x0f, 0x00, 0x10, 0x20,
+            0x0f, 0x06, 0x16, 0x26,
+            0x0f, 0x08, 0x18, 0x28,
+            0x0f, 0x0a, 0x1a, 0x2a,
+
+            0x0f, 0x00, 0x10, 0x20,
+            0x0f, 0x06, 0x16, 0x26,
+            0x0f, 0x08, 0x18, 0x28,
+            0x0f, 0x0a, 0x1a, 0x2a,
+    };
+
+/*
+    //palette tbl
+    for (i = 0; i < 16; i++)
+        vram_data_set(0x3f00 + i, plt[i]);
+    for (i = 0; i < 16; i++)
+        vram_data_set(0x3f10 + i, plt[i + 16]);
+*/
+    //name tbl
+    for (i = 0; i < 960; i++) 
+        vram_data_set(0x2000 + i, 0);
+
+/*
+*/
+    //attr tbl
+    for (i = 0; i < 64; i++) 
+        vram_data_set(0x23c0 + i, 0);
+
+    vram_data_set(0x2000 + 205, 'D');
+    vram_data_set(0x2000 + 206, 'e');
+    vram_data_set(0x2000 + 207, 'e');
+    vram_data_set(0x2000 + 208, '!');
+    vram_data_set(0x2000 + 209, '!');
+    //205 = palette gp2 00011011b 
+    //205 = 11
+    vram_data_set(0x23c0 + 11, 0x1b);
+
+    //other test.
+    vram_data_set(0x2000 + 300, 1);
+    vram_data_set(0x2000 + 0, 0x65);
+    /*
+     * */
+
+    set_monocolor(FALSE);
+
+    for (i = 0; i < 960; i++) 
+        set_bgtile(i);
+
+    //sprite test
+    struct sprite_attr sa;
+    sa.palette = 2;
+    sa.priority = 1;
+    sa.flip_h = 0;
+    sa.flip_v = 0;
+    set_sprite(30, 100, 'd', sa);
+    sa.flip_h = 1;
+    set_sprite(50, 100, 'd', sa);
+    sa.flip_v = 1;
+    set_sprite(70, 105, 'd', sa);
+
+    /*
+    vga_xfer();
+*/
+
+//void dump_vram(int type, int bank, unsigned short addr, int size);
+/*
+    dump_vram(VRAM_DUMP_TYPE_PTN, 0, 0, 0x100);
+    dump_vram(VRAM_DUMP_TYPE_NAME, 0, 0, 300);
+    dump_vram(VRAM_DUMP_TYPE_ATTR, 0, 0, 64);
+    dump_vram(VRAM_DUMP_TYPE_PLT, 0, 0, 16);
+*/
+}
+static int first_time = TRUE;
+#endif /* PPU_TEST */
+
 int show_background(void) {
     int i;
+
+#ifdef PPU_TEST
+    if (first_time) {
+        test_ppu();
+        first_time = FALSE;
+    }
+    return TRUE;
+#endif /*PPU_TEST */
+
     for (i = 0; i < H_SCREEN_TILE_SIZE * V_SCREEN_TILE_SIZE; i++) {
 #warning update bg must be more efficient. update only changed tile.
         set_bgtile(i);
@@ -442,6 +540,16 @@ int vram_init(void) {
     spr_palette_tbl = malloc(PALETTE_TBL_SIZE);
     if (spr_palette_tbl == NULL)
         return FALSE;
+
+    memset(pattern_tbl0, 0, PATTERN_TBL_SIZE);
+    memset(pattern_tbl1, 0, PATTERN_TBL_SIZE);
+    memset(sprite_ram, 0, SPRITE_RAM_SIZE);
+    memset(name_tbl0, 0, NAME_TBL_SIZE);
+    memset(name_tbl1, 0, NAME_TBL_SIZE);
+    memset(attr_tbl0, 0, ATTR_TBL_SIZE);
+    memset(attr_tbl1, 0, ATTR_TBL_SIZE);
+    memset(bg_palette_tbl, 0, PALETTE_TBL_SIZE);
+    memset(spr_palette_tbl, 0, PALETTE_TBL_SIZE);
 
     return TRUE;
 }

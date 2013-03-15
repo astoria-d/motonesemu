@@ -1,6 +1,5 @@
 #include <string.h>
 #include <stdio.h>
-#include <signal.h>
 #include <time.h>
 #include <stdlib.h>
 #include "tools.h"

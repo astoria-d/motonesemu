@@ -54,12 +54,10 @@ void set_rom_ce_pin(int ce) {
 
 static void *rom_loop(void* arg) {
     //rom data load delay is 1/10 (dummy interval)
-    struct timespec ts = {CPU_CLOCK_SEC, CPU_CLOCK_NSEC / 10};
 
     while (!rom_end_loop) {
         sem_wait(&rom_sem_id);
         if (rom_pin_status.ce) {
-            nanosleep(&ts, NULL);
             rom_data = rom_buffer[rom_addr];
             release_bus();
         }

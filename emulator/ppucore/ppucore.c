@@ -149,8 +149,8 @@ unsigned char ppu_status_get(void) {
     return ret;
 }
 
-void sprite_addr_set(unsigned char data) {
-    sprite_ram_addr_reg = data;
+void sprite_addr_set(unsigned char addr) {
+    sprite_ram_addr_reg = addr;
 }
 
 void sprite_data_set(unsigned char data) {
@@ -161,14 +161,16 @@ void ppu_scroll_set(unsigned char data) {
     scroll_reg = data;
 }
 
-void ppu_vram_addr_set(unsigned char data) {
+void ppu_vram_addr_set(unsigned char half_addr) {
+    //dprint("vram addr:%04x\n", half_addr);
     if (vram_addr_reg.cnt++ == 0)
-        vram_addr_reg.addr.b.low = data;
+        vram_addr_reg.addr.b.hi = half_addr;
     else
-        vram_addr_reg.addr.b.hi = data;
+        vram_addr_reg.addr.b.low = half_addr;
 }
 
 void ppu_vram_data_set(unsigned char data) {
+    //dprint("vram data:%04x\n", data);
     vram_data_reg = data;
 
     vram_data_set(vram_addr_reg.addr.s, data);
