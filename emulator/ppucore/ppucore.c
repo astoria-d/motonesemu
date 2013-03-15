@@ -89,6 +89,10 @@ static void *ppucore_loop(void* arg) {
     while (!ppucore_end_loop) {
         int updated = FALSE;
 
+        //start displaying
+        status_reg.vblank = 1;
+        status_reg.vram_ignore = 1;
+
         clock_gettime(CLOCK_REALTIME, &begin);
         if (ctrl_reg2.show_sprite) {
             //sprite in the back
@@ -104,6 +108,11 @@ static void *ppucore_loop(void* arg) {
         }
         if (updated) 
             vga_xfer();
+
+        //printing display done.
+        status_reg.vblank = 0;
+        status_reg.vram_ignore = 0;
+
         clock_gettime(CLOCK_REALTIME, &end);
 
         //sleep rest of time...
@@ -170,6 +179,10 @@ void ppu_vram_addr_set(unsigned char half_addr) {
 }
 
 void ppu_vram_data_set(unsigned char data) {
+    //check vram_ignore bit on write.
+    if (status_reg.vram_ignore)
+        return;
+
     //dprint("vram data:%04x\n", data);
     vram_data_reg = data;
 
