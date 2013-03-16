@@ -23,6 +23,7 @@ int execute6502(void);
 int test_and_set_exec(void);
 int emu_debug(void);
 int init_6502core(void);
+void break_hit(void);
 
 void pc_set(unsigned short addr);
 unsigned short pc_get(void);
@@ -132,7 +133,15 @@ static int decode_inst(void) {
 static int fetch_and_decode_inst(void) {
     int ret;
     extern int debug_mode;
+    unsigned short pc;
+    extern unsigned short break_point;
 
+
+    pc = pc_get();
+
+    if (break_point == pc) {
+        break_hit();
+    }
 
     if (debug_mode) {
         int ret = emu_debug();
@@ -140,7 +149,7 @@ static int fetch_and_decode_inst(void) {
             return FALSE;
     }
     //dprint("fetch\n");
-    load_memory(pc_get());
+    load_memory(pc);
     //dump_6502(FALSE);
 
     ret = decode_inst();

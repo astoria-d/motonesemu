@@ -9,6 +9,8 @@
 
 extern int debug_mode;
 void dump_6502(int full);
+void dump_mem(const char* msg, unsigned short base, 
+        unsigned short offset, unsigned char* buf, int size);
 
 #define MAX_HISTORY     10
 
@@ -17,14 +19,24 @@ struct cmd_list {
     char *cmd;
 };
 
-struct cmd_list* debug_history;
+static struct cmd_list* debug_history;
+static int log_msg;
+//global variable.
+unsigned short break_point;
 
 static void print_debug(void) {
-    printf("command:\n");
-    printf(" s: step\n");
-    printf(" c: continue\n");
-    printf(" show: show registers\n");
-    printf(" q: quit emulator\n");
+    printf("   command:\n");
+    printf("            s: step\n");
+    printf("            c: continue\n");
+    printf("       b addr: set break point\n");
+    printf("               (break point can be set only 1 address.)\n");
+    printf("          del: delete break point\n");
+    printf("  m addr size: memory dump\n");
+    printf("         show: show registers\n");
+    printf("        pshow: show ppu registers\n");
+    printf("  v addr size: vram dump\n");
+    printf("   log on/off: set log msg on/off\n");
+    printf("            q: quit emulator\n");
 }
 
 #if 0
@@ -83,6 +95,35 @@ int emu_debug(void) {
         else if (!strcmp(buf, "show")){
             dump_6502(TRUE);
         }
+        else if (!strcmp(buf, "log")){
+            scanf("%s", buf);
+            if (!strcmp(buf, "on")){
+                log_msg = TRUE;
+            }
+            else if (!strcmp(buf, "off")){
+                log_msg = FALSE;
+            }
+            else {
+                printf("log parameter must be either [on] or [off].\n");
+            }
+        }
+        else if (!strcmp(buf, "b")){
+            unsigned int val;
+            scanf("%x", &val);
+            break_point = val;
+        }
+        else if (!strcmp(buf, "del")){
+            break_point = 0;
+        }
+        else if (!strcmp(buf, "m")){
+            printf("not supported...\n");
+        }
+        else if (!strcmp(buf, "v")){
+            printf("not supported...\n");
+        }
+        else if (!strcmp(buf, "pshow")){
+            printf("not supported...\n");
+        }
         else {
             printf("unknown command [%s].\n", buf);
             print_debug();
@@ -95,6 +136,9 @@ int emu_debug(void) {
 void disasm(const char* mnemonic, int addr_mode, unsigned short pc) {
     unsigned char dbg_get_byte(unsigned short addr);
     unsigned short dbg_get_short(unsigned short addr);
+
+    if (!log_msg)
+        return;
 
     switch(addr_mode) {
         case ADDR_MODE_ZP:
@@ -164,10 +208,18 @@ void dump_mem(const char* msg, unsigned short base,
     printf("\n");
 }
 
+void break_hit(void) {
+    printf("------------------\nbreak...\n");
+    debug_mode = TRUE;
+    dump_6502(TRUE);
+}
+
 
 int init_debug(void) {
     dprint("init debug..\n");
     debug_history = NULL;
+    log_msg = debug_mode;
+    break_point = 0;
     //initscr();          /* Start curses mode          */
 
     return TRUE;

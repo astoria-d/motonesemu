@@ -29,7 +29,6 @@ static int init_datas(void) {
     int ret;
 
     main_loop_done = FALSE;
-    debug_mode = FALSE;
     critical_error = FALSE;
 
     ret = init_clock();
@@ -145,6 +144,7 @@ int main(int argc, char* argv[]) {
         print_usage();
         return -1;
     }
+    debug_mode = param_debug;
 
     ret = init_datas();
     if (!ret) {
@@ -168,7 +168,6 @@ int main(int argc, char* argv[]) {
         return FALSE;
     }
 
-    debug_mode = param_debug;
     reset_cpu();
     ret = start_clock();
     if (!ret) {
