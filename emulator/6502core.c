@@ -1181,21 +1181,21 @@ int func_JMP(void) {
 int func_JSR(void) {
     int done = FALSE;
 
-    //cycle 1,2
-    if (current_exec_index < 2) {
-        return jmp(current_exec_index, &done);
-    }
-    //cycle 3
-    else if (current_exec_index == 2) {
+    //cycle 1
+    if (current_exec_index == 0) {
         //save return addr(-1) hi.
         push((cpu_reg.pc - 1) >> 8);
         return TRUE;
     }
-    //cycle 4
-    else if (current_exec_index == 3) {
+    //cycle 2
+    else if (current_exec_index == 1) {
         //save return addr(-1) low.
         push(cpu_reg.pc - 1);
         return TRUE;
+    }
+    //cycle 3,4
+    else if (current_exec_index < 4) {
+        return jmp(current_exec_index - 2, &done);
     }
     //cycle 5
     else if (current_exec_index == 4) {
