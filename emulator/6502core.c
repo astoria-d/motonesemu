@@ -71,6 +71,10 @@ struct opcode_map {
 
 static struct cpu_6502 cpu_reg;
 static struct opcode_map *current_inst;
+
+//exec index is the cycle consumed for execution only.
+//cpu total cycle is current_exec_index + 1 because 
+//fetch cycle uses 1 cycle prior to the execution.
 static int current_exec_index;
 static int exec_done;
 
@@ -1136,19 +1140,19 @@ int func_JSR(void) {
         return jmp(current_exec_index, &done);
     }
     //cycle 3
-    else if (current_exec_index == 3) {
+    else if (current_exec_index == 2) {
         //save return addr(-1) hi.
         push((cpu_reg.pc - 1) >> 8);
         return TRUE;
     }
     //cycle 4
-    else if (current_exec_index == 4) {
+    else if (current_exec_index == 3) {
         //save return addr(-1) low.
         push(cpu_reg.pc - 1);
         return TRUE;
     }
     //cycle 5
-    else if (current_exec_index == 5) {
+    else if (current_exec_index == 4) {
         cpu_reg.pc = get_cpu_addr_buf();
         exec_done = TRUE;
         return TRUE;
@@ -1285,19 +1289,19 @@ int func_RTS(void) {
         return TRUE;
     }
     //cycle 2 
-    if (current_exec_index == 0) {
+    else if (current_exec_index == 1) {
         //set return addr low.
         set_cpu_addr_buf(get_cpu_data_buf());
         return TRUE;
     }
     //cycle 3
-    else if (current_exec_index == 1) {
+    else if (current_exec_index == 2) {
         //pop return addr hi.
         pop();
         return TRUE;
     }
     //cycle 4
-    else if (current_exec_index == 1) {
+    else if (current_exec_index == 3) {
         unsigned char hi, lo;
         unsigned short addr;
 
@@ -1309,7 +1313,7 @@ int func_RTS(void) {
         return TRUE;
     }
     //cycle 5
-    else if (current_exec_index == 2) {
+    else if (current_exec_index == 4) {
         //set pc = addr + 1
         cpu_reg.pc = get_cpu_addr_buf() + 1;
         exec_done = TRUE;
