@@ -17,13 +17,11 @@ static int reset_handler2(void);
 #define RESET_ADDR      0xFFFC
 #define IRQ_BRK_ADDR    0xFFFE
 
-void dump_6502(int full);
 int decode6502(unsigned char inst);
 int execute6502(void);
 int test_and_set_exec(void);
 int emu_debug(void);
 int init_6502core(void);
-void break_hit(void);
 
 void pc_set(unsigned short addr);
 unsigned short pc_get(void);
@@ -132,9 +130,16 @@ static int decode_inst(void) {
 
 static int fetch_and_decode_inst(void) {
     int ret;
-    extern int debug_mode;
     unsigned short pc;
+
+    //for debug.c
+    void break_hit(void);
+    void disas_pc(void);
+    void dump_6502(int full);
+    extern int debug_mode;
     extern unsigned short break_point;
+    extern int dbg_log_msg;
+    extern int critical_error;
 
 
     pc = pc_get();
@@ -143,19 +148,26 @@ static int fetch_and_decode_inst(void) {
         break_hit();
     }
 
+    if (dbg_log_msg) {
+        disas_pc();
+    }
     if (debug_mode) {
-        int ret = emu_debug();
+        if (!dbg_log_msg)
+            disas_pc();
+        ret = emu_debug();
         if (!ret)
             return FALSE;
     }
     //dprint("fetch\n");
     load_memory(pc);
-    //dump_6502(FALSE);
 
     ret = decode_inst();
     if (!ret) {
-        extern int critical_error;
+        disas_pc();
+        dump_6502(TRUE);
         fprintf(stderr, "cpu decode instruction failure.\n");
+        while (emu_debug());
+
         critical_error = TRUE;
         //raise(SIGINT);
         //abort();
@@ -170,6 +182,9 @@ static int fetch_and_decode_inst(void) {
 
 static int execute_inst(void) {
     int ret;
+
+    void disas_pc(void);
+    void dump_6502(int full);
     extern int critical_error;
 
     //dprint("execute\n");
@@ -180,6 +195,10 @@ static int execute_inst(void) {
     */
     if (!ret) {
         fprintf(stderr, "cpu execute instruction failure.\n");
+        disas_pc();
+        dump_6502(TRUE);
+        while (emu_debug());
+
         critical_error = TRUE;
         //raise(SIGINT);
         return ret;

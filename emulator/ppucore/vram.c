@@ -216,10 +216,10 @@ unsigned char vram_data_get(unsigned short addr) {
     addr &= PPU_ADDR_MASK;
 
     if (addr < PATTERN_TBL_SIZE) {
-        return name_tbl_get(0, addr & PATTERN_ADDR_MASK);
+        return pattern_tbl_get(0, addr & PATTERN_ADDR_MASK);
     }
     if (addr < 2 * PATTERN_TBL_SIZE) {
-        return name_tbl_get(1, addr & PATTERN_ADDR_MASK);
+        return pattern_tbl_get(1, addr & PATTERN_ADDR_MASK);
     }
     else if (addr >= PALETTE_START) {
         if (addr & PALETTE_SPRITE_BIT)
@@ -571,93 +571,4 @@ void clean_vram(void) {
     free(spr_palette_tbl);
 
 }
-
-
-/*
- * type 
- * 0: pattern table
- * 1: name table
- * 2: attribute table
- * 3: palette table (bank=0: bg, bank=1: sprite)
- * 4: sprite ram
- * */
-void dump_vram(int type, int bank, unsigned short addr, int size) {
-    char buf[100];
-    unsigned short base;
-    unsigned char *mem;
-
-    switch(type) {
-        case VRAM_DUMP_TYPE_PTN:
-            sprintf(buf, "pattern table %d:\n", bank);
-            base = (bank == 0 ? 0 : 0x1000);
-            mem = (bank == 0 ? pattern_tbl0 : pattern_tbl1);
-            break;
-
-        case VRAM_DUMP_TYPE_NAME:
-            sprintf(buf, "name table %d:\n", bank);
-            base = 0x2000 + bank * 0x400;
-            switch (bank) {
-                case 0:
-                    mem = name_tbl0;
-                    break;
-                case 1:
-                    mem = name_tbl1;
-                    break;
-                case 2:
-                    mem = name_tbl2;
-                    break;
-                case 3:
-                default:
-                    mem = name_tbl3;
-                    break;
-            }
-            break;
-
-        case VRAM_DUMP_TYPE_ATTR:
-            sprintf(buf, "attribute table %d:\n", bank);
-            base = 0x23c0 + bank * 0x400;
-            switch (bank) {
-                case 0:
-                    mem = attr_tbl0;
-                    break;
-                case 1:
-                    mem = attr_tbl1;
-                    break;
-                case 2:
-                    mem = attr_tbl2;
-                    break;
-                case 3:
-                default:
-                    mem = attr_tbl3;
-                    break;
-            }
-            break;
-
-        case VRAM_DUMP_TYPE_PLT:
-            switch (bank) {
-                case 0:
-                    base = 0x3f00;
-                    sprintf(buf, "bg palette table %d:\n", bank);
-                    mem = bg_palette_tbl;
-                    break;
-                case 1:
-                default:
-                    base = 0x3f10;
-                    sprintf(buf, "sprite palette table %d:\n", bank);
-                    mem = spr_palette_tbl;
-                    break;
-            }
-            break;
-
-        case VRAM_DUMP_TYPE_SPR:
-        default:
-            sprintf(buf, "sprite ram:\n");
-            base = 0;
-            mem = sprite_ram;
-            break;
-
-    }
-    dump_mem(buf, base, addr, mem, size);
-}
-
 

@@ -86,7 +86,6 @@ unsigned char get_cpu_data_buf(void);
 void set_cpu_data_buf(unsigned char data);
 unsigned short get_cpu_addr_buf(void);
 void set_cpu_addr_buf(unsigned short addr);
-void disasm(const char* mnemonic, int addr_mode, unsigned short pc);
 int get_clock_cnt(void);
 
 int func_ADC(void);
@@ -675,7 +674,7 @@ static void push(unsigned char data) {
 }
 
 static unsigned char pop(void) {
-    return load_memory(--cpu_reg.sp);
+    return load_memory(++cpu_reg.sp);
 }
 
 /*---------- instruction implementations.   -----------------*/
@@ -1184,13 +1183,14 @@ int func_JSR(void) {
     //cycle 1
     if (current_exec_index == 0) {
         //save return addr(-1) hi.
-        push((cpu_reg.pc - 1) >> 8);
+        //pc + 1 => jsr abslo abshi - 1
+        push((cpu_reg.pc + 1) >> 8);
         return TRUE;
     }
     //cycle 2
     else if (current_exec_index == 1) {
         //save return addr(-1) low.
-        push(cpu_reg.pc - 1);
+        push(cpu_reg.pc + 1);
         return TRUE;
     }
     //cycle 3,4
@@ -1592,7 +1592,6 @@ int decode6502(unsigned char inst) {
     /*dprint("decode inst: %02x > %s, %d cycle, %d len\n", 
             inst, omap->mnemonic, omap->cycle, omap->inst_len);
 */
-    disasm(omap->mnemonic, omap->addr_mode, cpu_reg.pc);
 
     current_inst = omap;
     current_exec_index = 0;
@@ -1650,6 +1649,16 @@ void pc_move(int offset) {
     cpu_reg.pc += offset;
 }
 
+int init_6502core(void) {
+    memset(&cpu_reg, 0, sizeof(struct cpu_6502));
+    current_inst = NULL;
+    current_exec_index = 0;
+    exec_done = FALSE;
+    return TRUE;
+}
+
+/* for debug.c */
+
 void dump_6502(int full) {
     printf("\nclock: %09d\n", get_clock_cnt());
     if (full) 
@@ -1675,11 +1684,13 @@ void dump_6502(int full) {
 }
 
 
-int init_6502core(void) {
-    memset(&cpu_reg, 0, sizeof(struct cpu_6502));
-    current_inst = NULL;
-    current_exec_index = 0;
-    exec_done = FALSE;
-    return TRUE;
-}
+void disas_pc(void) {
+    unsigned char inst;
+    unsigned char dbg_get_byte(unsigned short addr);
+    void disasm(const char* mnemonic, int addr_mode, unsigned short pc);
 
+    inst = dbg_get_byte(cpu_reg.pc);
+    struct opcode_map * omap = &opcode_list[inst];
+    
+    disasm(omap->mnemonic, omap->addr_mode, cpu_reg.pc);
+}

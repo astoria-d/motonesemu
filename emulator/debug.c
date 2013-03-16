@@ -9,8 +9,11 @@
 
 extern int debug_mode;
 void dump_6502(int full);
-void dump_mem(const char* msg, unsigned short base, 
-        unsigned short offset, unsigned char* buf, int size);
+void dump_vram(unsigned short addr, int size);
+void dump_mem(unsigned short addr, int size);
+unsigned char vram_data_get(unsigned short addr);
+unsigned char dbg_get_byte(unsigned short addr);
+unsigned short dbg_get_short(unsigned short addr);
 
 #define MAX_HISTORY     10
 
@@ -20,8 +23,8 @@ struct cmd_list {
 };
 
 static struct cmd_list* debug_history;
-static int log_msg;
 //global variable.
+int dbg_log_msg;
 unsigned short break_point;
 
 static void print_debug(void) {
@@ -98,10 +101,10 @@ int emu_debug(void) {
         else if (!strcmp(buf, "log")){
             scanf("%s", buf);
             if (!strcmp(buf, "on")){
-                log_msg = TRUE;
+                dbg_log_msg = TRUE;
             }
             else if (!strcmp(buf, "off")){
-                log_msg = FALSE;
+                dbg_log_msg = FALSE;
             }
             else {
                 printf("log parameter must be either [on] or [off].\n");
@@ -116,10 +119,18 @@ int emu_debug(void) {
             break_point = 0;
         }
         else if (!strcmp(buf, "m")){
-            printf("not supported...\n");
+            unsigned int addr;
+            int size;
+            scanf("%x", &addr);
+            scanf("%d", &size);
+            dump_mem(addr, size);
         }
         else if (!strcmp(buf, "v")){
-            printf("not supported...\n");
+            unsigned int addr;
+            int size;
+            scanf("%x", &addr);
+            scanf("%d", &size);
+            dump_vram(addr, size);
         }
         else if (!strcmp(buf, "pshow")){
             printf("not supported...\n");
@@ -134,11 +145,6 @@ int emu_debug(void) {
 }
 
 void disasm(const char* mnemonic, int addr_mode, unsigned short pc) {
-    unsigned char dbg_get_byte(unsigned short addr);
-    unsigned short dbg_get_short(unsigned short addr);
-
-    if (!log_msg)
-        return;
 
     switch(addr_mode) {
         case ADDR_MODE_ZP:
@@ -179,31 +185,55 @@ void disasm(const char* mnemonic, int addr_mode, unsigned short pc) {
     }
 }
 
-void dump_mem(const char* msg, unsigned short base, 
-        unsigned short offset, unsigned char* buf, int size) {
+void dump_vram(unsigned short addr, int size) {
     int i;
 
-    printf(msg);
-    if (offset % BYTES_PER_LINE)
-        printf("%04x: ", base + offset % BYTES_PER_LINE);
+    if (addr % BYTES_PER_LINE)
+        printf("%04x: ", addr % BYTES_PER_LINE);
 
-    for (i = 0; i < offset % BYTES_PER_LINE; i++) {
+    for (i = 0; i < addr % BYTES_PER_LINE; i++) {
         printf("   ");
     }
     for (i = 0; i < size; i++) {
-        if (offset % BYTES_PER_LINE == 0)
-            printf("%04x: ", base + offset);
+        if (addr % BYTES_PER_LINE == 0)
+            printf("%04x: ", addr);
 
-        printf("%02x ", *buf);
+        printf("%02x ", vram_data_get(addr));
 
-        if (offset % BYTES_PER_LINE == (BYTES_PER_LINE / 2) - 1)
+        if (addr % BYTES_PER_LINE == (BYTES_PER_LINE / 2) - 1)
             printf("  ");
 
-        if (offset % BYTES_PER_LINE == (BYTES_PER_LINE - 1))
+        if (addr % BYTES_PER_LINE == (BYTES_PER_LINE - 1))
             printf("\n");
 
-        buf++;
-        offset++;
+        addr++;
+    }
+    printf("\n");
+}
+
+void dump_mem(unsigned short addr, int size) {
+    int i;
+    unsigned char vram_data_get(unsigned short addr);
+
+    if (addr % BYTES_PER_LINE)
+        printf("%04x: ", addr % BYTES_PER_LINE);
+
+    for (i = 0; i < addr % BYTES_PER_LINE; i++) {
+        printf("   ");
+    }
+    for (i = 0; i < size; i++) {
+        if (addr % BYTES_PER_LINE == 0)
+            printf("%04x: ", addr);
+
+        printf("%02x ", dbg_get_byte(addr));
+
+        if (addr % BYTES_PER_LINE == (BYTES_PER_LINE / 2) - 1)
+            printf("  ");
+
+        if (addr % BYTES_PER_LINE == (BYTES_PER_LINE - 1))
+            printf("\n");
+
+        addr++;
     }
     printf("\n");
 }
@@ -218,7 +248,7 @@ void break_hit(void) {
 int init_debug(void) {
     dprint("init debug..\n");
     debug_history = NULL;
-    log_msg = debug_mode;
+    dbg_log_msg = FALSE;
     break_point = 0;
     //initscr();          /* Start curses mode          */
 

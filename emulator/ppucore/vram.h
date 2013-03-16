@@ -68,13 +68,6 @@ struct palette_unit {
     unsigned int    bit67   :2;
 } __attribute__ ((packed));
 
-#define VRAM_DUMP_TYPE_PTN  0
-#define VRAM_DUMP_TYPE_NAME 1
-#define VRAM_DUMP_TYPE_ATTR 2
-#define VRAM_DUMP_TYPE_PLT  3
-#define VRAM_DUMP_TYPE_SPR  4
-
-
 #define colto5bit(col8) ((col8) * 0x1F / 0xFF)
 #define colto8bit(col5) (((unsigned int)(col5)) * 0xFF / 0x1F)
 
