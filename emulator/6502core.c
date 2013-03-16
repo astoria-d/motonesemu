@@ -4,15 +4,20 @@
 #include "tools.h"
 #include "6502core.h"
 
+/*
+ * 6502 little endian
+ * hi bit > low bit order
+ * but gcc generates low > hi order for bit field
+ * */
 struct status_reg {
-    unsigned int negative       :1;
-    unsigned int overflow       :1;
-    unsigned int researved      :1;
-    unsigned int break_mode     :1;
-    unsigned int decimal        :1;
-    unsigned int irq_disable    :1;
-    unsigned int zero           :1;
     unsigned int carry          :1;
+    unsigned int zero           :1;
+    unsigned int irq_disable    :1;
+    unsigned int decimal        :1;
+    unsigned int break_mode     :1;
+    unsigned int researved      :1;
+    unsigned int overflow       :1;
+    unsigned int negative       :1;
 } __attribute__ ((packed));
 
 struct cpu_6502 {
@@ -47,6 +52,8 @@ typedef int (handler_6502_t) (void);
  **/
 
 #define N_BIT      0x80
+#define C_BIT      0x01
+#define V_BIT      0x40
 
 
 /* cycle check must be cleared on release  */
@@ -643,6 +650,20 @@ static void set_negative(unsigned char data) {
         cpu_reg.status.negative = 0;
 }
 
+static void set_carry(unsigned char data) {
+    if (data & C_BIT)
+        cpu_reg.status.carry = 1;
+    else
+        cpu_reg.status.carry = 0;
+}
+
+static void set_overflow(unsigned char data) {
+    if (data & V_BIT)
+        cpu_reg.status.overflow = 1;
+    else
+        cpu_reg.status.overflow = 0;
+}
+
 /*-------------   stack operation..  ---------------------*/
 //stack operation takes two cycles.
 static void push(unsigned char data) {
@@ -735,8 +756,51 @@ int func_BEQ(void) {
     return branch(cpu_reg.status.zero == 1);
 }
 
+/*
+ * Test Bits in Memory with Accumulator: BIT
+ * A & M
+ * Flags: N = M7, V = M6, Z
+ * */
 int func_BIT(void) {
-    return FALSE;
+    int done = FALSE;
+    int ret;
+    unsigned char cmp;
+
+    ret = load_addr_mode(&done);
+    if (!ret)
+        return FALSE;
+
+    if (!done) 
+        return TRUE;
+
+    cmp = get_cpu_data_buf();
+    //cmp N/V/Z flags set.
+    /*
+     * The BIT instruction really performs two distinct operations.
+     * First, it directly transfers the highest and next to highest 
+     * bits of the memory operand (that is, seven and six if m
+     * = 1, or fifteen and fourteen if m = 0) to the n and v flags. 
+     * It does this without modifying the value in the
+     * accumulator, making it useful for testing the sign of a value 
+     * in memory without loading it into one of the
+     * registers. An exception to this is the case where the immediate 
+     * addressing mode is used with the BIT
+     * instruction: since it serves no purpose to test the bits of a 
+     * constant value, the n and v flags are left unchanged in
+     * this one case.
+     * BITs second operation is to logically AND the value of the 
+     * memory operand with the value in the
+     * accumulator, conditioning the z flag in the status register to 
+     * reflect whether or not the result of the ANDing was
+     * zero or not, but without storing the result in the accumulator
+     * */
+    //6502 core supports zp and abs only
+    set_negative(cmp);
+    set_overflow(cmp);
+    set_zero(cpu_reg.acc & cmp);
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
 /*
@@ -834,16 +898,85 @@ int func_CLV(void) {
     return TRUE;
 }
 
+/*
+ * Compare Memory and Accumulator: CMP
+ * A - M
+ * Flags: N, Z, C
+ * */
 int func_CMP(void) {
-    return FALSE;
+    int done = FALSE;
+    int ret;
+    unsigned char cmp;
+
+    ret = load_addr_mode(&done);
+    if (!ret)
+        return FALSE;
+
+    if (!done) 
+        return TRUE;
+
+    cmp = get_cpu_data_buf();
+    //cmp C/N/Z flags set.
+    set_carry(cpu_reg.acc - cmp);
+    set_negative(cpu_reg.acc - cmp);
+    set_zero(cpu_reg.acc - cmp);
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
+/*
+ * Compare Memory and Index X: CPX
+ * X - M
+ * Flags: N, Z, C
+ * */
 int func_CPX(void) {
-    return FALSE;
+    int done = FALSE;
+    int ret;
+    unsigned char cmp;
+
+    ret = load_addr_mode(&done);
+    if (!ret)
+        return FALSE;
+
+    if (!done) 
+        return TRUE;
+
+    cmp = get_cpu_data_buf();
+    //cmp C/N/Z flags set.
+    set_carry(cpu_reg.x - cmp);
+    set_negative(cpu_reg.x - cmp);
+    set_zero(cpu_reg.x - cmp);
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
+/*
+ * Compare Memory with Index Y: CPY
+ * Y - M
+ * Flags: N, Z, C
+ * */
 int func_CPY(void) {
-    return FALSE;
+    int done = FALSE;
+    int ret;
+    unsigned char cmp;
+
+    ret = load_addr_mode(&done);
+    if (!ret)
+        return FALSE;
+
+    if (!done) 
+        return TRUE;
+
+    cmp = get_cpu_data_buf();
+    //cmp C/N/Z flags set.
+    set_carry(cpu_reg.y - cmp);
+    set_negative(cpu_reg.y - cmp);
+    set_zero(cpu_reg.y - cmp);
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
 int func_DEC(void) {
