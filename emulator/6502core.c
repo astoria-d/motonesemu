@@ -684,8 +684,31 @@ int func_ADC(void) {
     return FALSE;
 }
 
+/*
+ * AND Memory with Accumulator: AND
+ * A & M -> A
+ * Flags: N, Z
+ * */
 int func_AND(void) {
-    return FALSE;
+    int done = FALSE;
+    int ret;
+    unsigned char data;
+
+    ret = load_addr_mode(&done);
+    if (!ret)
+        return FALSE;
+
+    if (!done) 
+        return TRUE;
+
+    data = get_cpu_data_buf();
+    cpu_reg.acc = cpu_reg.acc & data;
+    //N/Z flags set.
+    set_negative(cpu_reg.acc);
+    set_zero(cpu_reg.acc);
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
 int func_ASL(void) {
@@ -1019,8 +1042,31 @@ int func_DEY(void) {
     return TRUE;
 }
 
+/*
+ * Exclusive-OR Memory with Accumulator: EOR
+ * A ^ M -> A
+ * Flags: N, Z
+ * */
 int func_EOR(void) {
-    return FALSE;
+    int done = FALSE;
+    int ret;
+    unsigned char data;
+
+    ret = load_addr_mode(&done);
+    if (!ret)
+        return FALSE;
+
+    if (!done) 
+        return TRUE;
+
+    data = get_cpu_data_buf();
+    cpu_reg.acc = cpu_reg.acc ^ data;
+    //N/Z flags set.
+    set_negative(cpu_reg.acc);
+    set_zero(cpu_reg.acc);
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
 int func_INC(void) {
@@ -1243,8 +1289,31 @@ int func_NOP(void) {
     return FALSE;
 }
 
+/*
+ * OR Memory with Accumulator: ORA
+ * A | M -> A
+ * Flags: N, Z
+ * */
 int func_ORA(void) {
-    return FALSE;
+    int done = FALSE;
+    int ret;
+    unsigned char data;
+
+    ret = load_addr_mode(&done);
+    if (!ret)
+        return FALSE;
+
+    if (!done) 
+        return TRUE;
+
+    data = get_cpu_data_buf();
+    cpu_reg.acc = cpu_reg.acc | data;
+    //N/Z flags set.
+    set_negative(cpu_reg.acc);
+    set_zero(cpu_reg.acc);
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
 int func_PHA(void) {
