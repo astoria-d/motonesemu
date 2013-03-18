@@ -89,7 +89,7 @@ static void end_loop(void) {
     //join the running thread.
     pthread_join(cpu_thread_id, &ret);
 
-    dprint("clock thread joined.\n");
+    dprint("cpu clock thread joined.\n");
 
 }
 
