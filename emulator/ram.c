@@ -84,6 +84,7 @@ unsigned char dbg_ram_get_byte(unsigned short offset) {
 }
 unsigned short dbg_ram_get_short(unsigned short offset) {
     unsigned short ret;
+    //little endian. low byte first.
     ret = ram_buffer[offset];
     ret |= (ram_buffer[offset + 1] << 8);
     return ret;

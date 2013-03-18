@@ -52,8 +52,10 @@ typedef int (handler_6502_t) (void);
  **/
 
 #define N_BIT      0x80
-#define C_BIT      0x01
 #define V_BIT      0x40
+
+//stack pointer base address
+#define STACK_BASE  0x100
 
 
 /* cycle check must be cleared on release  */
@@ -267,9 +269,9 @@ static int load_addr_mode(int *done) {
                     unsigned short addr = get_cpu_addr_buf();
                     unsigned short hi_8, added_hi_8;
 
-                    hi_8 = addr >> 8;
+                    hi_8 = (addr >> 8);
                     addr += cpu_reg.x;
-                    added_hi_8 = addr >> 8;
+                    added_hi_8 = (addr >> 8);
 
                     if (hi_8 == added_hi_8) {
                         load_memory(addr);
@@ -315,9 +317,9 @@ static int load_addr_mode(int *done) {
                     unsigned short addr = get_cpu_addr_buf();
                     unsigned short hi_8, added_hi_8;
 
-                    hi_8 = addr >> 8;
+                    hi_8 = (addr >> 8);
                     addr += cpu_reg.y;
-                    added_hi_8 = addr >> 8;
+                    added_hi_8 = (addr >> 8);
 
                     if (hi_8 == added_hi_8) {
                         load_memory(addr);
@@ -360,6 +362,8 @@ static int load_addr_mode(int *done) {
             else if (current_exec_index == 2) {
                 unsigned short addr = get_cpu_data_buf();
                 load_addr(addr, 1);
+                //save addr in the temporary buffer.
+                set_cpu_data_buf(addr);
                 return TRUE;
             }
             else if (current_exec_index == 3) {
@@ -383,6 +387,8 @@ static int load_addr_mode(int *done) {
             else if (current_exec_index == 1) {
                 unsigned short addr = get_cpu_data_buf();
                 load_addr(addr, 1);
+                //save addr in the temporary buffer.
+                set_cpu_data_buf(addr);
                 return TRUE;
             }
             else if (current_exec_index == 2) {
@@ -393,12 +399,12 @@ static int load_addr_mode(int *done) {
             else if (current_exec_index == 3) {
                 if (current_inst->cycle_aux) {
                     //Add one cycle if indexing across page boundary
-                    unsigned short addr = get_cpu_data_buf();
+                    unsigned short addr = get_cpu_addr_buf();
                     unsigned short hi_8, added_hi_8;
 
-                    hi_8 = addr >> 8;
+                    hi_8 = (addr >> 8);
                     addr += cpu_reg.y;
-                    added_hi_8 = addr >> 8;
+                    added_hi_8 = (addr >> 8);
 
                     if (hi_8 == added_hi_8) {
                         load_memory(addr);
@@ -406,11 +412,11 @@ static int load_addr_mode(int *done) {
                     }
 
                     //load value in the next cycle.
-                    set_cpu_data_buf(addr);
+                    set_cpu_addr_buf(addr);
                     return TRUE;
                 }
                 else {
-                    unsigned short addr = get_cpu_data_buf();
+                    unsigned short addr = get_cpu_addr_buf();
                     addr += cpu_reg.y;
                     load_memory(addr);
                     goto addr_mode_done;
@@ -418,7 +424,7 @@ static int load_addr_mode(int *done) {
             }
             else if (current_exec_index == 4) {
                 if (current_inst->cycle_aux) {
-                    unsigned short addr = get_cpu_data_buf();
+                    unsigned short addr = get_cpu_addr_buf();
                     load_memory(addr);
                     goto addr_mode_done;
                 }
@@ -583,6 +589,8 @@ static int store_addr_mode(unsigned char data, int *done) {
             else if (current_exec_index == 2) {
                 unsigned short addr = get_cpu_data_buf();
                 load_addr(addr, 1);
+                //save addr in the temporary buffer.
+                set_cpu_data_buf(addr);
                 return TRUE;
             }
             else if (current_exec_index == 3) {
@@ -606,6 +614,8 @@ static int store_addr_mode(unsigned char data, int *done) {
             else if (current_exec_index == 1) {
                 unsigned short addr = get_cpu_data_buf();
                 load_addr(addr, 1);
+                //save addr in the temporary buffer.
+                set_cpu_data_buf(addr);
                 return TRUE;
             }
             else if (current_exec_index == 2) {
@@ -614,13 +624,13 @@ static int store_addr_mode(unsigned char data, int *done) {
                 return TRUE;
             }
             else if (current_exec_index == 3) {
-                unsigned short addr = get_cpu_data_buf();
+                unsigned short addr = get_cpu_addr_buf();
                 addr += cpu_reg.y;
-                set_cpu_data_buf(addr);
+                set_cpu_addr_buf(addr);
                 return TRUE;
             }
             else if (current_exec_index == 4) {
-                unsigned short addr = get_cpu_data_buf();
+                unsigned short addr = get_cpu_addr_buf();
                 store_memory(addr, data);
                 goto addr_mode_done;
             }
@@ -653,8 +663,8 @@ static void set_negative(unsigned char data) {
         cpu_reg.status.negative = 0;
 }
 
-static void set_carry(unsigned char data) {
-    if (data & C_BIT)
+static void set_carry(unsigned char data, unsigned char cmp) {
+    if (data - cmp >= 0)
         cpu_reg.status.carry = 1;
     else
         cpu_reg.status.carry = 0;
@@ -670,11 +680,13 @@ static void set_overflow(unsigned char data) {
 /*-------------   stack operation..  ---------------------*/
 //stack operation takes two cycles.
 static void push(unsigned char data) {
-    store_memory(cpu_reg.sp--, data);
+    store_memory(STACK_BASE + cpu_reg.sp, data);
+    cpu_reg.sp--;
 }
 
 static unsigned char pop(void) {
-    return load_memory(++cpu_reg.sp);
+    cpu_reg.sp++;
+    return load_memory(STACK_BASE + cpu_reg.sp);
 }
 
 /*---------- instruction implementations.   -----------------*/
@@ -734,7 +746,7 @@ static int branch(unsigned char condition) {
         unsigned short addr = cpu_reg.pc;
         unsigned short br_addr = cpu_reg.pc + rel;
 
-        if (addr >> 8 == br_addr >> 8) {
+        if ((addr >> 8) == (br_addr >> 8)) {
             //in page branch.
             cpu_reg.pc = br_addr;
             exec_done = TRUE;
@@ -943,7 +955,7 @@ int func_CMP(void) {
 
     cmp = get_cpu_data_buf();
     //cmp C/N/Z flags set.
-    set_carry(cpu_reg.acc - cmp);
+    set_carry(cpu_reg.acc, cmp);
     set_negative(cpu_reg.acc - cmp);
     set_zero(cpu_reg.acc - cmp);
 
@@ -970,7 +982,7 @@ int func_CPX(void) {
 
     cmp = get_cpu_data_buf();
     //cmp C/N/Z flags set.
-    set_carry(cpu_reg.x - cmp);
+    set_carry(cpu_reg.x, cmp);
     set_negative(cpu_reg.x - cmp);
     set_zero(cpu_reg.x - cmp);
 
@@ -997,7 +1009,17 @@ int func_CPY(void) {
 
     cmp = get_cpu_data_buf();
     //cmp C/N/Z flags set.
-    set_carry(cpu_reg.y - cmp);
+
+/*
+ * Subtract the data located at the effective address specified 
+ * by the operand from the contents of the Y
+ * register, setting the carry, zero, and negative flags based 
+ * on the result, but without altering the contents of either
+ * the memory location or the register. The comparison is of 
+ * unsigned values only (expect for signed comparison
+ * for equality).
+ * */
+    set_carry(cpu_reg.y, cmp);
     set_negative(cpu_reg.y - cmp);
     set_zero(cpu_reg.y - cmp);
 
@@ -1684,13 +1706,14 @@ void dump_6502(int full) {
 }
 
 
-void disas_pc(void) {
+int disas_inst(unsigned short addr) {
     unsigned char inst;
     unsigned char dbg_get_byte(unsigned short addr);
     void disasm(const char* mnemonic, int addr_mode, unsigned short pc);
 
-    inst = dbg_get_byte(cpu_reg.pc);
+    inst = dbg_get_byte(addr);
     struct opcode_map * omap = &opcode_list[inst];
     
-    disasm(omap->mnemonic, omap->addr_mode, cpu_reg.pc);
+    disasm(omap->mnemonic, omap->addr_mode, addr);
+    return omap->inst_len;
 }

@@ -74,6 +74,7 @@ unsigned char load_memory(unsigned short addr) {
 }
 
 void store_memory(unsigned short addr, unsigned char data) {
+    dprint("store: @%04x = %02x\n", addr, data);
 
     set_rw_pin(1);
     set_bus_addr(addr);
@@ -91,13 +92,13 @@ void store_memory(unsigned short addr, unsigned char data) {
  * the parameter "cycle" means first or second read.
  * */
 unsigned short load_addr(unsigned short addr, int cycle) {
-    unsigned char byte = load_memory(addr);
+    unsigned short byte = load_memory(addr);
 
     ///NES=little endian. lower byte first, higher byte second.
     if (cycle == 1)
-        cpu_addr_buffer = byte;
+        cpu_addr_buffer = ((cpu_addr_buffer & 0xff00) | byte);
     else
-        cpu_addr_buffer |= byte << 8;
+        cpu_addr_buffer = ((cpu_addr_buffer & 0x00ff) | (byte << 8));
     return cpu_addr_buffer;
 }
 
@@ -134,7 +135,7 @@ static int fetch_and_decode_inst(void) {
 
     //for debug.c
     void break_hit(void);
-    void disas_pc(void);
+    int disas_inst(unsigned short addr);
     void dump_6502(int full);
     extern int debug_mode;
     extern unsigned short break_point;
@@ -149,11 +150,11 @@ static int fetch_and_decode_inst(void) {
     }
 
     if (dbg_log_msg) {
-        disas_pc();
+        disas_inst(pc);
     }
     if (debug_mode) {
         if (!dbg_log_msg)
-            disas_pc();
+            disas_inst(pc);
         ret = emu_debug();
         if (!ret)
             return FALSE;
@@ -163,7 +164,7 @@ static int fetch_and_decode_inst(void) {
 
     ret = decode_inst();
     if (!ret) {
-        disas_pc();
+        disas_inst(pc);
         dump_6502(TRUE);
         fprintf(stderr, "cpu decode instruction failure.\n");
         while (emu_debug());
@@ -183,7 +184,7 @@ static int fetch_and_decode_inst(void) {
 static int execute_inst(void) {
     int ret;
 
-    void disas_pc(void);
+    int disas_inst(unsigned short addr);
     void dump_6502(int full);
     extern int critical_error;
 
@@ -195,7 +196,7 @@ static int execute_inst(void) {
     */
     if (!ret) {
         fprintf(stderr, "cpu execute instruction failure.\n");
-        disas_pc();
+        disas_inst(pc_get());
         dump_6502(TRUE);
         while (emu_debug());
 

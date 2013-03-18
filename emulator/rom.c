@@ -72,6 +72,7 @@ unsigned char dbg_rom_get_byte(unsigned short offset) {
 }
 unsigned short dbg_rom_get_short(unsigned short offset) {
     unsigned short ret;
+    //little endian. low byte first.
     ret = rom_buffer[offset];
     ret |= (rom_buffer[offset + 1] << 8);
     return ret;

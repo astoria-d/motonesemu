@@ -60,6 +60,9 @@ unsigned char dbg_get_byte(unsigned short addr) {
 unsigned short dbg_get_short(unsigned short addr) {
         return 0;
 }
+int disas_inst(unsigned short addr) {
+    return 0;
+}
 
 /*
  * ppu test function
