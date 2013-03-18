@@ -1,5 +1,4 @@
 #include <string.h>
-#include <semaphore.h>
 
 #include "tools.h"
 #include "bus.h"
@@ -24,7 +23,6 @@ struct cpu_pin {
 static unsigned short addr_bus;
 static unsigned char data_bus;
 static struct cpu_pin pin_status;
-static sem_t sem_bus_wait;
 
 /*
  * NES memory map
@@ -52,7 +50,6 @@ static sem_t sem_bus_wait;
 void release_bus(void) {
     //dprint("release bus\n");
     pin_status.ready = 1;
-    sem_post(&sem_bus_wait);
 }
 
 /*
@@ -64,9 +61,6 @@ void start_bus(void) {
         /*case rom*/
         pin_status.ready = 0;
         set_rom_ce_pin(TRUE);
-
-        //wait for the bus ready.
-        sem_wait(&sem_bus_wait);
     }
     else if ((addr_bus & IO_APU_BIT) == IO_APU_BIT) {
     }
@@ -74,18 +68,11 @@ void start_bus(void) {
         /*case ppu*/
         pin_status.ready = 0;
         set_ppu_ce_pin(TRUE);
-
-        //wait for the bus ready.
-        //dprint("wait for ppu done\n");
-        sem_wait(&sem_bus_wait);
     }
     else {
         /*case ram*/
         pin_status.ready = 0;
         set_ram_ce_pin(TRUE);
-
-        //wait for the bus ready.
-        sem_wait(&sem_bus_wait);
     }
 }
 
@@ -178,22 +165,15 @@ void set_rw_pin(int rw) {
 }
 
 int init_bus(void) {
-    int ret;
-
     addr_bus = 0;
     data_bus = 0;
     memset(&pin_status, 0, sizeof(struct cpu_pin));
     pin_status.ready = 1;
 
-    ret = sem_init(&sem_bus_wait, 0, 0);
-    if (ret != RT_OK)
-        return FALSE;
-
     return TRUE;
 }
 
 void clean_bus(void){
-    sem_destroy(&sem_bus_wait);
 }
 
 /*
