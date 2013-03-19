@@ -162,6 +162,8 @@ struct opcode_map opcode_list [255] = {
 /*
  * load from memory in various addressing mode.
  * cpu_data_buf has the output value.
+ *
+ *
  * */
 static int load_addr_mode(int *done) {
     switch (current_inst->addr_mode) {
@@ -194,6 +196,14 @@ static int load_addr_mode(int *done) {
             }
             break;
 
+            /*
+             * Indexed zero page
+             * Wraparound is used when performing the addition so 
+             * the address of the data will always be
+             * in zero page. For example, if the operand is $FF and 
+             * the X register contains $01 the address
+             * of the data will be $0000, not $0100.
+             * */
         case ADDR_MODE_ZP_X:
             //zp indexed with x takes three cycles.
             if (current_exec_index == 0) {
@@ -207,7 +217,7 @@ static int load_addr_mode(int *done) {
                 return TRUE;
             }
             else if (current_exec_index == 2) {
-                unsigned short zp = get_cpu_data_buf();
+                unsigned char zp = get_cpu_data_buf();
                 load_memory(zp);
                 goto addr_mode_done;
             }
@@ -226,7 +236,7 @@ static int load_addr_mode(int *done) {
                 return TRUE;
             }
             else if (current_exec_index == 2) {
-                unsigned short zp = get_cpu_data_buf();
+                unsigned char zp = get_cpu_data_buf();
                 load_memory(zp);
                 goto addr_mode_done;
             }
@@ -279,7 +289,7 @@ static int load_addr_mode(int *done) {
                     }
 
                     //load value in the next cycle.
-                    set_cpu_data_buf(addr);
+                    set_cpu_addr_buf(addr);
                     return TRUE;
                 }
                 else {
@@ -291,7 +301,7 @@ static int load_addr_mode(int *done) {
             }
             else if (current_exec_index == 3) {
                 if (current_inst->cycle_aux) {
-                    unsigned short addr = get_cpu_data_buf();
+                    unsigned short addr = get_cpu_addr_buf();
                     load_memory(addr);
                     goto addr_mode_done;
                 }
@@ -327,7 +337,7 @@ static int load_addr_mode(int *done) {
                     }
 
                     //load value in the next cycle.
-                    set_cpu_data_buf(addr);
+                    set_cpu_addr_buf(addr);
                     return TRUE;
                 }
                 else {
@@ -339,7 +349,7 @@ static int load_addr_mode(int *done) {
             }
             else if (current_exec_index == 3) {
                 if (current_inst->cycle_aux) {
-                    unsigned short addr = get_cpu_data_buf();
+                    unsigned short addr = get_cpu_addr_buf();
                     load_memory(addr);
                     goto addr_mode_done;
                 }
@@ -360,14 +370,14 @@ static int load_addr_mode(int *done) {
                 return TRUE;
             }
             else if (current_exec_index == 2) {
-                unsigned short addr = get_cpu_data_buf();
+                unsigned char addr = get_cpu_data_buf();
                 load_addr(addr, 1);
                 //save addr in the temporary buffer.
                 set_cpu_data_buf(addr);
                 return TRUE;
             }
             else if (current_exec_index == 3) {
-                unsigned short addr = get_cpu_data_buf();
+                unsigned char addr = get_cpu_data_buf();
                 load_addr(addr + 1, 2);
                 return TRUE;
             }
@@ -385,14 +395,14 @@ static int load_addr_mode(int *done) {
                 return TRUE;
             }
             else if (current_exec_index == 1) {
-                unsigned short addr = get_cpu_data_buf();
+                unsigned char addr = get_cpu_data_buf();
                 load_addr(addr, 1);
                 //save addr in the temporary buffer.
                 set_cpu_data_buf(addr);
                 return TRUE;
             }
             else if (current_exec_index == 2) {
-                unsigned short addr = get_cpu_data_buf();
+                unsigned char addr = get_cpu_data_buf();
                 load_addr(addr + 1, 2);
                 return TRUE;
             }
@@ -480,7 +490,7 @@ static int store_addr_mode(unsigned char data, int *done) {
                 return TRUE;
             }
             else if (current_exec_index == 2) {
-                unsigned short zp = get_cpu_data_buf();
+                unsigned char zp = get_cpu_data_buf();
                 store_memory(zp, data);
                 goto addr_mode_done;
             }
@@ -499,7 +509,7 @@ static int store_addr_mode(unsigned char data, int *done) {
                 return TRUE;
             }
             else if (current_exec_index == 2) {
-                unsigned short zp = get_cpu_data_buf();
+                unsigned char zp = get_cpu_data_buf();
                 store_memory(zp, data);
                 goto addr_mode_done;
             }
@@ -539,11 +549,11 @@ static int store_addr_mode(unsigned char data, int *done) {
             else if (current_exec_index == 2) {
                 unsigned short addr = get_cpu_addr_buf();
                 addr += cpu_reg.x;
-                set_cpu_data_buf(addr);
+                set_cpu_addr_buf(addr);
                 return TRUE;
             }
             else if (current_exec_index == 3) {
-                unsigned short addr = get_cpu_data_buf();
+                unsigned short addr = get_cpu_addr_buf();
                 store_memory(addr, data);
                 goto addr_mode_done;
             }
@@ -563,11 +573,11 @@ static int store_addr_mode(unsigned char data, int *done) {
             else if (current_exec_index == 2) {
                 unsigned short addr = get_cpu_addr_buf();
                 addr += cpu_reg.y;
-                set_cpu_data_buf(addr);
+                set_cpu_addr_buf(addr);
                 return TRUE;
             }
             else if (current_exec_index == 3) {
-                unsigned short addr = get_cpu_data_buf();
+                unsigned short addr = get_cpu_addr_buf();
                 store_memory(addr, data);
                 goto addr_mode_done;
             }
@@ -587,14 +597,14 @@ static int store_addr_mode(unsigned char data, int *done) {
                 return TRUE;
             }
             else if (current_exec_index == 2) {
-                unsigned short addr = get_cpu_data_buf();
+                unsigned char addr = get_cpu_data_buf();
                 load_addr(addr, 1);
                 //save addr in the temporary buffer.
                 set_cpu_data_buf(addr);
                 return TRUE;
             }
             else if (current_exec_index == 3) {
-                unsigned short addr = get_cpu_data_buf();
+                unsigned char addr = get_cpu_data_buf();
                 load_addr(addr + 1, 2);
                 return TRUE;
             }
@@ -612,14 +622,14 @@ static int store_addr_mode(unsigned char data, int *done) {
                 return TRUE;
             }
             else if (current_exec_index == 1) {
-                unsigned short addr = get_cpu_data_buf();
+                unsigned char addr = get_cpu_data_buf();
                 load_addr(addr, 1);
                 //save addr in the temporary buffer.
                 set_cpu_data_buf(addr);
                 return TRUE;
             }
             else if (current_exec_index == 2) {
-                unsigned short addr = get_cpu_data_buf();
+                unsigned char addr = get_cpu_data_buf();
                 load_addr(addr + 1, 2);
                 return TRUE;
             }
@@ -702,7 +712,7 @@ static int memory_to_memory(int *do_operation, int *done) {
                 return TRUE;
             }
             else if (current_exec_index == 2) {
-                unsigned short zp = get_cpu_data_buf();
+                unsigned char zp = get_cpu_data_buf();
                 load_memory(zp);
                 set_cpu_addr_buf(zp);
                 return TRUE;
@@ -714,7 +724,7 @@ static int memory_to_memory(int *do_operation, int *done) {
                 return TRUE;
             }
             else if (current_exec_index == 4) {
-                unsigned short zp = get_cpu_addr_buf();
+                unsigned char zp = get_cpu_addr_buf();
                 unsigned short data = get_cpu_data_buf();
                 store_memory(zp, data);
                 goto mm_done;
@@ -765,7 +775,7 @@ static int memory_to_memory(int *do_operation, int *done) {
                 return TRUE;
             }
             else if (current_exec_index == 2) {
-                unsigned char abs = get_cpu_addr_buf();
+                unsigned short abs = get_cpu_addr_buf();
                 set_cpu_addr_buf(abs + cpu_reg.x);
                 return TRUE;
             }
@@ -1811,6 +1821,8 @@ int func_TYA(void) {
     exec_done = TRUE;
     return TRUE;
 }
+
+/* ------------------     6502 execution..      ------------------- */
 
 /*
  * decode6502:
