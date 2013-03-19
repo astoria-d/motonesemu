@@ -63,6 +63,8 @@ unsigned short dbg_get_short(unsigned short addr) {
 int disas_inst(unsigned short addr) {
     return 0;
 }
+void set_nmi_pin(int val) {
+}
 
 /*
  * ppu test function

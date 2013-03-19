@@ -61,6 +61,11 @@ typedef int (handler_6502_t) (void);
 /* cycle check must be cleared on release  */
 #define cycle_check
 
+
+#define NMI_VECTOR        0xFFFA
+#define RESET_VECTOR      0xFFFC
+#define IRQ_VECTOR        0xFFFE
+
 struct opcode_map {
     unsigned char   opcode;
     char            mnemonic[4];
@@ -79,6 +84,7 @@ static struct opcode_map *current_inst;
 //fetch cycle uses 1 cycle prior to the execution.
 static int current_exec_index;
 static int exec_done;
+static int intr_done;
 
 unsigned char load_memory(unsigned short addr);
 unsigned short load_addr(unsigned short addr, int cycle);
@@ -1840,7 +1846,6 @@ int decode6502(unsigned char inst) {
 */
 
     current_inst = omap;
-    current_exec_index = 0;
 
     return TRUE;
 }
@@ -1848,8 +1853,10 @@ int decode6502(unsigned char inst) {
 int test_and_set_exec(void) {
     int ret;
     ret = exec_done;
-    if (exec_done)
+    if (exec_done) {
         exec_done = FALSE;
+        current_exec_index = 0;
+    }
     return ret;
 }
 
@@ -1877,9 +1884,80 @@ int execute6502(void) {
             return FALSE;
         }
     }
-
 #endif
 
+    return ret;
+}
+
+int reset_exec6502(void) {
+    switch (current_exec_index++) {
+        case 0:
+            //step 4: load intvec low.
+            load_addr(RESET_VECTOR, 1);
+            return TRUE;
+        case 1:
+            //step 5: load intvec hi.
+            load_addr(RESET_VECTOR + 1, 2);
+            return TRUE;
+        case 2:
+            //step 6: set pc
+            cpu_reg.pc = get_cpu_addr_buf();
+            intr_done = TRUE;
+            return TRUE;
+    }
+    return FALSE;
+}
+
+int reset6502(void) {
+    current_exec_index = 0;
+    return reset_exec6502();
+}
+
+int nmi6502(void) {
+    dprint("nmi...\n");
+
+    //nmi6502 is always called when current instruction execution is done.
+    switch (current_exec_index++) {
+        case 0:
+            //first: push pc hi.
+            push(cpu_reg.pc >> 8);
+            return TRUE;
+        case 1:
+            //second: push pc low.
+            push(cpu_reg.pc);
+            return TRUE;
+        case 2:
+            {
+                //step 3, push status_reg
+                unsigned char stat;
+                memcpy(&stat, &cpu_reg, sizeof(stat));
+                push(stat);
+                return TRUE;
+            }
+        case 3:
+            //step 4: load intvec low.
+            load_addr(NMI_VECTOR, 1);
+            return TRUE;
+        case 4:
+            //step 5: load intvec hi.
+            load_addr(NMI_VECTOR + 1, 2);
+            return TRUE;
+        case 5:
+            //step 6: set pc
+            cpu_reg.pc = get_cpu_addr_buf();
+            intr_done = TRUE;
+            return TRUE;
+    }
+    return FALSE;
+}
+
+int test_and_set_intr(void) {
+    int ret;
+    ret = intr_done;
+    if (ret) {
+        current_exec_index = 0;
+        intr_done = FALSE;
+    }
     return ret;
 }
 
@@ -1900,6 +1978,7 @@ int init_6502core(void) {
     current_inst = NULL;
     current_exec_index = 0;
     exec_done = FALSE;
+    intr_done = FALSE;
     return TRUE;
 }
 

@@ -13,6 +13,9 @@ void clean_vscreen(void);
 int palette_init(void);
 void vga_xfer(void);
 void set_monocolor (int mono);
+void set_nmi_pin(int val);
+
+
 static void dump_ppu_reg(void);
 
 /*
@@ -119,6 +122,10 @@ static void *ppucore_loop(void* arg) {
         //printing display done.
         status_reg.vblank = 1;
         status_reg.vram_ignore = 0;
+        if (ctrl_reg1.nmi_vblank) {
+            //generate nmi interrupt to the cpu.
+            set_nmi_pin(TRUE);
+        }
 
         clock_gettime(CLOCK_REALTIME, &end);
 

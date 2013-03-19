@@ -10,25 +10,30 @@
 static int fetch_and_decode_inst(void);
 static int decode_inst(void);
 static int execute_inst(void);
-static int reset_handler1(void);
-static int reset_handler2(void);
 
-#define NMI_ADDR        0xFFFA
-#define RESET_ADDR      0xFFFC
-#define IRQ_BRK_ADDR    0xFFFE
-
+int reset6502(void);
+int reset_exec6502(void);
 int decode6502(unsigned char inst);
 int execute6502(void);
 int test_and_set_exec(void);
+int test_and_set_intr(void);
 int emu_debug(void);
 int init_6502core(void);
+int nmi6502(void);
 
 void pc_set(unsigned short addr);
 unsigned short pc_get(void);
 void pc_move(int offset);
-void start_bus(void);
-void end_bus(void);
-void set_rw_pin(int rw);
+
+//for debug.c
+void break_hit(void);
+int disas_inst(unsigned short addr);
+void dump_6502(int full);
+extern int debug_mode;
+extern unsigned short break_point;
+extern int dbg_log_msg;
+extern int critical_error;
+
 
 static unsigned char cpu_data_buffer;
 static unsigned short cpu_addr_buffer;
@@ -102,23 +107,57 @@ unsigned short load_addr(unsigned short addr, int cycle) {
     return cpu_addr_buffer;
 }
 
-void reset_cpu(void) {
-    init_6502core();
-    execute_func = reset_handler1;
+static int reset_handler2(void) {
+    int ret;
+    ret = reset_exec6502();
+    if (!ret) {
+        fprintf(stderr, "cpu reset failure.\n");
+        critical_error = TRUE;
+        return FALSE;
+    }
+
+    if (test_and_set_intr()) {
+        execute_func = fetch_and_decode_inst;
+    }
+    return ret;
 }
 
 static int reset_handler1(void) {
-    load_addr(RESET_ADDR, 1);
+    int ret;
+    ret = reset6502();
+    if (!ret) {
+        fprintf(stderr, "cpu reset failure.\n");
+        critical_error = TRUE;
+        return FALSE;
+    }
     execute_func = reset_handler2;
     return TRUE;
 }
 
-static int reset_handler2(void) {
-    load_addr(RESET_ADDR + 1, 2);
-    pc_set(cpu_addr_buffer);
+void reset_cpu(void) {
+    execute_func = reset_handler1;
+}
 
-    execute_func = fetch_and_decode_inst;
-    return TRUE;
+static int nmi_handler(void) {
+    int ret;
+
+    ret = nmi6502();
+    if (!ret) {
+        dump_6502(TRUE);
+        fprintf(stderr, "cpu nmi handling failure.\n");
+        while (emu_debug());
+
+        critical_error = TRUE;
+        return FALSE;
+    }
+
+    //last cycle goes to next execute cycle
+    if (test_and_set_intr()) {
+        //deassert nmi pin.
+        set_nmi_pin(FALSE);
+        execute_func = fetch_and_decode_inst;
+    }
+    return ret;
 }
 
 static int decode_inst(void) {
@@ -133,14 +172,11 @@ static int fetch_and_decode_inst(void) {
     int ret;
     unsigned short pc;
 
-    //for debug.c
-    void break_hit(void);
-    int disas_inst(unsigned short addr);
-    void dump_6502(int full);
-    extern int debug_mode;
-    extern unsigned short break_point;
-    extern int dbg_log_msg;
-    extern int critical_error;
+    //if nmi occurred, no further execution on the current instruction.
+    if (get_nmi_pin()) {
+        execute_func = nmi_handler;
+        return execute_func();
+    }
 
 
     pc = pc_get();
@@ -183,10 +219,6 @@ static int fetch_and_decode_inst(void) {
 
 static int execute_inst(void) {
     int ret;
-
-    int disas_inst(unsigned short addr);
-    void dump_6502(int full);
-    extern int critical_error;
 
     //dprint("execute\n");
 

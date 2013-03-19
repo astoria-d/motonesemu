@@ -14,9 +14,9 @@ unsigned short dbg_ram_get_short(unsigned short offset);
 struct cpu_pin {
     unsigned int rw     :1;     /*assert on write.*/
     unsigned int nmi    :1;     /*input*/
-    unsigned int irq    :1;     /*input*/
-    unsigned int reset  :1;     /*input*/
-    unsigned int ready  :1;
+    unsigned int irq    :1;     /*input, not used...*/
+    unsigned int reset  :1;     /*input, not used...*/
+    unsigned int ready  :1;     /*i/o access ready state*/
     unsigned int clock  :1;     /*not used*/
 };
 
@@ -162,6 +162,15 @@ char get_bus_data(void) {
  * */
 void set_rw_pin(int rw) {
     pin_status.rw = rw;
+}
+
+/*nmi interrupt*/
+void set_nmi_pin(int val) {
+    pin_status.nmi = val;
+}
+
+int get_nmi_pin(void) {
+    return pin_status.nmi;
 }
 
 int init_bus(void) {
