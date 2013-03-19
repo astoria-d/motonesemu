@@ -54,14 +54,14 @@ void set_bgtile(int tile_id);
 #define NAME_ATTR_MASK      0x2FFF
 #define PALETTE_SPRITE_BIT  0x10
 
-#define NAME0_START         PATTERN_TBL_SIZE * 2
-#define ATTR0_START         NAME0_START + NAME_TBL_SIZE
-#define NAME1_START         ATTR0_START + ATTR_TBL_SIZE
-#define ATTR1_START         NAME1_START + NAME_TBL_SIZE
-#define NAME2_START         ATTR1_START + ATTR_TBL_SIZE
-#define ATTR2_START         NAME2_START + NAME_TBL_SIZE
-#define NAME3_START         ATTR2_START + ATTR_TBL_SIZE
-#define ATTR3_START         NAME3_START + NAME_TBL_SIZE
+#define NAME0_START         (PATTERN_TBL_SIZE * 2)
+#define ATTR0_START         (NAME0_START + NAME_TBL_SIZE)
+#define NAME1_START         (ATTR0_START + ATTR_TBL_SIZE)
+#define ATTR1_START         (NAME1_START + NAME_TBL_SIZE)
+#define NAME2_START         (ATTR1_START + ATTR_TBL_SIZE)
+#define ATTR2_START         (NAME2_START + NAME_TBL_SIZE)
+#define NAME3_START         (ATTR2_START + ATTR_TBL_SIZE)
+#define ATTR3_START         (NAME3_START + NAME_TBL_SIZE)
 
 /*vram definition*/
 static unsigned char * sprite_ram;
@@ -193,6 +193,16 @@ void vram_data_set(unsigned short addr, unsigned char data) {
             attr_tbl_set(0, addr - ATTR0_START, data);
         }
         else if (addr < ATTR1_START) {
+            /*
+            dprint("NAME0_START:%04x\n", NAME0_START);
+            dprint("NAME1_START:%04x\n", NAME1_START);
+            dprint("NAME2_START:%04x\n", NAME2_START);
+            dprint("NAME3_START:%04x\n", NAME3_START);
+            dprint("ATTR0_START:%04x\n", ATTR0_START);
+            dprint("ATTR1_START:%04x\n", ATTR1_START);
+            dprint("ATTR2_START:%04x\n", ATTR2_START);
+            dprint("ATTR3_START:%04x\n", ATTR3_START);
+            */
             name_tbl_set(1, addr - NAME1_START, data);
         }
         else if (addr < NAME2_START) {
