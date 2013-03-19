@@ -141,6 +141,11 @@ int emu_debug(void) {
             scanf("%d", &size);
             while (size > 0) {
                 int l = disas_inst(addr);
+                if (l == 0) {
+                    printf("...(not an instruction)\n");
+                    dump_mem(addr, size);
+                    break;
+                }
                 size -= l;
                 addr += l;
             }
@@ -255,10 +260,12 @@ void dump_mem(unsigned short addr, int size) {
     unsigned char vram_data_get(unsigned short addr);
 
     if (addr % BYTES_PER_LINE)
-        printf("%04x: ", addr % BYTES_PER_LINE);
+        printf("%04x: ", addr);
 
     for (i = 0; i < addr % BYTES_PER_LINE; i++) {
         printf("   ");
+        if (i % BYTES_PER_LINE == (BYTES_PER_LINE / 2) - 1)
+            printf("  ");
     }
     for (i = 0; i < size; i++) {
         if (addr % BYTES_PER_LINE == 0)

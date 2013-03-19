@@ -167,6 +167,8 @@ static void spr_ram_tbl_set(unsigned short offset, unsigned char data) {
 
 void vram_data_set(unsigned short addr, unsigned char data) {
 
+    dprint("vram_data_set addr:%04x, data:%2x\n", addr, data);
+
     //mirror 0x4000 up addr.
     addr &= PPU_ADDR_MASK;
 
