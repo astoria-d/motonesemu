@@ -31,7 +31,7 @@
 1D     ORA     5   4   TRUE    3
 1E     ASL     5   7   FALSE   3
 1F     0   0   0   FALSE   0
-20 JSR     4   6   FALSE   1
+20 JSR     4   6   FALSE   3
 21 AND     12  6   FALSE   2
 22 0   0   0   FALSE   0
 23 0   0   0   FALSE   0

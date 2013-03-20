@@ -101,7 +101,7 @@ void set_bus_addr(unsigned short addr) {
     if (addr & ROM_BIT) {
         set_rom_addr(addr & ROM_MASK);
     }
-    else if ((addr_bus & IO_APU_BIT) == IO_APU_BIT) {
+    else if ((addr & IO_APU_BIT) == IO_APU_BIT) {
     }
     else if (addr & IO_PPU_BIT) {
         set_ppu_addr(addr & IO_PPU_MASK);
