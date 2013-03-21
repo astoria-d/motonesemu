@@ -24,6 +24,7 @@ int nmi6502(void);
 void pc_set(unsigned short addr);
 unsigned short pc_get(void);
 void pc_move(int offset);
+void report_exec_err(void);
 
 //for debug.c
 void break_hit(void);
@@ -227,8 +228,7 @@ static int execute_inst(void) {
     /*
     */
     if (!ret) {
-        fprintf(stderr, "cpu execute instruction failure.\n");
-        disas_inst(pc_get());
+        report_exec_err();
         dump_6502(TRUE);
         while (emu_debug());
 

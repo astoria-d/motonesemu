@@ -890,8 +890,52 @@ int func_AND(void) {
     return TRUE;
 }
 
+/*
+ * Arithmetic Shift Left One Bit: ASL
+ * C <- 7 6 5 4 3 2 1 0 <- 0
+ * Flags: N, Z, C
+ * */
 int func_ASL(void) {
-    return FALSE;
+    int done = FALSE;
+    int operation = FALSE;
+    unsigned char data;
+    int ret;
+
+    if (current_inst->addr_mode == ADDR_MODE_ACC) {
+        unsigned char op_data = cpu_reg.acc;
+        //set carry flag from the pre-opration value.
+        cpu_reg.status.carry = ((op_data & 0x80) > 0);
+        cpu_reg.acc = (op_data << 1);
+        set_negative(cpu_reg.acc);
+        set_zero(cpu_reg.acc);
+        goto acc_done;
+    }
+    else {
+        ret = memory_to_memory(&operation, &done);
+        if (!ret)
+            return FALSE;
+
+        if (operation) {
+            unsigned char op_data = get_cpu_data_buf();
+            //set carry flag from the pre-opration value.
+            cpu_reg.status.carry = ((op_data & 0x80) > 0);
+            op_data = (op_data << 1);
+            set_cpu_data_buf(op_data);
+            return TRUE;
+        }
+    }
+
+    if (!done) 
+        return TRUE;
+
+    // N/Z flags set.
+    data = get_cpu_data_buf();
+    set_negative(data);
+    set_zero(data);
+
+acc_done:
+    exec_done = TRUE;
+    return TRUE;
 }
 
 static int branch(unsigned char condition) {
@@ -1203,7 +1247,7 @@ int func_CPY(void) {
 int func_DEC(void) {
     int done = FALSE;
     int operation = FALSE;
-    unsigned short data;
+    unsigned char data;
     int ret;
 
     ret = memory_to_memory(&operation, &done);
@@ -1296,7 +1340,7 @@ int func_EOR(void) {
 int func_INC(void) {
     int done = FALSE;
     int operation = FALSE;
-    unsigned short data;
+    unsigned char data;
     int ret;
 
     ret = memory_to_memory(&operation, &done);
@@ -1531,8 +1575,52 @@ int func_LDY(void) {
     return TRUE;
 }
 
+/*
+ * Logical Shift Right One Bit: LSR
+ * 0 -> 7 6 5 4 3 2 1 0 -> C
+ * Flags: N, Z, C
+ * */
 int func_LSR(void) {
-    return FALSE;
+    int done = FALSE;
+    int operation = FALSE;
+    unsigned char data;
+    int ret;
+
+    if (current_inst->addr_mode == ADDR_MODE_ACC) {
+        unsigned char op_data = cpu_reg.acc;
+        //set carry flag from the pre-opration value.
+        cpu_reg.status.carry = (op_data & 0x01);
+        cpu_reg.acc = (op_data >> 1);
+        set_negative(cpu_reg.acc);
+        set_zero(cpu_reg.acc);
+        goto acc_done;
+    }
+    else {
+        ret = memory_to_memory(&operation, &done);
+        if (!ret)
+            return FALSE;
+
+        if (operation) {
+            unsigned char op_data = get_cpu_data_buf();
+            //set carry flag from the pre-opration value.
+            cpu_reg.status.carry = (op_data & 0x01);
+            op_data = (op_data >> 1);
+            set_cpu_data_buf(op_data);
+            return TRUE;
+        }
+    }
+
+    if (!done) 
+        return TRUE;
+
+    // N/Z flags set.
+    data = get_cpu_data_buf();
+    set_negative(data);
+    set_zero(data);
+
+acc_done:
+    exec_done = TRUE;
+    return TRUE;
 }
 
 int func_NOP(void) {
@@ -1566,28 +1654,188 @@ int func_ORA(void) {
     return TRUE;
 }
 
-int func_PHA(void) {
+/*
+ * push takes 2 cycles.
+ * */
+static int push_op(unsigned char data, int *done) {
+    //cycle 1
+    if (current_exec_index == 0) {
+        push(data);
+        return TRUE;
+    }
+    //cycle 2
+    else if (current_exec_index == 1) {
+        //cycle 2 doesn't do enything.
+        *done = TRUE;
+        return TRUE;
+    }
     return FALSE;
+}
+
+/*
+ * Push Accumulator on Stack: PHA
+ * A -> S
+ * Flags: none
+ * */
+int func_PHA(void) {
+    int ret;
+    int done = FALSE;
+    ret = push_op(cpu_reg.acc, &done);
+    exec_done = done;
+    return ret;
 }
 
 int func_PHP(void) {
     return FALSE;
 }
 
-int func_PLA(void) {
+/*
+ * pull takes 3 cycles.
+ * */
+static int pull_op(int *done) {
+    //cycle 1
+    if (current_exec_index == 0) {
+        pop();
+        return TRUE;
+    }
+    //cycle 2
+    else if (current_exec_index == 1) {
+        //cycle 2 doesn't do enything.
+        return TRUE;
+    }
+    //cycle 3
+    else if (current_exec_index == 2) {
+        //cycle 3 caller must xfer data from cpu data buf
+        *done = TRUE;
+        return TRUE;
+    }
     return FALSE;
+}
+
+/*
+ * Pull Accumulator from Stack: PLA
+ * S -> A
+ * Flags: N, Z
+ * */
+int func_PLA(void) {
+    int ret;
+    int done = FALSE;
+    ret = pull_op(&done);
+    if (done) {
+        cpu_reg.acc = get_cpu_data_buf();
+        set_negative(cpu_reg.acc);
+        set_zero(cpu_reg.acc);
+    }
+    exec_done = done;
+    return ret;
 }
 
 int func_PLP(void) {
     return FALSE;
 }
 
+/*
+ * Rotate Left One Bit: ROL
+ * C <- 7 6 5 4 3 2 1 0 <- C
+ * Flags: N, Z, C
+ * */
 int func_ROL(void) {
-    return FALSE;
+    int done = FALSE;
+    int operation = FALSE;
+    unsigned char data;
+    int ret;
+
+    if (current_inst->addr_mode == ADDR_MODE_ACC) {
+        unsigned char op_data = cpu_reg.acc;
+        //set carry flag from the pre-opration value.
+        cpu_reg.status.carry = ((op_data & 0x80) > 0);
+        cpu_reg.acc = (op_data << 1);
+        if (cpu_reg.status.carry)
+            cpu_reg.acc |= 0x01;
+        set_negative(cpu_reg.acc);
+        set_zero(cpu_reg.acc);
+        goto acc_done;
+    }
+    else {
+        ret = memory_to_memory(&operation, &done);
+        if (!ret)
+            return FALSE;
+
+        if (operation) {
+            unsigned char op_data = get_cpu_data_buf();
+            //set carry flag from the pre-opration value.
+            cpu_reg.status.carry = ((op_data & 0x80) > 0);
+            op_data = (op_data << 1);
+            if (cpu_reg.status.carry)
+                op_data |= 0x01;
+            set_cpu_data_buf(op_data);
+            return TRUE;
+        }
+    }
+
+    if (!done) 
+        return TRUE;
+
+    // N/Z flags set.
+    data = get_cpu_data_buf();
+    set_negative(data);
+    set_zero(data);
+
+acc_done:
+    exec_done = TRUE;
+    return TRUE;
 }
 
+/*
+ * Rotate Right One Bit: ROR
+ * C -> 7 6 5 4 3 2 1 0 -> C
+ * Flags: N, Z, C
+ * */
 int func_ROR(void) {
-    return FALSE;
+    int done = FALSE;
+    int operation = FALSE;
+    unsigned char data;
+    int ret;
+
+    if (current_inst->addr_mode == ADDR_MODE_ACC) {
+        unsigned char op_data = cpu_reg.acc;
+        //set carry flag from the pre-opration value.
+        cpu_reg.status.carry = (op_data & 0x01);
+        cpu_reg.acc = (op_data >> 1);
+        if (cpu_reg.status.carry)
+            cpu_reg.acc |= 0x80;
+        set_negative(cpu_reg.acc);
+        set_zero(cpu_reg.acc);
+        goto acc_done;
+    }
+    else {
+        ret = memory_to_memory(&operation, &done);
+        if (!ret)
+            return FALSE;
+
+        if (operation) {
+            unsigned char op_data = get_cpu_data_buf();
+            //set carry flag from the pre-opration value.
+            cpu_reg.status.carry = (op_data & 0x01);
+            op_data = (op_data >> 1);
+            if (cpu_reg.status.carry)
+                op_data |= 0x80;
+            set_cpu_data_buf(op_data);
+            return TRUE;
+        }
+    }
+
+    if (!done) 
+        return TRUE;
+
+    // N/Z flags set.
+    data = get_cpu_data_buf();
+    set_negative(data);
+    set_zero(data);
+
+acc_done:
+    exec_done = TRUE;
+    return TRUE;
 }
 
 int func_RTI(void) {
@@ -2020,3 +2268,10 @@ int disas_inst(unsigned short addr) {
     disasm(omap->mnemonic, omap->addr_mode, addr);
     return omap->inst_len;
 }
+
+void report_exec_err(void) {
+    fprintf(stderr, "cpu execute instruction failure @0x%04x.\n", pc_get());
+    fprintf(stderr, "error instruction: %s, cycle:%d\n", 
+            current_inst->mnemonic, current_exec_index - 1);
+}
+
