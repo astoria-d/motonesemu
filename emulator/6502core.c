@@ -1919,7 +1919,55 @@ acc_done:
     return TRUE;
 }
 
+/*
+ * Return from Interrupt: RTI
+ * Return from Interrupt
+ * Flags: all
+ * */
 int func_RTI(void) {
+    //cycle 1
+    if (current_exec_index == 0) {
+        //pop statu reg.
+        pop();
+        return TRUE;
+    }
+    //cycle 2 
+    else if (current_exec_index == 1) {
+        unsigned char data;
+        //set status reg
+        data = get_cpu_data_buf();
+        memcpy(&cpu_reg.status, &data, sizeof(data));
+        //pop return addr low.
+        pop();
+        return TRUE;
+    }
+    //cycle 3
+    else if (current_exec_index == 2) {
+        //set return addr low.
+        set_cpu_addr_buf(get_cpu_data_buf());
+        //pop return addr hi.
+        pop();
+        return TRUE;
+    }
+    //cycle 4
+    else if (current_exec_index == 3) {
+        unsigned char hi, lo;
+        unsigned short addr;
+
+        //set return addr hi
+        lo = get_cpu_addr_buf();
+        hi = get_cpu_data_buf();
+        addr = (hi << 8) | lo;
+        set_cpu_addr_buf(addr);
+        return TRUE;
+    }
+    //cycle 5
+    else if (current_exec_index == 4) {
+        //set pc = addr
+        cpu_reg.pc = get_cpu_addr_buf();
+        exec_done = TRUE;
+        return TRUE;
+    }
     return FALSE;
 }
 
@@ -2253,16 +2301,19 @@ int execute6502(void) {
 int reset_exec6502(void) {
     switch (current_exec_index++) {
         case 0:
-            //step 4: load intvec low.
+            //step 1: load intvec low.
             load_addr(RESET_VECTOR, 1);
             return TRUE;
         case 1:
-            //step 5: load intvec hi.
+            //step 2: load intvec hi.
             load_addr(RESET_VECTOR + 1, 2);
             return TRUE;
         case 2:
-            //step 6: set pc
+            //step 3: set pc
             cpu_reg.pc = get_cpu_addr_buf();
+            //set status flag
+            cpu_reg.status.decimal = 0;
+            cpu_reg.status.irq_disable = 1;
             intr_done = TRUE;
             return TRUE;
     }
@@ -2306,6 +2357,10 @@ int nmi6502(void) {
         case 5:
             //step 6: set pc
             cpu_reg.pc = get_cpu_addr_buf();
+            //set status flag
+            cpu_reg.status.decimal = 0;
+            cpu_reg.status.irq_disable = 1;
+
             intr_done = TRUE;
             return TRUE;
     }
