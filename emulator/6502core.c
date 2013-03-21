@@ -831,15 +831,68 @@ static void set_negative(unsigned char data) {
         cpu_reg.status.negative = 0;
 }
 
-static void set_carry(unsigned char data, unsigned char cmp) {
+static void set_CMP_carry(unsigned char data, unsigned char cmp) {
     if (data - cmp >= 0)
         cpu_reg.status.carry = 1;
     else
         cpu_reg.status.carry = 0;
 }
 
-static void set_overflow(unsigned char data) {
+static void set_BIT_overflow(unsigned char data) {
     if (data & V_BIT)
+        cpu_reg.status.overflow = 1;
+    else
+        cpu_reg.status.overflow = 0;
+}
+
+/*
+ * c Set if unsigned overflow; cleared if valid unsigned result.
+ * */
+static void set_ADD_carry(unsigned char d1, unsigned char d2, unsigned char d3) {
+    unsigned short d1_short = d1;
+    unsigned short d2_short = d2;
+    unsigned short d3_short = d3;
+    if (d1_short + d2_short + d3_short > 0xff)
+        cpu_reg.status.carry = 1;
+    else
+        cpu_reg.status.carry = 0;
+}
+
+/*
+ * v Set if signed overflow; cleared if valid signed result.
+ * */
+static void set_ADD_overflow(char d1, char d2, char d3) {
+    short d1_short = d1;
+    short d2_short = d2;
+    short d3_short = d3;
+    if (d1_short + d2_short + d3_short > +127 || d1_short + d2_short + d3_short < -128 )
+        cpu_reg.status.overflow = 1;
+    else
+        cpu_reg.status.overflow = 0;
+}
+
+/*
+ * c Set if unsigned borrow not required; cleared if unsigned borrow.
+ * */
+static void set_SUB_carry(unsigned char d1, unsigned char d2, unsigned char d3) {
+    unsigned short d1_short = d1;
+    unsigned short d2_short = d2;
+    unsigned short d3_short = d3;
+
+    if (d1_short >=  d2_short + d3_short)
+        cpu_reg.status.carry = 1;
+    else
+        cpu_reg.status.carry = 0;
+}
+
+/*
+ * v Set if signed borrow not required; cleared if signed borrow.
+ * */
+static void set_SUB_overflow(char d1, char d2, char d3) {
+    short d1_short = d1;
+    short d2_short = d2;
+    short d3_short = d3;
+    if (d1_short >= d2_short + d3_short)
         cpu_reg.status.overflow = 1;
     else
         cpu_reg.status.overflow = 0;
@@ -859,8 +912,36 @@ static unsigned char pop(void) {
 
 /*---------- instruction implementations.   -----------------*/
 
+/*
+ * Add Memory to Accumulator with Carry: ADC
+ * A + M + C -> A
+ * Flags: N, V, Z, C
+ * */
 int func_ADC(void) {
-    return FALSE;
+    int done = FALSE;
+    int ret;
+    unsigned char data;
+
+    ret = load_addr_mode(&done);
+    if (!ret)
+        return FALSE;
+
+    if (!done) 
+        return TRUE;
+
+    data = get_cpu_data_buf();
+    //signed, unsigned overflow check.
+    set_ADD_carry(cpu_reg.acc, cpu_reg.status.carry, data);
+    set_ADD_overflow(cpu_reg.acc, cpu_reg.status.carry, data);
+    //add data with carry to accumurator.
+    cpu_reg.acc += data + cpu_reg.status.carry;
+
+    // N/Z flags set.
+    set_negative(cpu_reg.acc);
+    set_zero(cpu_reg.acc);
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
 /*
@@ -1046,7 +1127,7 @@ int func_BIT(void) {
      * */
     //6502 core supports zp and abs only
     set_negative(cmp);
-    set_overflow(cmp);
+    set_BIT_overflow(cmp);
     set_zero(cpu_reg.acc & cmp);
 
     exec_done = TRUE;
@@ -1167,7 +1248,7 @@ int func_CMP(void) {
 
     cmp = get_cpu_data_buf();
     //cmp C/N/Z flags set.
-    set_carry(cpu_reg.acc, cmp);
+    set_CMP_carry(cpu_reg.acc, cmp);
     set_negative(cpu_reg.acc - cmp);
     set_zero(cpu_reg.acc - cmp);
 
@@ -1194,7 +1275,7 @@ int func_CPX(void) {
 
     cmp = get_cpu_data_buf();
     //cmp C/N/Z flags set.
-    set_carry(cpu_reg.x, cmp);
+    set_CMP_carry(cpu_reg.x, cmp);
     set_negative(cpu_reg.x - cmp);
     set_zero(cpu_reg.x - cmp);
 
@@ -1231,7 +1312,7 @@ int func_CPY(void) {
  * unsigned values only (expect for signed comparison
  * for equality).
  * */
-    set_carry(cpu_reg.y, cmp);
+    set_CMP_carry(cpu_reg.y, cmp);
     set_negative(cpu_reg.y - cmp);
     set_zero(cpu_reg.y - cmp);
 
@@ -1889,8 +1970,40 @@ int func_RTS(void) {
     return FALSE;
 }
 
+/*
+ * Subtract Memory from Accumulator with Borrow: SBC
+ * A - M - ~C -> A
+ * Flags: N, V, Z, C
+ * */
 int func_SBC(void) {
-    return FALSE;
+    int done = FALSE;
+    int ret;
+    unsigned char data;
+    unsigned char c_comp;
+
+    ret = load_addr_mode(&done);
+    if (!ret)
+        return FALSE;
+
+    if (!done) 
+        return TRUE;
+
+    data = get_cpu_data_buf();
+    c_comp = (cpu_reg.status.carry == 0 ? 1 : 0);
+
+    //signed, unsigned overflow check.
+    set_SUB_carry(cpu_reg.acc, data, c_comp);
+    set_SUB_overflow(cpu_reg.acc, data, c_comp);
+
+    //subtract data with carry to accumurator.
+    cpu_reg.acc = cpu_reg.acc - data - c_comp;
+
+    // N/Z flags set.
+    set_negative(cpu_reg.acc);
+    set_zero(cpu_reg.acc);
+
+    exec_done = TRUE;
+    return TRUE;
 }
 
 /*
