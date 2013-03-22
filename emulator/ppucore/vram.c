@@ -14,55 +14,6 @@ void dump_mem(const char* msg, unsigned short base,
         unsigned short offset, unsigned char* buf, int size);
 void set_bgtile(int tile_id);
 
-/*
- * NES vram memory map
- *
- * 0x0000   -   0x0FFF      pattern table 0
- * 0x1000   -   0x1FFF      pattern table 1
- *
- * 0x2000   -   0x23BF      name table 0
- * 0x23C0   -   0x23FF      attribute table 0
- * 0x2400   -   0x27BF      name table 1
- * 0x27C0   -   0x27FF      attribute table 1
- * 0x2800   -   0x2BBF      name table 2
- * 0x2BC0   -   0x2BFF      attribute table 2
- * 0x2C00   -   0x2FBF      name table 3
- * 0x2FC0   -   0x2FFF      attribute table 3
- * 0x3000   -   0x3EFF      mirror name/attr tbl
- *
- * 0x3F00   -   0x3F0F      bg palette tble
- * 0x3F10   -   0x3F1F      sprite palette tble
- * 0x3F20   -   0x3FFF      mirror palette tble
- *
- * 0x4000   -   0xFFFF      mirror 0x0000-0x3FFFF
- * */
-
-#define PATTERN_TBL_SIZE    0x1000
-#define NAME_TBL_SIZE       V_SCREEN_TILE_SIZE * H_SCREEN_TILE_SIZE
-#define ATTR_TBL_SIZE       (VIRT_SCREEN_TILE_SIZE * VIRT_SCREEN_TILE_SIZE \
-                            / ATTR_GROUP_UNIT / ATTR_UNIT_PER_BYTE)
-#define PALETTE_TBL_SIZE    0x10
-#define SPRITE_RAM_SIZE     0xff
-
-#define PATTERN_ADDR_MASK       (PATTERN_TBL_SIZE - 1)
-#define ATTR_TBL_ADDR_MASK      (ATTR_TBL_SIZE - 1)
-#define PALETTE_TBL_ADDR_MASK   (PALETTE_TBL_SIZE - 1)
-#define SPR_RAM_ADDR_MASK       (SPRITE_RAM_SIZE - 1)
-
-#define PPU_ADDR_MASK       (0x4000 - 1)
-#define PALETTE_START       0x3F00
-#define NAME_ATTR_MASK      0x2FFF
-#define PALETTE_SPRITE_BIT  0x10
-
-#define NAME0_START         (PATTERN_TBL_SIZE * 2)
-#define ATTR0_START         (NAME0_START + NAME_TBL_SIZE)
-#define NAME1_START         (ATTR0_START + ATTR_TBL_SIZE)
-#define ATTR1_START         (NAME1_START + NAME_TBL_SIZE)
-#define NAME2_START         (ATTR1_START + ATTR_TBL_SIZE)
-#define ATTR2_START         (NAME2_START + NAME_TBL_SIZE)
-#define NAME3_START         (ATTR2_START + ATTR_TBL_SIZE)
-#define ATTR3_START         (NAME3_START + NAME_TBL_SIZE)
-
 /*vram definition*/
 static unsigned char * sprite_ram;
 
@@ -500,12 +451,6 @@ int load_chr_rom(FILE* cartridge, int num_rom_bank) {
 }
 
 int vram_init(void) {
-    name_tbl2 = NULL;
-    name_tbl3 = NULL;
-
-    attr_tbl2 = NULL;
-    attr_tbl3 = NULL;
-    
 
     pattern_tbl0 = malloc(PATTERN_TBL_SIZE);
     if (pattern_tbl0 == NULL)
@@ -535,6 +480,12 @@ int vram_init(void) {
     if (attr_tbl1 == NULL)
         return FALSE;
 
+    name_tbl2 = name_tbl0;
+    name_tbl3 = name_tbl1;
+
+    attr_tbl2 = attr_tbl0;
+    attr_tbl3 = attr_tbl1;
+    
     bg_palette_tbl = malloc(PALETTE_TBL_SIZE);
     if (bg_palette_tbl == NULL)
         return FALSE;

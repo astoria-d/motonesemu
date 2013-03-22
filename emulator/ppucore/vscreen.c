@@ -22,6 +22,10 @@ struct tile_rgb15 {
 
 static struct tile_rgb15 *vscreen;
 
+static unsigned char bg_pattern_bank;
+static unsigned char spr_pattern_bank;
+static unsigned short   name_tbl_base;
+
 void vscreenn_dot_get(int x, int y, struct rgb15 *col) {
     int tile_id, tile_id_x, tile_id_y;
     int inner_x, inner_y;
@@ -83,9 +87,8 @@ void set_bgtile(int tile_id) {
 
     load_attribute(0, tile_id, &plt);
 
-#warning name tbl base addr check...
-    name_index = vram_data_get(0x2000 + tile_id);
-    load_pattern(0, name_index, &ptn);
+    name_index = vram_data_get(name_tbl_base + tile_id);
+    load_pattern(bg_pattern_bank, name_index, &ptn);
 
     set_data = vscreen + tile_id;
     for (i = 0; i < TILE_DOT_SIZE; i++) {
@@ -108,7 +111,7 @@ void set_sprite(int x, int y, int tile_id, struct sprite_attr sa) {
 
     load_spr_attribute(sa, &plt);
 
-    load_pattern(0, tile_id, &ptn);
+    load_pattern(spr_pattern_bank, tile_id, &ptn);
 
     //display shows left to right with high bit to low bit
     for (i = 0; i < TILE_DOT_SIZE; i++) {
@@ -147,7 +150,35 @@ void set_sprite(int x, int y, int tile_id, struct sprite_attr sa) {
     }
 }
 
+void set_bg_pattern_bank(unsigned char bank) {
+    bg_pattern_bank = bank;
+}
+void set_spr_pattern_bank(unsigned char bank) {
+    spr_pattern_bank = bank;
+}
+void set_name_tbl_base(unsigned char sw) {
+    switch (sw) {
+        case 0:
+            name_tbl_base = NAME0_START;
+            break;
+        case 1:
+            name_tbl_base = NAME1_START;
+            break;
+        case 2:
+            name_tbl_base = NAME2_START;
+            break;
+        case 3:
+        default:
+            name_tbl_base = NAME3_START;
+            break;
+    }
+}
+
 int vscreen_init(void) {
+    bg_pattern_bank = 0;
+    spr_pattern_bank = 0;
+    name_tbl_base = NAME0_START;
+
     vscreen = (struct tile_rgb15 *) malloc(
         sizeof (struct tile_rgb15) * VIRT_SCREEN_TILE_SIZE * VIRT_SCREEN_TILE_SIZE);
     if (vscreen == NULL)

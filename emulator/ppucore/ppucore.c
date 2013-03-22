@@ -14,6 +14,9 @@ int palette_init(void);
 void vga_xfer(void);
 void set_monocolor (int mono);
 void set_nmi_pin(int val);
+void set_bg_pattern_bank(unsigned char bank);
+void set_spr_pattern_bank(unsigned char bank);
+void set_name_tbl_base(unsigned char sw);
 
 
 static void dump_ppu_reg(void);
@@ -81,6 +84,12 @@ static unsigned char vram_data_reg;
 static unsigned char scroll_reg;
 static unsigned char vram_dma_reg;
 
+//value set by the ctrl_reg1.
+static unsigned char    sprite_size_type;
+static unsigned char    vram_addr_inc;
+
+#define SPR_STYPE_8x8   0 
+#define SPR_STYPE_8x16  1
 
 static pthread_t ppucore_thread_id;
 static int ppucore_end_loop;
@@ -153,7 +162,32 @@ static void *ppucore_loop(void* arg) {
 }
 
 void ppu_ctrl1_set(unsigned char data) {
+    unsigned char old, diff_tmp; 
+    struct ppu_ctrl_reg1 diff; 
+
+    memcpy(&old, &ctrl_reg1, sizeof(ctrl_reg1));
     memcpy(&ctrl_reg1, &data, sizeof(ctrl_reg1));
+
+    diff_tmp = old ^ data;
+    memcpy(&diff, &diff_tmp, sizeof(ctrl_reg1));
+
+    //set sprite_size
+    //if (diff.sprite_size)
+    //    sprite_size = (ctrl_reg1.sprite_size == 0 ? 8 : 16);
+
+    //set bg base tbl addr
+    if (diff.bg_ptn_addr_sel)
+        set_bg_pattern_bank(ctrl_reg1.bg_ptn_addr_sel);
+    //set sprite base tbl addr
+    if (diff.sprite_ptn_sel) 
+        set_spr_pattern_bank(ctrl_reg1.sprite_ptn_sel);
+    //set vram address increase unit
+    if (diff.addr_inc_size) 
+        vram_addr_inc = (ctrl_reg1.addr_inc_size == 0 ? 1 : 32);
+    //set main screen addr
+    if (diff.name_tbl_sel)
+        set_name_tbl_base(ctrl_reg1.name_tbl_sel);
+
     //dprint("ctrl1: %x\n", data);
     //dump_ppu_reg();
 }
@@ -208,12 +242,7 @@ void ppu_vram_data_set(unsigned char data) {
 
     vram_data_set(vram_addr_reg.addr.s, data);
     //vram addr increment.
-    if (ctrl_reg1.addr_inc_size) {
-        vram_addr_reg.addr.s += 32;
-    }
-    else {
-        vram_addr_reg.addr.s += 1;
-    }
+    vram_addr_reg.addr.s += vram_addr_inc;
 }
 
 unsigned char ppu_vram_data_get(void) {
@@ -235,6 +264,9 @@ int ppucore_init(void) {
     vram_data_reg = 0;
     scroll_reg = 0;
     vram_dma_reg = 0;
+
+    sprite_size_type = SPR_STYPE_8x8;
+    vram_addr_inc = 1;
 
     ret = vram_init();
     if (!ret)
