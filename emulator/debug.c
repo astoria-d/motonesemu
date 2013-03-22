@@ -14,6 +14,7 @@ void dump_mem(unsigned short addr, int size);
 unsigned char vram_data_get(unsigned short addr);
 unsigned char dbg_get_byte(unsigned short addr);
 unsigned short dbg_get_short(unsigned short addr);
+void dump_ppu_reg(void);
 
 #define MAX_HISTORY     10
 
@@ -151,7 +152,7 @@ int emu_debug(void) {
             }
         }
         else if (!strcmp(buf, "pshow")){
-            printf("not supported...\n");
+            dump_ppu_reg();
         }
         else {
             printf("unknown command [%s].\n", buf);

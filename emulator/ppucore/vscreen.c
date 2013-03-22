@@ -24,7 +24,8 @@ static struct tile_rgb15 *vscreen;
 
 static unsigned char bg_pattern_bank;
 static unsigned char spr_pattern_bank;
-static unsigned short   name_tbl_base;
+static unsigned short   bg_name_tbl_base;
+static unsigned char    bg_attr_tbl_bank;
 
 void vscreenn_dot_get(int x, int y, struct rgb15 *col) {
     int tile_id, tile_id_x, tile_id_y;
@@ -85,9 +86,9 @@ void set_bgtile(int tile_id) {
     struct tile_rgb15* set_data;
     int i,j;
 
-    load_attribute(0, tile_id, &plt);
+    load_attribute(bg_attr_tbl_bank, tile_id, &plt);
 
-    name_index = vram_data_get(name_tbl_base + tile_id);
+    name_index = vram_data_get(bg_name_tbl_base + tile_id);
     load_pattern(bg_pattern_bank, name_index, &ptn);
 
     set_data = vscreen + tile_id;
@@ -156,28 +157,30 @@ void set_bg_pattern_bank(unsigned char bank) {
 void set_spr_pattern_bank(unsigned char bank) {
     spr_pattern_bank = bank;
 }
-void set_name_tbl_base(unsigned char sw) {
+void set_bg_name_tbl_base(unsigned char sw) {
     switch (sw) {
         case 0:
-            name_tbl_base = NAME0_START;
+            bg_name_tbl_base = NAME0_START;
             break;
         case 1:
-            name_tbl_base = NAME1_START;
+            bg_name_tbl_base = NAME1_START;
             break;
         case 2:
-            name_tbl_base = NAME2_START;
+            bg_name_tbl_base = NAME2_START;
             break;
         case 3:
         default:
-            name_tbl_base = NAME3_START;
+            bg_name_tbl_base = NAME3_START;
             break;
     }
+    bg_attr_tbl_bank = sw;
 }
 
 int vscreen_init(void) {
     bg_pattern_bank = 0;
     spr_pattern_bank = 0;
-    name_tbl_base = NAME0_START;
+    bg_name_tbl_base = NAME0_START;
+    bg_attr_tbl_bank = 0;
 
     vscreen = (struct tile_rgb15 *) malloc(
         sizeof (struct tile_rgb15) * VIRT_SCREEN_TILE_SIZE * VIRT_SCREEN_TILE_SIZE);

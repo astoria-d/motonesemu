@@ -16,10 +16,10 @@ void set_monocolor (int mono);
 void set_nmi_pin(int val);
 void set_bg_pattern_bank(unsigned char bank);
 void set_spr_pattern_bank(unsigned char bank);
-void set_name_tbl_base(unsigned char sw);
+void set_bg_name_tbl_base(unsigned char sw);
 
 
-static void dump_ppu_reg(void);
+void dump_ppu_reg(void);
 
 /*
  * 6502 little endian
@@ -186,7 +186,7 @@ void ppu_ctrl1_set(unsigned char data) {
         vram_addr_inc = (ctrl_reg1.addr_inc_size == 0 ? 1 : 32);
     //set main screen addr
     if (diff.name_tbl_sel)
-        set_name_tbl_base(ctrl_reg1.name_tbl_sel);
+        set_bg_name_tbl_base(ctrl_reg1.name_tbl_sel);
 
     //dprint("ctrl1: %x\n", data);
     //dump_ppu_reg();
@@ -309,7 +309,10 @@ void clean_ppucore(void) {
     clean_vscreen();
 }
 
-static void dump_ppu_reg(void) {
+/*
+ * for debug.c
+ * */
+void dump_ppu_reg(void) {
     printf("control reg1\n");
     printf(" nmi_vblank:%d\n", ctrl_reg1.nmi_vblank);
     printf(" sprite_size:%d\n", ctrl_reg1.sprite_size);
