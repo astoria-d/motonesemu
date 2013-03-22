@@ -9,7 +9,7 @@
 07 0   0   0   FALSE   0
 08 PHP     8   3   FALSE   1
 09 ORA     10  2   FALSE   2
-0A     ASL     9   2   FALSE   2
+0A     ASL     9   2   FALSE   1
 0B     0   0   0   FALSE   0
 0C     0   0   0   FALSE   0
 0D     ORA     4   4   FALSE   3
@@ -41,7 +41,7 @@
 27 0   0   0   FALSE   0
 28 PLP     8   4   FALSE   1
 29 AND     10  2   FALSE   2
-2A     ROL     9   2   FALSE   2
+2A     ROL     9   2   FALSE   1
 2B     0   0   0   FALSE   0
 2C     BIT     4   4   FALSE   3
 2D     AND     4   4   FALSE   3
@@ -73,7 +73,7 @@
 47 0   0   0   FALSE   0
 48 PHA     8   3   FALSE   1
 49 EOR     10  2   FALSE   2
-4A     LSR     9   2   FALSE   2
+4A     LSR     9   2   FALSE   1
 4B     0   0   0   FALSE   0
 4C     JMP     4   3   FALSE   3
 4D     EOR     4   4   FALSE   3
@@ -105,7 +105,7 @@
 67 0   0   0   FALSE   0
 68 PLA     8   4   FALSE   1
 69 ADC     10  2   FALSE   2
-6A     ROR     9   2   FALSE   2
+6A     ROR     9   2   FALSE   1
 6B     0   0   0   FALSE   0
 6C     JMP     7   5   FALSE   3
 6D     ADC     4   4   FALSE   3

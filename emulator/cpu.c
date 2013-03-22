@@ -76,10 +76,14 @@ unsigned char load_memory(unsigned short addr) {
     cpu_data_buffer = get_bus_data();
     end_bus();
 
+    dprint("                                  ");
+    dprint("                                  ");
+    dprint("load: @%04x = %02x\n", addr, cpu_data_buffer);
     return cpu_data_buffer;
 }
 
 void store_memory(unsigned short addr, unsigned char data) {
+    dprint("                                  ");
     dprint("store: @%04x = %02x\n", addr, data);
 
     set_rw_pin(1);

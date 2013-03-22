@@ -299,7 +299,7 @@ int show_background(void) {
     int i;
 
 #ifdef PPU_TEST
-    if (first_time) {
+    if (1 /*first_time*/) {
         test_ppu();
         first_time = FALSE;
     }
@@ -307,7 +307,6 @@ int show_background(void) {
 #endif /*PPU_TEST */
 
     for (i = 0; i < H_SCREEN_TILE_SIZE * V_SCREEN_TILE_SIZE; i++) {
-#warning update bg must be more efficient. update only changed tile.
         set_bgtile(i);
     }
     return TRUE;

@@ -208,6 +208,9 @@ void ppu_ctrl2_set(unsigned char data) {
 unsigned char ppu_status_get(void) {
     unsigned char ret;
     memcpy(&ret, &status_reg, sizeof(status_reg));
+
+    //if read status reg, vram addr register counter is reset
+    vram_addr_reg.cnt = 0;
     //dprint("ppu_status:%x\n", ret);
     return ret;
 }
@@ -234,6 +237,8 @@ void ppu_vram_addr_set(unsigned char half_addr) {
 
 void ppu_vram_data_set(unsigned char data) {
     //check vram_ignore bit on write.
+    /*
+    */
     if (status_reg.vram_ignore)
         return;
 
