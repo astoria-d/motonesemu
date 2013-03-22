@@ -87,6 +87,7 @@ static unsigned char vram_dma_reg;
 //value set by the ctrl_reg1.
 static unsigned char    sprite_size_type;
 static unsigned char    vram_addr_inc;
+static unsigned int     vram_read_cnt;
 
 #define SPR_STYPE_8x8   0 
 #define SPR_STYPE_8x16  1
@@ -233,6 +234,9 @@ void ppu_vram_addr_set(unsigned char half_addr) {
         vram_addr_reg.addr.b.hi = half_addr;
     else
         vram_addr_reg.addr.b.low = half_addr;
+
+    //when setting the addr, read cnt is reset.
+    vram_read_cnt = 0;
 }
 
 void ppu_vram_data_set(unsigned char data) {
@@ -251,6 +255,14 @@ void ppu_vram_data_set(unsigned char data) {
 }
 
 unsigned char ppu_vram_data_get(void) {
+    if (vram_read_cnt++ == 0) {
+        //first read always fail.
+        return 0;
+    }
+
+    vram_data_reg = vram_data_get(vram_addr_reg.addr.s);
+    //vram addr increment.
+    vram_addr_reg.addr.s += vram_addr_inc;
     return vram_data_reg;
 }
 
@@ -269,6 +281,7 @@ int ppucore_init(void) {
     vram_data_reg = 0;
     scroll_reg = 0;
     vram_dma_reg = 0;
+    vram_read_cnt = 0;
 
     sprite_size_type = SPR_STYPE_8x8;
     vram_addr_inc = 1;

@@ -124,6 +124,7 @@ void vram_data_set(unsigned short addr, unsigned char data) {
     addr &= PPU_ADDR_MASK;
 
     if (addr < 2 * PATTERN_TBL_SIZE) {
+        dprint("invalid vram write addr:%04x, data:%2x\n", addr, data);
         //do nothing. pattern table is read only.
     }
     else if (addr >= PALETTE_START) {
