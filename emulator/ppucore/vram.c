@@ -33,6 +33,11 @@ static unsigned char * attr_tbl3;
 static unsigned char * pattern_tbl0;
 static unsigned char * pattern_tbl1;
 
+//#define PPU_TEST
+#ifdef PPU_TEST
+static int first_time = TRUE;
+#endif /* PPU_TEST */
+
 /*
  * VRAM get/set functions....
  *
@@ -124,7 +129,7 @@ void vram_data_set(unsigned short addr, unsigned char data) {
     addr &= PPU_ADDR_MASK;
 
     if (addr < 2 * PATTERN_TBL_SIZE) {
-        dprint("invalid vram write addr:%04x, data:%2x\n", addr, data);
+        //dprint("invalid vram write addr:%04x, data:%2x\n", addr, data);
         //do nothing. pattern table is read only.
     }
     else if (addr >= PALETTE_START) {
@@ -213,7 +218,6 @@ unsigned char vram_data_get(unsigned short addr) {
 
 /* VRAM manipulation... */
 
-//#define PPU_TEST
 #ifdef PPU_TEST
 /*
  * ppu test function
@@ -293,7 +297,6 @@ static void test_ppu(void) {
     dump_vram(VRAM_DUMP_TYPE_PLT, 0, 0, 16);
 */
 }
-static int first_time = TRUE;
 #endif /* PPU_TEST */
 
 int show_background(void) {

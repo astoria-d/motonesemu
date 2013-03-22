@@ -118,7 +118,7 @@ static void *ppucore_loop(void* arg) {
             //sprite in the back
             ;
         }
-        if (ctrl_reg2.show_bg) {
+        if (1/*ctrl_reg2.show_bg*/) {
             //back ground image
             updated |= show_background();
         }
