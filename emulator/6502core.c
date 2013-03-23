@@ -832,7 +832,7 @@ static void set_negative(unsigned char data) {
 }
 
 static void set_CMP_carry(unsigned char data, unsigned char cmp) {
-    if (data - cmp >= 0)
+    if (data >= cmp)
         cpu_reg.status.carry = 1;
     else
         cpu_reg.status.carry = 0;
