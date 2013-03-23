@@ -58,6 +58,7 @@ unsigned char dbg_get_byte(unsigned short addr) { return 0; }
 unsigned short dbg_get_short(unsigned short addr) { return 0; }
 int disas_inst(unsigned short addr) { return 0; }
 void set_nmi_pin(int val) { }
+void d1_set(int on_off) {}
 void d2_set(int on_off) {}
 void d3_set(int on_off) {}
 

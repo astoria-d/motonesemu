@@ -25,6 +25,7 @@ void pc_set(unsigned short addr);
 unsigned short pc_get(void);
 void pc_move(int offset);
 void report_exec_err(void);
+void d1_set(int on_off);
 void d2_set(int on_off);
 void d3_set(int on_off);
 
@@ -34,7 +35,6 @@ int disas_inst(unsigned short addr);
 void dump_6502(int full);
 extern int debug_mode;
 extern unsigned short break_point;
-extern int dbg_log_msg;
 extern int critical_error;
 
 
@@ -44,6 +44,7 @@ static unsigned short cpu_addr_buffer;
 static void (*dump_6502_level2)(int);
 static void (*dump_6502_level3_load)(unsigned short, unsigned char);
 static void (*dump_6502_level3_store)(unsigned short, unsigned char);
+static int (*d1_disas)(unsigned short);
 
 /*
  * clock execution function array.
@@ -196,12 +197,8 @@ static int fetch_and_decode_inst(void) {
         break_hit();
     }
 
-    if (dbg_log_msg) {
-        disas_inst(pc);
-    }
+    d1_disas(pc);
     if (debug_mode) {
-        if (!dbg_log_msg)
-            disas_inst(pc);
         ret = emu_debug();
         if (!ret)
             return FALSE;
@@ -273,6 +270,7 @@ unsigned char get_cpu_data_buf(void) {
 /*null func*/
 static void null_dump_6502 (int param) {}
 static void null_load_store (unsigned short addr, unsigned char data) {}
+static int null_disas(unsigned short addr) {return 0;}
 
 static void dump_load (unsigned short addr, unsigned char data) {
     dprint("                                  ");
@@ -301,6 +299,7 @@ int init_cpu(void) {
     cpu_data_buffer = 0;
     cpu_addr_buffer = 0;
 
+    d1_set(debug_mode);
     d2_set(debug_mode);
     d3_set(debug_mode);
 
@@ -308,6 +307,15 @@ int init_cpu(void) {
 }
 
 /*------for debug.c-----*/
+void d1_set(int on_off) {
+    if (on_off) {
+        d1_disas = disas_inst;
+    }
+    else {
+        d1_disas = null_disas;
+    }
+}
+
 void d2_set(int on_off) {
     if (on_off) {
         dump_6502_level2 = dump_6502;

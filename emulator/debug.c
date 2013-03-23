@@ -15,6 +15,7 @@ unsigned char vram_data_get(unsigned short addr);
 unsigned char dbg_get_byte(unsigned short addr);
 unsigned short dbg_get_short(unsigned short addr);
 void dump_ppu_reg(void);
+void d1_set(int on_off);
 void d2_set(int on_off);
 void d3_set(int on_off);
 void d4_set(int on_off);
@@ -28,7 +29,6 @@ struct cmd_list {
 
 static struct cmd_list* debug_history;
 //global variable.
-int dbg_log_msg;
 unsigned short break_point;
 
 static void print_debug(void) {
@@ -43,7 +43,7 @@ static void print_debug(void) {
     printf("        pshow: show ppu registers\n");
     printf("  v addr size: vram dump\n");
     printf("  da addr size: disassemble\n");
-    printf("   log on/off: set log msg on/off\n");
+    printf("   d1 on/off: debug log level 1 (dump instruction on execution)\n");
     printf("   d2 on/off: debug log level 2 (dump reg status for each instruction)\n");
     printf("   d3 on/off: debug log level 3 (dump load/store data value)\n");
     printf("   d4 on/off: debug log level 4 (dump vram data write)\n");
@@ -106,13 +106,13 @@ int emu_debug(void) {
         else if (!strcmp(buf, "show")){
             dump_6502(TRUE);
         }
-        else if (!strcmp(buf, "log")){
+        else if (!strcmp(buf, "d1")){
             scanf("%s", buf);
             if (!strcmp(buf, "on")){
-                dbg_log_msg = TRUE;
+                d1_set(TRUE);
             }
             else if (!strcmp(buf, "off")){
-                dbg_log_msg = FALSE;
+                d1_set(FALSE);
             }
             else {
                 printf("log parameter must be either [on] or [off].\n");
@@ -337,7 +337,6 @@ void break_hit(void) {
 int init_debug(void) {
     dprint("init debug..\n");
     debug_history = NULL;
-    dbg_log_msg = debug_mode;
     break_point = 0;
     //initscr();          /* Start curses mode          */
 
