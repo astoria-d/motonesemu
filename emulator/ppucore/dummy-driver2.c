@@ -23,6 +23,7 @@ void dump_vram(int type, int bank, unsigned short addr, int size);
 void set_bgtile(int tile_id);
 void set_sprite(int x, int y, int tile_id, struct sprite_attr sa);
 void set_monocolor (int mono);
+void ppu_ctrl1_set(unsigned char data);
 
 struct timespec sleep_inteval = {0, 1000000 / VGA_REFRESH_RATE};
 
@@ -52,19 +53,13 @@ int load_prg_rom(FILE* cartridge, int num_rom_bank) {
  * */
 int debug_mode = TRUE;
 int critical_error = FALSE;
-void dump_6502(int full) {
-}
-unsigned char dbg_get_byte(unsigned short addr) {
-        return 0;
-}
-unsigned short dbg_get_short(unsigned short addr) {
-        return 0;
-}
-int disas_inst(unsigned short addr) {
-    return 0;
-}
-void set_nmi_pin(int val) {
-}
+void dump_6502(int full) { }
+unsigned char dbg_get_byte(unsigned short addr) { return 0; }
+unsigned short dbg_get_short(unsigned short addr) { return 0; }
+int disas_inst(unsigned short addr) { return 0; }
+void set_nmi_pin(int val) { }
+void d2_set(int on_off) {}
+void d3_set(int on_off) {}
 
 /*
  * ppu test function
@@ -95,7 +90,7 @@ static void test_ppu(void) {
         vram_data_set(0x3f10 + i, plt[i + 16]);
 
     for (i = 0; i < 960; i++) 
-        vram_data_set(0x2000 + i, 0);
+        vram_data_set(0x2000 + i, i%255);
 
     for (i = 0; i < 64; i++) 
         vram_data_set(0x23c0 + i, 0);
@@ -115,6 +110,11 @@ static void test_ppu(void) {
     vram_data_set(0x2000 + 0, 0x65);
 
     set_monocolor(FALSE);
+
+    //bg character base addr set to 0x1000.
+    ppu_ctrl1_set(0x10);
+    //bg&sprite show
+    ppu_ctrl2_set(0x18);
 
     for (i = 0; i < 960; i++) 
         set_bgtile(i);
@@ -159,7 +159,8 @@ int main(int argc, char** argv) {
         fprintf(stderr, "ppucore init error.\n");
         return -1;
     }
-    ret = load_cartridge("sample1.nes");
+    //ret = load_cartridge("sample1.nes");
+    ret = load_cartridge("smb.nes");
     if (ret == FALSE) {
         fprintf(stderr, "load cartridge error.\n");
         return -1;

@@ -25,6 +25,8 @@ void pc_set(unsigned short addr);
 unsigned short pc_get(void);
 void pc_move(int offset);
 void report_exec_err(void);
+void d2_set(int on_off);
+void d3_set(int on_off);
 
 //for debug.c
 void break_hit(void);
@@ -38,6 +40,10 @@ extern int critical_error;
 
 static unsigned char cpu_data_buffer;
 static unsigned short cpu_addr_buffer;
+
+static void (*dump_6502_level2)(int);
+static void (*dump_6502_level3_load)(unsigned short, unsigned char);
+static void (*dump_6502_level3_store)(unsigned short, unsigned char);
 
 /*
  * clock execution function array.
@@ -76,17 +82,14 @@ unsigned char load_memory(unsigned short addr) {
     cpu_data_buffer = get_bus_data();
     end_bus();
 
+    dump_6502_level3_load (addr, cpu_data_buffer);
     /*
-    dprint("                                  ");
-    dprint("                                  ");
-    dprint("load: @%04x = %02x\n", addr, cpu_data_buffer);
     */
     return cpu_data_buffer;
 }
 
 void store_memory(unsigned short addr, unsigned char data) {
-    dprint("                                  ");
-    dprint("store: @%04x = %02x\n", addr, data);
+    dump_6502_level3_store (addr, data);
 
     set_rw_pin(1);
     set_bus_addr(addr);
@@ -186,6 +189,7 @@ static int fetch_and_decode_inst(void) {
     }
 
 
+    dump_6502_level2(TRUE);
     pc = pc_get();
 
     if (break_point == pc) {
@@ -266,6 +270,20 @@ unsigned char get_cpu_data_buf(void) {
     return cpu_data_buffer;
 }
 
+/*null func*/
+static void null_dump_6502 (int param) {}
+static void null_load_store (unsigned short addr, unsigned char data) {}
+
+static void dump_load (unsigned short addr, unsigned char data) {
+    dprint("                                  ");
+    dprint("                                  ");
+    dprint("load: @%04x = %02x\n", addr, data);
+}
+static void dump_store (unsigned short addr, unsigned char data) {
+    dprint("                                  ");
+    dprint("store: @%04x = %02x\n", addr, data);
+}
+
 int init_cpu(void) {
     int ret;
 
@@ -283,6 +301,30 @@ int init_cpu(void) {
     cpu_data_buffer = 0;
     cpu_addr_buffer = 0;
 
+    d2_set(debug_mode);
+    d3_set(debug_mode);
+
     return TRUE;
+}
+
+/*------for debug.c-----*/
+void d2_set(int on_off) {
+    if (on_off) {
+        dump_6502_level2 = dump_6502;
+    }
+    else {
+        dump_6502_level2 = null_dump_6502;
+    }
+}
+
+void d3_set(int on_off) {
+    if (on_off) {
+        dump_6502_level3_load = dump_load;
+        dump_6502_level3_store = dump_store;
+    }
+    else {
+        dump_6502_level3_load = null_load_store;
+        dump_6502_level3_store = null_load_store;
+    }
 }
 

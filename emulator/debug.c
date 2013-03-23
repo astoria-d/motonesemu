@@ -15,6 +15,9 @@ unsigned char vram_data_get(unsigned short addr);
 unsigned char dbg_get_byte(unsigned short addr);
 unsigned short dbg_get_short(unsigned short addr);
 void dump_ppu_reg(void);
+void d2_set(int on_off);
+void d3_set(int on_off);
+void d4_set(int on_off);
 
 #define MAX_HISTORY     10
 
@@ -41,6 +44,9 @@ static void print_debug(void) {
     printf("  v addr size: vram dump\n");
     printf("  da addr size: disassemble\n");
     printf("   log on/off: set log msg on/off\n");
+    printf("   d2 on/off: debug log level 2 (dump reg status for each instruction)\n");
+    printf("   d3 on/off: debug log level 3 (dump load/store data value)\n");
+    printf("   d4 on/off: debug log level 4 (dump vram data write)\n");
     printf("            q: quit emulator\n");
 }
 
@@ -110,6 +116,42 @@ int emu_debug(void) {
             }
             else {
                 printf("log parameter must be either [on] or [off].\n");
+            }
+        }
+        else if (!strcmp(buf, "d2")){
+            scanf("%s", buf);
+            if (!strcmp(buf, "on")){
+                d2_set(TRUE);
+            }
+            else if (!strcmp(buf, "off")){
+                d2_set(FALSE);
+            }
+            else {
+                printf("d2 parameter must be either [on] or [off].\n");
+            }
+        }
+        else if (!strcmp(buf, "d3")){
+            scanf("%s", buf);
+            if (!strcmp(buf, "on")){
+                d3_set(TRUE);
+            }
+            else if (!strcmp(buf, "off")){
+                d3_set(FALSE);
+            }
+            else {
+                printf("d3 parameter must be either [on] or [off].\n");
+            }
+        }
+        else if (!strcmp(buf, "d4")){
+            scanf("%s", buf);
+            if (!strcmp(buf, "on")){
+                d4_set(TRUE);
+            }
+            else if (!strcmp(buf, "off")){
+                d4_set(FALSE);
+            }
+            else {
+                printf("d4 parameter must be either [on] or [off].\n");
             }
         }
         else if (!strcmp(buf, "b")){

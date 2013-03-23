@@ -118,7 +118,7 @@ static void *ppucore_loop(void* arg) {
             //sprite in the back
             ;
         }
-        if (1/*ctrl_reg2.show_bg*/) {
+        if (ctrl_reg2.show_bg/**/) {
             //back ground image
             updated |= show_background();
         }
@@ -286,10 +286,6 @@ int ppucore_init(void) {
     sprite_size_type = SPR_STYPE_8x8;
     vram_addr_inc = 1;
 
-    ret = vram_init();
-    if (!ret)
-        return FALSE;
-
     ret = vga_xfer_init();
     if (!ret)
         return FALSE;
@@ -299,6 +295,10 @@ int ppucore_init(void) {
         return FALSE;
 
     ret = palette_init();
+    if (!ret)
+        return FALSE;
+
+    ret = vram_init();
     if (!ret)
         return FALSE;
 

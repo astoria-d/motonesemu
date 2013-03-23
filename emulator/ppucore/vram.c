@@ -38,6 +38,11 @@ static unsigned char * pattern_tbl1;
 static int first_time = TRUE;
 #endif /* PPU_TEST */
 
+extern int debug_mode;
+static void (*vram_log_level4)(unsigned short, unsigned char);
+static void dump_vram_write (unsigned short addr, unsigned char data);
+void d4_set(int on_off);
+
 /*
  * VRAM get/set functions....
  *
@@ -122,8 +127,12 @@ static void spr_ram_tbl_set(unsigned short offset, unsigned char data) {
 }
 
 void vram_data_set(unsigned short addr, unsigned char data) {
+#ifdef PPU_TEST
+    if (!first_time)
+        return;
+#endif /* PPU_TEST */
 
-    dprint("vram_data_set addr:%04x, data:%2x\n", addr, data);
+    vram_log_level4 (addr, data);
 
     //mirror 0x4000 up addr.
     addr &= PPU_ADDR_MASK;
@@ -236,23 +245,28 @@ static void test_ppu(void) {
             0x0f, 0x0a, 0x1a, 0x2a,
     };
 
+    //bg character base addr set to 0x1000.
+    ppu_ctrl1_set(0x00);
+
 /*
+*/
     //palette tbl
     for (i = 0; i < 16; i++)
         vram_data_set(0x3f00 + i, plt[i]);
     for (i = 0; i < 16; i++)
         vram_data_set(0x3f10 + i, plt[i + 16]);
-*/
+
     //name tbl
     for (i = 0; i < 960; i++) 
-        vram_data_set(0x2000 + i, 0);
+        vram_data_set(0x2000 + i, i %255);
 
 /*
 */
     //attr tbl
     for (i = 0; i < 64; i++) 
-        vram_data_set(0x23c0 + i, 0);
+        vram_data_set(0x23c0 + i, i%16);
 
+    /*
     vram_data_set(0x2000 + 205, 'D');
     vram_data_set(0x2000 + 206, 'e');
     vram_data_set(0x2000 + 207, 'e');
@@ -265,14 +279,16 @@ static void test_ppu(void) {
     //other test.
     vram_data_set(0x2000 + 300, 1);
     vram_data_set(0x2000 + 0, 0x65);
-    /*
-     * */
+*/
 
+    /*
     set_monocolor(FALSE);
+     * */
 
     for (i = 0; i < 960; i++) 
         set_bgtile(i);
 
+    /*
     //sprite test
     struct sprite_attr sa;
     sa.palette = 2;
@@ -284,6 +300,10 @@ static void test_ppu(void) {
     set_sprite(50, 100, 'd', sa);
     sa.flip_v = 1;
     set_sprite(70, 105, 'd', sa);
+     * */
+
+    //bg&sprite show
+    ppu_ctrl2_set(0x18);
 
     /*
     vga_xfer();
@@ -507,6 +527,8 @@ int vram_init(void) {
     memset(bg_palette_tbl, 0, PALETTE_TBL_SIZE);
     memset(spr_palette_tbl, 0, PALETTE_TBL_SIZE);
 
+    d4_set(debug_mode);
+
     return TRUE;
 }
 
@@ -528,3 +550,16 @@ void clean_vram(void) {
 
 }
 
+static void null_write (unsigned short addr, unsigned char data) {}
+static void dump_vram_write (unsigned short addr, unsigned char data) {
+    dprint("vram_data_set addr:%04x, data:%2x\n", addr, data);
+}
+
+void d4_set(int on_off) {
+    if (on_off) {
+        vram_log_level4 = dump_vram_write;
+    }
+    else {
+        vram_log_level4 = null_write;
+    }
+}
