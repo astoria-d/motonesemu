@@ -2342,7 +2342,7 @@ int nmi6502(void) {
             {
                 //step 3, push status_reg
                 unsigned char stat;
-                memcpy(&stat, &cpu_reg, sizeof(stat));
+                memcpy(&stat, &cpu_reg.status, sizeof(stat));
                 push(stat);
                 return TRUE;
             }
