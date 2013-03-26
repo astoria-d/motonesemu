@@ -140,6 +140,9 @@ void vram_data_set(unsigned short addr, unsigned char data) {
     if (addr < 2 * PATTERN_TBL_SIZE) {
         //dprint("invalid vram write addr:%04x, data:%2x\n", addr, data);
         //do nothing. pattern table is read only.
+        extern int critical_error;
+        dprint("invalid vram write!!!!\n");
+        critical_error = TRUE;
     }
     else if (addr >= PALETTE_START) {
         // bg/sprite palette table.
@@ -552,6 +555,7 @@ void clean_vram(void) {
 
 static void null_write (unsigned short addr, unsigned char data) {}
 static void dump_vram_write (unsigned short addr, unsigned char data) {
+    dprint("                                  ");
     dprint("vram_data_set addr:%04x, data:%2x\n", addr, data);
 }
 

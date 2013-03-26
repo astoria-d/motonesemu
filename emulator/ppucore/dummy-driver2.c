@@ -61,6 +61,7 @@ void set_nmi_pin(int val) { }
 void d1_set(int on_off) {}
 void d2_set(int on_off) {}
 void d3_set(int on_off) {}
+void clean_clock(void){}
 
 /*
  * ppu test function

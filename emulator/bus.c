@@ -126,6 +126,9 @@ void set_bus_data(unsigned char data){
         return;
 
     if (addr_bus & ROM_BIT) {
+        extern int critical_error;
+        dprint("invalid write!!!!\n");
+        critical_error = TRUE;
         //no write to ROM
     }
     else if ((addr_bus & IO_APU_BIT) == IO_APU_BIT) {

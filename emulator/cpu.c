@@ -98,7 +98,6 @@ void store_memory(unsigned short addr, unsigned char data) {
     start_bus();
     end_bus();
 
-    cpu_addr_buffer = addr;
     cpu_data_buffer = data;
 }
 

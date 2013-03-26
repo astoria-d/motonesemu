@@ -2336,7 +2336,7 @@ int reset6502(void) {
 }
 
 int nmi6502(void) {
-    dprint("nmi...\n");
+    //dprint("nmi...\n");
 
     //nmi6502 is always called when current instruction execution is done.
     switch (current_exec_index++) {

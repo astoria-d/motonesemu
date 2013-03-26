@@ -100,6 +100,13 @@ void set_bgtile(int tile_id) {
                 //dprint("%d, %d, colind:%d\n", j, i, pi);
                 set_data->l[i].d[7 - j] = plt.col[pi];
             }
+            else {
+                //TODO
+                //for the time being, transparent bg color is black..
+                set_data->l[i].d[7 - j].r = 0;
+                set_data->l[i].d[7 - j].g = 0;
+                set_data->l[i].d[7 - j].b = 0;
+            }
         }
     }
 
