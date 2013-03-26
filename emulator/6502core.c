@@ -921,6 +921,7 @@ int func_ADC(void) {
     int done = FALSE;
     int ret;
     unsigned char data;
+    unsigned char old_carry;
 
     ret = load_addr_mode(&done);
     if (!ret)
@@ -930,11 +931,12 @@ int func_ADC(void) {
         return TRUE;
 
     data = get_cpu_data_buf();
+    old_carry = cpu_reg.status.carry;
     //signed, unsigned overflow check.
     set_ADD_carry(cpu_reg.acc, cpu_reg.status.carry, data);
     set_ADD_overflow(cpu_reg.acc, cpu_reg.status.carry, data);
     //add data with carry to accumurator.
-    cpu_reg.acc += data + cpu_reg.status.carry;
+    cpu_reg.acc += data + old_carry;
 
     // N/Z flags set.
     set_negative(cpu_reg.acc);
