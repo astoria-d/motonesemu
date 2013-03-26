@@ -5,7 +5,7 @@ TEST_BIN=dummy-driver2
 DUMMY_OBJS=dummy-driver2.o debug.o cartridge.o 
 
 OBJS=ppucore.o vram.o vscreen.o palette.o \
-	 vga_xfer.o
+	 vga_xfer.o sprite.o
 	 
 LIBS=-L../../libs -L./ -lmotones -pthread -lrt -lppucore
 

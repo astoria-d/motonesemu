@@ -46,8 +46,8 @@ static ppu_write_t *ppucore_write_func[8] = {
     ppu_ctrl1_set,
     ppu_ctrl2_set,
     null_write,
-    sprite_data_set,
     sprite_addr_set,
+    sprite_data_set,
     ppu_scroll_set,
     ppu_vram_addr_set,
     ppu_vram_data_set

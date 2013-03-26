@@ -7,6 +7,7 @@
 #include "vram.h"
 #include "ppucore.h"
 #include "vga_xfer.h"
+#include "sprite.h"
 
 int vscreen_init(void);
 void clean_vscreen(void);
@@ -17,6 +18,8 @@ void set_nmi_pin(int val);
 void set_bg_pattern_bank(unsigned char bank);
 void set_spr_pattern_bank(unsigned char bank);
 void set_bg_name_tbl_base(unsigned char sw);
+void spr_ram_tbl_set(unsigned short offset, unsigned char data);
+int show_sprite(int foreground);
 
 
 void dump_ppu_reg(void);
@@ -70,18 +73,23 @@ struct ppu_vram_addr_reg {
     unsigned int cnt :1;
 };
 
+struct ppu_scroll_reg {
+    unsigned char x;
+    unsigned char y;
+    unsigned int cnt :1;
+};
 /*ppu core register instances*/
 
 static struct ppu_ctrl_reg1 ctrl_reg1;
 static struct ppu_ctrl_reg2 ctrl_reg2;
 static struct ppu_status_reg status_reg;
 static struct ppu_vram_addr_reg vram_addr_reg;
+static struct ppu_scroll_reg scroll_reg;
+static struct ppu_sprite_reg sprite_reg;
 
 static unsigned char sprite_ram_addr_reg;
-static unsigned char sprite_ram_data_reg;
 static unsigned char sprite_ram_dma_reg;
 static unsigned char vram_data_reg;
-static unsigned char scroll_reg;
 static unsigned char vram_dma_reg;
 
 //value set by the ctrl_reg1.
@@ -116,7 +124,7 @@ static void *ppucore_loop(void* arg) {
         clock_gettime(CLOCK_REALTIME, &begin);
         if (ctrl_reg2.show_sprite) {
             //sprite in the back
-            ;
+            show_sprite(FALSE);
         }
         if (ctrl_reg2.show_bg/**/) {
             //back ground image
@@ -124,7 +132,7 @@ static void *ppucore_loop(void* arg) {
         }
         if (ctrl_reg2.show_sprite) {
             //foreground sprite
-            ;
+            show_sprite(TRUE);
         }
         if (updated) 
             vga_xfer();
@@ -217,15 +225,39 @@ unsigned char ppu_status_get(void) {
 }
 
 void sprite_addr_set(unsigned char addr) {
+    dprint("sprite_addr_set addr=%02x\n", addr);
     sprite_ram_addr_reg = addr;
+    sprite_reg.cnt = 0;
 }
 
 void sprite_data_set(unsigned char data) {
-    sprite_ram_data_reg = data;
+    dprint("sprite_data_set addr=%02x, data=%02x, cnt:%d\n", 
+            sprite_ram_addr_reg, data, sprite_reg.cnt);
+    switch (sprite_reg.cnt) {
+        case 0:
+        default:
+            sprite_reg.y = data;
+            break;
+        case 1:
+            sprite_reg.index = data;
+            break;
+        case 2:
+            memcpy(&sprite_reg.sa, &data, sizeof(struct sprite_attr));
+            break;
+        case 3:
+            sprite_reg.x = data;
+            break;
+    }
+    spr_ram_tbl_set(sprite_ram_addr_reg + sprite_reg.cnt, data);
+    sprite_reg.cnt++;
 }
 
 void ppu_scroll_set(unsigned char data) {
-    scroll_reg = data;
+    dprint("scroll set %s = %02x\n", (scroll_reg.cnt == 0 ? "x" : "y"), data);
+    if (scroll_reg.cnt++ == 0)
+        scroll_reg.x = data;
+    else
+        scroll_reg.y = data;
 }
 
 void ppu_vram_addr_set(unsigned char half_addr) {
@@ -274,12 +306,12 @@ int ppucore_init(void) {
     memset(&ctrl_reg2, 0,  sizeof(ctrl_reg1));
     memset(&status_reg, 0, sizeof(status_reg));
     memset(&vram_addr_reg, 0, sizeof(vram_addr_reg));
+    memset(&scroll_reg, 0, sizeof(scroll_reg));
+    memset(&sprite_reg, 0, sizeof(sprite_reg));
 
     sprite_ram_addr_reg = 0;
-    sprite_ram_data_reg = 0;
     sprite_ram_dma_reg = 0;
     vram_data_reg = 0;
-    scroll_reg = 0;
     vram_dma_reg = 0;
     vram_read_cnt = 0;
 
@@ -287,6 +319,10 @@ int ppucore_init(void) {
     vram_addr_inc = 1;
 
     ret = vga_xfer_init();
+    if (!ret)
+        return FALSE;
+
+    ret = sprite_init();
     if (!ret)
         return FALSE;
 
@@ -324,6 +360,7 @@ void clean_ppucore(void) {
     dprint("ppucore thread joined.\n");
 
     clean_vram();
+    clean_sprite();
     clean_vscreen();
 }
 

@@ -15,7 +15,6 @@ void dump_mem(const char* msg, unsigned short base,
 void set_bgtile(int tile_id);
 
 /*vram definition*/
-static unsigned char * sprite_ram;
 
 static unsigned char * bg_palette_tbl;
 static unsigned char * spr_palette_tbl;
@@ -115,15 +114,6 @@ static unsigned char bg_palette_tbl_get(unsigned short offset) {
 
 static void bg_palette_tbl_set(unsigned short offset, unsigned char data) {
     bg_palette_tbl[offset] = data;
-}
-
-
-static unsigned char spr_ram_tbl_get(unsigned short offset) {
-    return sprite_ram[offset];
-}
-
-static void spr_ram_tbl_set(unsigned short offset, unsigned char data) {
-    sprite_ram[offset] = data;
 }
 
 void vram_data_set(unsigned short addr, unsigned char data) {
@@ -322,23 +312,6 @@ static void test_ppu(void) {
 }
 #endif /* PPU_TEST */
 
-int show_background(void) {
-    int i;
-
-#ifdef PPU_TEST
-    if (1 /*first_time*/) {
-        test_ppu();
-        first_time = FALSE;
-    }
-    return TRUE;
-#endif /*PPU_TEST */
-
-    for (i = 0; i < H_SCREEN_TILE_SIZE * V_SCREEN_TILE_SIZE; i++) {
-        set_bgtile(i);
-    }
-    return TRUE;
-}
-
 static int attr_index_to_gp(int tile_index) {
     int tile_x, tile_y, gp_x, gp_y;
 
@@ -486,10 +459,6 @@ int vram_init(void) {
     if (pattern_tbl1 == NULL)
         return FALSE;
 
-    sprite_ram = malloc(SPRITE_RAM_SIZE);
-    if (sprite_ram == NULL)
-        return FALSE;
-
     name_tbl0 = malloc(NAME_TBL_SIZE);
     if (name_tbl0 == NULL)
         return FALSE;
@@ -522,7 +491,6 @@ int vram_init(void) {
 
     memset(pattern_tbl0, 0, PATTERN_TBL_SIZE);
     memset(pattern_tbl1, 0, PATTERN_TBL_SIZE);
-    memset(sprite_ram, 0, SPRITE_RAM_SIZE);
     memset(name_tbl0, 0, NAME_TBL_SIZE);
     memset(name_tbl1, 0, NAME_TBL_SIZE);
     memset(attr_tbl0, 0, ATTR_TBL_SIZE);
@@ -539,8 +507,6 @@ void clean_vram(void) {
 
     free(pattern_tbl0);
     free(pattern_tbl1);
-
-    free(sprite_ram);
 
     free(name_tbl0);
     free(name_tbl1);

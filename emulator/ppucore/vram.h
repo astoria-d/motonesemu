@@ -80,12 +80,10 @@ struct palette_unit {
 #define ATTR_TBL_SIZE       (VIRT_SCREEN_TILE_SIZE * VIRT_SCREEN_TILE_SIZE \
                             / ATTR_GROUP_UNIT / ATTR_UNIT_PER_BYTE)
 #define PALETTE_TBL_SIZE    0x10
-#define SPRITE_RAM_SIZE     0xff
 
 #define PATTERN_ADDR_MASK       (PATTERN_TBL_SIZE - 1)
 #define ATTR_TBL_ADDR_MASK      (ATTR_TBL_SIZE - 1)
 #define PALETTE_TBL_ADDR_MASK   (PALETTE_TBL_SIZE - 1)
-#define SPR_RAM_ADDR_MASK       (SPRITE_RAM_SIZE - 1)
 
 #define PPU_ADDR_MASK       (0x4000 - 1)
 #define PALETTE_START       0x3F00

@@ -11,6 +11,8 @@
 void load_attribute(unsigned char bank, int tile_index, struct palette *plt);
 void load_pattern(unsigned char bank, unsigned char ptn_index, struct tile_2* pattern);
 void load_spr_attribute(struct sprite_attr sa, struct palette *plt);
+void spr_ram_data_get(unsigned char index, unsigned char *x, unsigned char *y, 
+        unsigned char *tile_id, struct sprite_attr *sa);
 
 struct tile_rgb15_line {
     struct rgb15 d[8];
@@ -101,16 +103,27 @@ void set_bgtile(int tile_id) {
                 set_data->l[i].d[7 - j] = plt.col[pi];
             }
             else {
-                //TODO
-                //for the time being, transparent bg color is black..
+                //TODO for the time being, transparent bg color is black..
+                /*
                 set_data->l[i].d[7 - j].r = 0;
                 set_data->l[i].d[7 - j].g = 0;
                 set_data->l[i].d[7 - j].b = 0;
+                */
             }
         }
     }
 
 }
+
+int show_background(void) {
+    int i;
+
+    for (i = 0; i < H_SCREEN_TILE_SIZE * V_SCREEN_TILE_SIZE; i++) {
+        set_bgtile(i);
+    }
+    return TRUE;
+}
+
 
 void set_sprite(int x, int y, int tile_id, struct sprite_attr sa) {
     struct palette plt;
@@ -157,6 +170,29 @@ void set_sprite(int x, int y, int tile_id, struct sprite_attr sa) {
         }
     }
 }
+
+int show_sprite(int foreground) {
+    int i;
+    struct sprite_attr sa;
+    unsigned char x, y, tile;
+
+    if (foreground) {
+        for (i = 0; i < SPRITE_CNT; i++) {
+            spr_ram_data_get(i, &x, &y, &tile, &sa);
+            if (sa.priority)
+                set_sprite(x, y, tile, sa);
+        }
+    }
+    else {
+        for (i = 0; i < SPRITE_CNT; i++) {
+            spr_ram_data_get(i, &x, &y, &tile, &sa);
+            if (!sa.priority)
+                set_sprite(x, y, tile, sa);
+        }
+    }
+    return TRUE;
+}
+
 
 void set_bg_pattern_bank(unsigned char bank) {
     bg_pattern_bank = bank;
