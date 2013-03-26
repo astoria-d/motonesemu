@@ -985,7 +985,7 @@ int func_ASL(void) {
     if (current_inst->addr_mode == ADDR_MODE_ACC) {
         unsigned char op_data = cpu_reg.acc;
         //set carry flag from the pre-opration value.
-        cpu_reg.status.carry = ((op_data & 0x80) > 0);
+        cpu_reg.status.carry = ((op_data & 0x80) != 0);
         cpu_reg.acc = (op_data << 1);
         set_negative(cpu_reg.acc);
         set_zero(cpu_reg.acc);
@@ -999,7 +999,7 @@ int func_ASL(void) {
         if (operation) {
             unsigned char op_data = get_cpu_data_buf();
             //set carry flag from the pre-opration value.
-            cpu_reg.status.carry = ((op_data & 0x80) > 0);
+            cpu_reg.status.carry = ((op_data & 0x80) != 0);
             op_data = (op_data << 1);
             set_cpu_data_buf(op_data);
             return TRUE;
@@ -1828,10 +1828,12 @@ int func_ROL(void) {
 
     if (current_inst->addr_mode == ADDR_MODE_ACC) {
         unsigned char op_data = cpu_reg.acc;
+        unsigned char old_carry = cpu_reg.status.carry;
+
         //set carry flag from the pre-opration value.
-        cpu_reg.status.carry = ((op_data & 0x80) > 0);
+        cpu_reg.status.carry = ((op_data & 0x80) != 0);
         cpu_reg.acc = (op_data << 1);
-        if (cpu_reg.status.carry)
+        if (old_carry)
             cpu_reg.acc |= 0x01;
         set_negative(cpu_reg.acc);
         set_zero(cpu_reg.acc);
@@ -1844,10 +1846,12 @@ int func_ROL(void) {
 
         if (operation) {
             unsigned char op_data = get_cpu_data_buf();
+            unsigned char old_carry = cpu_reg.status.carry;
+
             //set carry flag from the pre-opration value.
-            cpu_reg.status.carry = ((op_data & 0x80) > 0);
+            cpu_reg.status.carry = ((op_data & 0x80) != 0);
             op_data = (op_data << 1);
-            if (cpu_reg.status.carry)
+            if (old_carry)
                 op_data |= 0x01;
             set_cpu_data_buf(op_data);
             return TRUE;
@@ -1880,10 +1884,12 @@ int func_ROR(void) {
 
     if (current_inst->addr_mode == ADDR_MODE_ACC) {
         unsigned char op_data = cpu_reg.acc;
+        unsigned char old_carry = cpu_reg.status.carry;
+
         //set carry flag from the pre-opration value.
         cpu_reg.status.carry = (op_data & 0x01);
         cpu_reg.acc = (op_data >> 1);
-        if (cpu_reg.status.carry)
+        if (old_carry)
             cpu_reg.acc |= 0x80;
         set_negative(cpu_reg.acc);
         set_zero(cpu_reg.acc);
@@ -1896,10 +1902,12 @@ int func_ROR(void) {
 
         if (operation) {
             unsigned char op_data = get_cpu_data_buf();
+            unsigned char old_carry = cpu_reg.status.carry;
+
             //set carry flag from the pre-opration value.
             cpu_reg.status.carry = (op_data & 0x01);
             op_data = (op_data >> 1);
-            if (cpu_reg.status.carry)
+            if (old_carry)
                 op_data |= 0x80;
             set_cpu_data_buf(op_data);
             return TRUE;
