@@ -58,7 +58,7 @@ struct ppu_status_reg {
     unsigned int nouse          :4;
     unsigned int vram_ignore    :1;
     unsigned int sprite_overflow    :1;
-    unsigned int sprite_0_hit   :1;
+    unsigned int sprite0_hit   :1;
     unsigned int vblank         :1;
 } __attribute__ ((packed));
 
@@ -120,6 +120,7 @@ static void *ppucore_loop(void* arg) {
         //start displaying
         status_reg.vblank = 0;
         status_reg.vram_ignore = 1;
+        status_reg.sprite0_hit = 0;
 
         clock_gettime(CLOCK_REALTIME, &begin);
         if (ctrl_reg2.show_sprite) {
@@ -220,7 +221,7 @@ unsigned char ppu_status_get(void) {
 
     //if read status reg, vram addr register counter is reset
     vram_addr_reg.cnt = 0;
-    //dprint("ppu_status:%x\n", ret);
+    dprint("ppu_status:%02x\n", ret);
     return ret;
 }
 
@@ -296,6 +297,11 @@ unsigned char ppu_vram_data_get(void) {
     //vram addr increment.
     vram_addr_reg.addr.s += vram_addr_inc;
     return vram_data_reg;
+}
+
+void sprite0_hit_set(void) {
+    dprint("sprite0 set...\n");
+    status_reg.sprite0_hit = 1;
 }
 
 int ppucore_init(void) {

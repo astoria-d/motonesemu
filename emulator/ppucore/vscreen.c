@@ -13,6 +13,7 @@ void load_pattern(unsigned char bank, unsigned char ptn_index, struct tile_2* pa
 void load_spr_attribute(struct sprite_attr sa, struct palette *plt);
 void spr_ram_data_get(unsigned char index, unsigned char *x, unsigned char *y, 
         unsigned char *tile_id, struct sprite_attr *sa);
+void sprite0_hit_set(void);
 
 struct tile_rgb15_line {
     struct rgb15 d[8];
@@ -180,17 +181,25 @@ int show_sprite(int foreground) {
     //draw lowest priority first, 
     //high priority late. highest priority comes top.
     if (foreground) {
-        for (i = 0; i < SPRITE_CNT; i++) {
-            spr_ram_data_get(SPRITE_CNT - 1 - i, &x, &y, &tile, &sa);
-            if (sa.priority)
+        for (i = SPRITE_CNT - 1; i >= 0; i--) {
+            spr_ram_data_get(i, &x, &y, &tile, &sa);
+            if (sa.priority) {
                 set_sprite(x, y, tile, sa);
+                if (i == 0) {
+                    sprite0_hit_set();
+                }
+            }
         }
     }
     else {
-        for (i = 0; i < SPRITE_CNT; i++) {
-            spr_ram_data_get(SPRITE_CNT - 1 - i, &x, &y, &tile, &sa);
-            if (!sa.priority)
+        for (i = SPRITE_CNT - 1; i >= 0; i--) {
+            spr_ram_data_get(i, &x, &y, &tile, &sa);
+            if (!sa.priority) {
                 set_sprite(x, y, tile, sa);
+                if (i == 0) {
+                    sprite0_hit_set();
+                }
+            }
         }
     }
     return TRUE;
