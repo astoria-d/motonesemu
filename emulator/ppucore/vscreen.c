@@ -176,16 +176,19 @@ int show_sprite(int foreground) {
     struct sprite_attr sa;
     unsigned char x, y, tile;
 
+    //sprite priority:
+    //draw lowest priority first, 
+    //high priority late. highest priority comes top.
     if (foreground) {
         for (i = 0; i < SPRITE_CNT; i++) {
-            spr_ram_data_get(i, &x, &y, &tile, &sa);
+            spr_ram_data_get(SPRITE_CNT - 1 - i, &x, &y, &tile, &sa);
             if (sa.priority)
                 set_sprite(x, y, tile, sa);
         }
     }
     else {
         for (i = 0; i < SPRITE_CNT; i++) {
-            spr_ram_data_get(i, &x, &y, &tile, &sa);
+            spr_ram_data_get(SPRITE_CNT - 1 - i, &x, &y, &tile, &sa);
             if (!sa.priority)
                 set_sprite(x, y, tile, sa);
         }

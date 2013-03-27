@@ -5,6 +5,7 @@
 #include "rom.h"
 #include "ram.h"
 #include "ppu.h"
+#include "apu.h"
 
 unsigned char dbg_rom_get_byte(unsigned short offset);
 unsigned short dbg_rom_get_short(unsigned short offset);
@@ -35,7 +36,7 @@ static struct cpu_pin pin_status;
  * */
 
 #define IO_PPU_BIT  0x2000
-#define IO_APU_BIT  0x6000
+#define IO_APU_BIT  0x4000
 #define ROM_BIT     0x8000
 
 #define RAM_MASK    0x07FF
@@ -57,21 +58,20 @@ void release_bus(void) {
  * */
 void start_bus(void) {
     //dprint("start bus %04x, addr&ppu: %x\n", addr_bus, addr_bus & IO_PPU_BIT);
+    pin_status.ready = 0;
     if (addr_bus & ROM_BIT) {
         /*case rom*/
-        pin_status.ready = 0;
         set_rom_ce_pin(TRUE);
     }
-    else if ((addr_bus & IO_APU_BIT) == IO_APU_BIT) {
+    else if (addr_bus & IO_APU_BIT) {
+        set_apu_start(TRUE);
     }
     else if (addr_bus & IO_PPU_BIT) {
         /*case ppu*/
-        pin_status.ready = 0;
         set_ppu_ce_pin(TRUE);
     }
     else {
         /*case ram*/
-        pin_status.ready = 0;
         set_ram_ce_pin(TRUE);
     }
 }
@@ -80,11 +80,13 @@ void end_bus(void) {
     if (!pin_status.ready) {
         fprintf(stderr, "pin not ready!!!!\n");
     }
+
     //dprint("end bus\n");
     if (addr_bus & ROM_BIT) {
         set_rom_ce_pin(FALSE);
     }
-    else if ((addr_bus & IO_APU_BIT) == IO_APU_BIT) {
+    else if (addr_bus & IO_APU_BIT) {
+        set_apu_start(FALSE);
     }
     else if (addr_bus & IO_PPU_BIT) {
         set_ppu_ce_pin(FALSE);
@@ -101,7 +103,9 @@ void set_bus_addr(unsigned short addr) {
     if (addr & ROM_BIT) {
         set_rom_addr(addr & ROM_MASK);
     }
-    else if ((addr & IO_APU_BIT) == IO_APU_BIT) {
+    else if (addr & IO_APU_BIT) {
+        //dprint("bus addr ioapu...\n");
+        set_apu_addr(addr & IO_APU_MASK);
     }
     else if (addr & IO_PPU_BIT) {
         set_ppu_addr(addr & IO_PPU_MASK);
@@ -131,7 +135,8 @@ void set_bus_data(unsigned char data){
         critical_error = TRUE;
         //no write to ROM
     }
-    else if ((addr_bus & IO_APU_BIT) == IO_APU_BIT) {
+    else if (addr_bus & IO_APU_BIT) {
+        set_apu_data(data);
     }
     else if (addr_bus & IO_PPU_BIT) {
         set_ppu_data(data);
@@ -149,7 +154,8 @@ char get_bus_data(void) {
     if (addr_bus & ROM_BIT) {
         data_bus = get_rom_data();
     }
-    else if ((addr_bus & IO_APU_BIT) == IO_APU_BIT) {
+    else if (addr_bus & IO_APU_BIT) {
+        data_bus = get_apu_data();
     }
     else if (addr_bus & IO_PPU_BIT) {
         data_bus = get_ppu_data();
@@ -165,6 +171,10 @@ char get_bus_data(void) {
  * */
 void set_rw_pin(int rw) {
     pin_status.rw = rw;
+}
+
+int get_rw_pin(void) {
+    return pin_status.rw;
 }
 
 /*nmi interrupt*/
@@ -195,7 +205,7 @@ unsigned char dbg_get_byte(unsigned short addr) {
     if (addr & ROM_BIT) {
         return dbg_rom_get_byte(addr & ROM_MASK);
     }
-    else if ((addr & IO_APU_BIT) == IO_APU_BIT) {
+    else if (addr & IO_APU_BIT) {
         return 0;
     }
     else if (addr & IO_PPU_BIT) {
@@ -209,7 +219,7 @@ unsigned short dbg_get_short(unsigned short addr) {
     if (addr & ROM_BIT) {
         return dbg_rom_get_short(addr & ROM_MASK);
     }
-    else if ((addr & IO_APU_BIT) == IO_APU_BIT) {
+    else if (addr & IO_APU_BIT) {
         return 0;
     }
     else if (addr & IO_PPU_BIT) {

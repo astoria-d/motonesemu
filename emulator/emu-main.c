@@ -12,10 +12,14 @@ int init_cpu(void);
 int init_bus(void);
 int init_debug(void);
 int init_ppu(void);
+int init_apu(void);
+int init_dma(void);
 
 void clean_bus(void);
 void clean_debug(void);
 void clean_ppu(void);
+void clean_apu(void);
+void clean_dma(void);
 
 void reset_cpu(void);
 int load_cartridge(const char* cartridge);
@@ -61,6 +65,18 @@ static int init_datas(void) {
         return FALSE;
     }
 
+    ret = init_apu();
+    if (!ret) {
+        fprintf(stderr, "apu init err.\n");
+        return FALSE;
+    }
+
+    ret = init_dma();
+    if (!ret) {
+        fprintf(stderr, "dma init err.\n");
+        return FALSE;
+    }
+
     ret = init_cpu();
     if (!ret) {
         fprintf(stderr, "cpu init err.\n");
@@ -79,9 +95,11 @@ static int init_datas(void) {
 static void clean_datas(void) {
     dprint("clean data...\n");
     clean_clock();
+    clean_dma();
     clean_rom();
     clean_ram();
     clean_ppu();
+    clean_apu();
     clean_bus();
 
     clean_debug();

@@ -3,7 +3,7 @@ BIN=motonesemu
 
 OBJS=emu-main.o clock.o bus.o cpu.o \
 	 rom.o cartridge.o 6502core.o debug.o ram.o \
-	 ppu.o
+	 ppu.o dma.o ioapu.o
 	 
 #	 kbhit.o
 
