@@ -45,7 +45,3 @@ void vga_shm_free(void* addr) {
     shmdt(addr);
 }
 
-void vga_shm_remove(void) {
-    shmctl(shmid, IPC_RMID, 0);
-}
-
