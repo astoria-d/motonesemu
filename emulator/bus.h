@@ -9,6 +9,9 @@ void start_bus(void);
 void end_bus(void);
 void set_rw_pin(int rw);
 
+void release_bus(void);
+void take_bus(void);
+
 void set_nmi_pin(int val);
 int get_nmi_pin(void);
 

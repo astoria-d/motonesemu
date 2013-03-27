@@ -20,7 +20,7 @@ static apu_write_t *apu_write_func[APU_IO_SIZE];
 static apu_read_t *apu_read_func[APU_IO_SIZE];
 
 void set_apu_addr(unsigned short addr) {
-    dprint("set_apu_addr: %02x\n", addr);
+    //dprint("set_apu_addr: %02x\n", addr);
     apu_addr = addr;
 }
 
@@ -29,7 +29,7 @@ unsigned char get_apu_data(void) {
 }
 
 void set_apu_data(unsigned char data) {
-    dprint("set_apu_data: %02x\n", data);
+    //dprint("set_apu_data: %02x\n", data);
     apu_data = data;
 }
 

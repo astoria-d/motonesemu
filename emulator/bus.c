@@ -53,6 +53,14 @@ void release_bus(void) {
     pin_status.ready = 1;
 }
 
+int bus_ready(void) {
+    return pin_status.ready;
+}
+
+void take_bus(void) {
+    pin_status.ready = 0;
+}
+
 /*
  * this function blocks when accessing rom/ram device.
  * */

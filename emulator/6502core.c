@@ -85,10 +85,14 @@ static struct opcode_map *current_inst;
 static int current_exec_index;
 static int exec_done;
 static int intr_done;
+static int bus_status;
 
 unsigned char load_memory(unsigned short addr);
 unsigned short load_addr(unsigned short addr, int cycle);
 void store_memory(unsigned short addr, unsigned char data);
+int bus_ready(void);
+#define BUS_READY_CHECK()  \
+    if ((bus_status = bus_ready()) != TRUE) { return FALSE; } 
 
 unsigned char get_cpu_data_buf(void);
 void set_cpu_data_buf(unsigned char data);
@@ -172,6 +176,8 @@ struct opcode_map opcode_list [255] = {
  *
  * */
 static int load_addr_mode(int *done) {
+    BUS_READY_CHECK()
+
     switch (current_inst->addr_mode) {
         case ADDR_MODE_ACC:
         case ADDR_MODE_IMP:
@@ -461,6 +467,8 @@ addr_mode_done:
  * store into memory in various addressing mode.
  * */
 static int store_addr_mode(unsigned char data, int *done) {
+    BUS_READY_CHECK()
+
     switch (current_inst->addr_mode) {
         case ADDR_MODE_ACC:
         case ADDR_MODE_IMP:
@@ -666,6 +674,8 @@ addr_mode_done:
  * for inc/dec/shift operation
  * */
 static int memory_to_memory(int *do_operation, int *done) {
+    BUS_READY_CHECK()
+
     switch (current_inst->addr_mode) {
         case ADDR_MODE_ACC:
         case ADDR_MODE_IMP:
@@ -900,14 +910,20 @@ static void set_SUB_overflow(char d1, char d2, char d3) {
 
 /*-------------   stack operation..  ---------------------*/
 //stack operation takes two cycles.
-static void push(unsigned char data) {
+static int push(unsigned char data) {
+    BUS_READY_CHECK()
+
     store_memory(STACK_BASE + cpu_reg.sp, data);
     cpu_reg.sp--;
+    return TRUE;
 }
 
-static unsigned char pop(void) {
+static int pop(void) {
+    BUS_READY_CHECK()
+
     cpu_reg.sp++;
-    return load_memory(STACK_BASE + cpu_reg.sp);
+    load_memory(STACK_BASE + cpu_reg.sp);
+    return TRUE;
 }
 
 /*---------- instruction implementations.   -----------------*/
@@ -1477,6 +1493,8 @@ int func_INY(void) {
 }
 
 static int jmp(int cycle, int *done) {
+    BUS_READY_CHECK()
+
     switch (current_inst->addr_mode) {
         case ADDR_MODE_ABS:
             //takes 2 cycles.
@@ -1561,14 +1579,12 @@ int func_JSR(void) {
     if (current_exec_index == 0) {
         //save return addr(-1) hi.
         //pc + 1 => jsr abslo abshi - 1
-        push((cpu_reg.pc + 1) >> 8);
-        return TRUE;
+        return push((cpu_reg.pc + 1) >> 8);
     }
     //cycle 2
     else if (current_exec_index == 1) {
         //save return addr(-1) low.
-        push(cpu_reg.pc + 1);
-        return TRUE;
+        return push(cpu_reg.pc + 1);
     }
     //cycle 3,4
     else if (current_exec_index < 4) {
@@ -1743,8 +1759,7 @@ int func_ORA(void) {
 static int push_op(unsigned char data, int *done) {
     //cycle 1
     if (current_exec_index == 0) {
-        push(data);
-        return TRUE;
+        return push(data);
     }
     //cycle 2
     else if (current_exec_index == 1) {
@@ -1778,8 +1793,7 @@ int func_PHP(void) {
 static int pull_op(int *done) {
     //cycle 1
     if (current_exec_index == 0) {
-        pop();
-        return TRUE;
+        return pop();
     }
     //cycle 2
     else if (current_exec_index == 1) {
@@ -1938,8 +1952,7 @@ int func_RTI(void) {
     //cycle 1
     if (current_exec_index == 0) {
         //pop statu reg.
-        pop();
-        return TRUE;
+        return pop();
     }
     //cycle 2 
     else if (current_exec_index == 1) {
@@ -1948,16 +1961,14 @@ int func_RTI(void) {
         data = get_cpu_data_buf();
         memcpy(&cpu_reg.status, &data, sizeof(data));
         //pop return addr low.
-        pop();
-        return TRUE;
+        return pop();
     }
     //cycle 3
     else if (current_exec_index == 2) {
         //set return addr low.
         set_cpu_addr_buf(get_cpu_data_buf());
         //pop return addr hi.
-        pop();
-        return TRUE;
+        return pop();
     }
     //cycle 4
     else if (current_exec_index == 3) {
@@ -1991,8 +2002,7 @@ int func_RTS(void) {
     //cycle 1
     if (current_exec_index == 0) {
         //pop return addr low.
-        pop();
-        return TRUE;
+        return pop();
     }
     //cycle 2 
     else if (current_exec_index == 1) {
@@ -2003,8 +2013,7 @@ int func_RTS(void) {
     //cycle 3
     else if (current_exec_index == 2) {
         //pop return addr hi.
-        pop();
-        return TRUE;
+        return pop();
     }
     //cycle 4
     else if (current_exec_index == 3) {
@@ -2282,6 +2291,10 @@ int test_and_set_exec(void) {
 int execute6502(void) {
     int ret;
     ret = current_inst->func();
+    if (!ret && !bus_status) {
+        //if bus status not ready, deson't do anything.
+        return TRUE;
+    }
     current_exec_index++;
 
 #ifdef cycle_check
@@ -2309,6 +2322,11 @@ int execute6502(void) {
 }
 
 int reset_exec6502(void) {
+    if ((bus_status = bus_ready()) != TRUE) { 
+        //on reset, if bus is not ready, do nothing.
+        return TRUE; 
+    } 
+
     switch (current_exec_index++) {
         case 0:
             //step 1: load intvec low.
@@ -2336,25 +2354,27 @@ int reset6502(void) {
 }
 
 int nmi6502(void) {
+    if ((bus_status = bus_ready()) != TRUE) { 
+        //on nmi, if bus is not ready, do nothing.
+        return TRUE; 
+    } 
+
     //dprint("nmi...\n");
 
     //nmi6502 is always called when current instruction execution is done.
     switch (current_exec_index++) {
         case 0:
             //first: push pc hi.
-            push(cpu_reg.pc >> 8);
-            return TRUE;
+            return push(cpu_reg.pc >> 8);
         case 1:
             //second: push pc low.
-            push(cpu_reg.pc);
-            return TRUE;
+            return push(cpu_reg.pc);
         case 2:
             {
                 //step 3, push status_reg
                 unsigned char stat;
                 memcpy(&stat, &cpu_reg.status, sizeof(stat));
-                push(stat);
-                return TRUE;
+                return push(stat);
             }
         case 3:
             //step 4: load intvec low.

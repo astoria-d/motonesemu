@@ -20,6 +20,7 @@ int test_and_set_intr(void);
 int emu_debug(void);
 int init_6502core(void);
 int nmi6502(void);
+int bus_ready(void);
 
 void pc_set(unsigned short addr);
 unsigned short pc_get(void);
@@ -203,6 +204,11 @@ static int fetch_and_decode_inst(void) {
             return FALSE;
     }
     //dprint("fetch\n");
+
+    //if bus not ready, do nothing.
+    if (!bus_ready())
+        return TRUE;
+
     load_memory(pc);
 
     ret = decode_inst();
