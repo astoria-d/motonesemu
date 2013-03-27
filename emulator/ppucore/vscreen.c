@@ -11,9 +11,8 @@
 void load_attribute(unsigned char bank, int tile_index, struct palette *plt);
 void load_pattern(unsigned char bank, unsigned char ptn_index, struct tile_2* pattern);
 void load_spr_attribute(struct sprite_attr sa, struct palette *plt);
-void spr_ram_data_get(unsigned char index, unsigned char *x, unsigned char *y, 
-        unsigned char *tile_id, struct sprite_attr *sa);
 void sprite0_hit_set(void);
+unsigned char spr_ram_tbl_get(unsigned short offset);
 
 struct tile_rgb15_line {
     struct rgb15 d[8];
@@ -116,10 +115,16 @@ void set_bgtile(int tile_id) {
 
 }
 
-int show_background(void) {
-    int i;
+int load_background(int scanline) {
+    int i, start, end;
 
-    for (i = 0; i < H_SCREEN_TILE_SIZE * V_SCREEN_TILE_SIZE; i++) {
+    //load tile must be executed every 8 scanlines only.
+    if (scanline % TILE_DOT_SIZE)
+        return TRUE;
+
+    start = scanline / TILE_DOT_SIZE * H_SCREEN_TILE_SIZE;
+    end = start + H_SCREEN_TILE_SIZE;
+    for (i = start; i < end; i++) {
         set_bgtile(i);
     }
     return TRUE;
@@ -172,36 +177,33 @@ void set_sprite(int x, int y, int tile_id, struct sprite_attr sa) {
     }
 }
 
-int show_sprite(int foreground) {
+int load_sprite(int foreground, int scanline) {
     int i;
     struct sprite_attr sa;
-    unsigned char x, y, tile;
+    unsigned char x, y, tile, tmp;
 
     //sprite priority:
     //draw lowest priority first, 
     //high priority late. highest priority comes top.
-    if (foreground) {
-        for (i = SPRITE_CNT - 1; i >= 0; i--) {
-            spr_ram_data_get(i, &x, &y, &tile, &sa);
-            if (sa.priority) {
-                set_sprite(x, y, tile, sa);
-                if (i == 0) {
-                    sprite0_hit_set();
-                }
-            }
+    for (i = SPRITE_CNT - 1; i >= 0; i--) {
+        y = spr_ram_tbl_get(4 * i);
+        if (scanline != y)
+            continue;
+
+        tmp = spr_ram_tbl_get(4 * i + 2);
+        memcpy(&sa, &tmp, sizeof(struct sprite_attr));
+        if (sa.priority != foreground)
+            continue;
+
+        tile = spr_ram_tbl_get(4 * i + 1);
+        x = spr_ram_tbl_get(4 * i + 3);
+
+        set_sprite(x, y, tile, sa);
+        if (i == 0) {
+            sprite0_hit_set();
         }
     }
-    else {
-        for (i = SPRITE_CNT - 1; i >= 0; i--) {
-            spr_ram_data_get(i, &x, &y, &tile, &sa);
-            if (!sa.priority) {
-                set_sprite(x, y, tile, sa);
-                if (i == 0) {
-                    sprite0_hit_set();
-                }
-            }
-        }
-    }
+
     return TRUE;
 }
 

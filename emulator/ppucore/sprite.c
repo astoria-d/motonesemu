@@ -16,16 +16,8 @@ void spr_ram_tbl_set(unsigned short offset, unsigned char data) {
     sprite_ram[offset & SPR_RAM_ADDR_MASK] = data;
 }
 
-void spr_ram_data_get(unsigned char index, unsigned char *x, unsigned char *y, 
-        unsigned char *tile_id, struct sprite_attr *sa) {
-    //index is multiple of 4.
-    index *= 4;
-    index &= SPR_RAM_ADDR_MASK;
-
-    *y = sprite_ram[index++];
-    *tile_id = sprite_ram[index++];
-    memcpy(sa, sprite_ram + index++, sizeof(struct sprite_attr));
-    *x = sprite_ram[index++];
+unsigned char spr_ram_tbl_get(unsigned short offset) {
+    return sprite_ram[offset & SPR_RAM_ADDR_MASK];
 }
 
 int sprite_init(void) {

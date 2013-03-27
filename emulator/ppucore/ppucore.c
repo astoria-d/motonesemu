@@ -12,15 +12,16 @@
 int vscreen_init(void);
 void clean_vscreen(void);
 int palette_init(void);
-void vga_xfer(void);
 void set_monocolor (int mono);
 void set_nmi_pin(int val);
 void set_bg_pattern_bank(unsigned char bank);
 void set_spr_pattern_bank(unsigned char bank);
 void set_bg_name_tbl_base(unsigned char sw);
 void spr_ram_tbl_set(unsigned short offset, unsigned char data);
-int show_sprite(int foreground);
 
+int load_sprite(int foreground, int scanline);
+int load_background(int scanline);
+void vga_xfer(int scanline);
 
 void dump_ppu_reg(void);
 
@@ -100,6 +101,8 @@ static unsigned int     vram_read_cnt;
 #define SPR_STYPE_8x8   0 
 #define SPR_STYPE_8x16  1
 
+#define SCAN_LINE       (V_SCREEN_TILE_SIZE * TILE_DOT_SIZE)
+
 static pthread_t ppucore_thread_id;
 static int ppucore_end_loop;
 
@@ -112,10 +115,10 @@ static void *ppucore_loop(void* arg) {
     struct timespec begin, end;
     struct timespec slp;
     long sec, nsec;
+    int scanline;
 #define NANOMAX (1000000000 - 1)
 
     while (!ppucore_end_loop) {
-        int updated = FALSE;
 
         //start displaying
         status_reg.vblank = 0;
@@ -123,20 +126,24 @@ static void *ppucore_loop(void* arg) {
         status_reg.sprite0_hit = 0;
 
         clock_gettime(CLOCK_REALTIME, &begin);
-        if (ctrl_reg2.show_sprite) {
-            //sprite in the back
-            show_sprite(FALSE);
+        for (scanline = 0; scanline < SCAN_LINE; scanline++) {
+            if (ctrl_reg2.show_sprite) {
+                //sprite in the back
+                load_sprite(FALSE, scanline);
+            }
+            if (ctrl_reg2.show_bg/**/) {
+                //back ground image is pre-loaded. load 1 line ahead of drawline.
+                if (scanline == 0)
+                    load_background(scanline);
+                if (scanline < SCAN_LINE - 1)
+                    load_background(scanline + 8);
+            }
+            if (ctrl_reg2.show_sprite) {
+                //foreground sprite
+                load_sprite(TRUE, scanline);
+            }
+            vga_xfer(scanline);
         }
-        if (ctrl_reg2.show_bg/**/) {
-            //back ground image
-            updated |= show_background();
-        }
-        if (ctrl_reg2.show_sprite) {
-            //foreground sprite
-            show_sprite(TRUE);
-        }
-        if (updated) 
-            vga_xfer();
 
         //printing display done.
         status_reg.vblank = 1;
@@ -221,7 +228,7 @@ unsigned char ppu_status_get(void) {
 
     //if read status reg, vram addr register counter is reset
     vram_addr_reg.cnt = 0;
-    dprint("ppu_status:%02x\n", ret);
+    //dprint("ppu_status:%02x\n", ret);
     return ret;
 }
 
