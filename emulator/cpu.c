@@ -305,8 +305,8 @@ int init_cpu(void) {
     cpu_addr_buffer = 0;
 
     d1_set(debug_mode);
-    d2_set(debug_mode);
-    d3_set(debug_mode);
+    d2_set(FALSE);
+    d3_set(FALSE);
 
     return TRUE;
 }

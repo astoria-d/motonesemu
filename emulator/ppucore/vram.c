@@ -498,7 +498,8 @@ int vram_init(void) {
     memset(bg_palette_tbl, 0, PALETTE_TBL_SIZE);
     memset(spr_palette_tbl, 0, PALETTE_TBL_SIZE);
 
-    d4_set(debug_mode);
+    //d4_set(debug_mode);
+    d4_set(FALSE);
 
     return TRUE;
 }

@@ -6,10 +6,11 @@
 #include "tools.h"
 #include "vga.h"
 
+static int   shmid;
+
 void *vga_shm_get(void) {
     void* ret;
     key_t key;
-    int   shmid;
 
     //create shared memory
     key = ftok(VGA_SHM, VGA_SHM_PRJ_ID);
@@ -42,5 +43,9 @@ void *vga_shm_get(void) {
 
 void vga_shm_free(void* addr) {
     shmdt(addr);
+}
+
+void vga_shm_remove(void) {
+    shmctl(shmid, IPC_RMID, 0);
 }
 

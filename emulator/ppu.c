@@ -11,6 +11,7 @@
 void set_vga_base(unsigned char* base);
 void *vga_shm_get(void);
 void vga_shm_free(void* addr);
+void vga_shm_remove(void);
 void release_bus(void);
 
 struct ppu_cpu_pin {
@@ -151,6 +152,7 @@ int init_ppu(void) {
 void clean_ppu(void) {
     clean_ppucore();
     vga_shm_free(vga_shared_buf);
+    vga_shm_remove();
 }
 
 
