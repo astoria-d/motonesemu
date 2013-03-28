@@ -10,6 +10,7 @@
 #include "vga.h"
 #include "vram.h"
 #include "sprite.h"
+#include "clock.h"
 
 static struct rgb15 *disp_data;
 void *vga_shm_get(void);
@@ -62,6 +63,7 @@ void d1_set(int on_off) {}
 void d2_set(int on_off) {}
 void d3_set(int on_off) {}
 void clean_clock(void){}
+int register_clock_hander(clock_func_t *handler, int devide) {return 0;}
 
 /*
  * ppu test function

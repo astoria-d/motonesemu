@@ -142,7 +142,7 @@ int init_clock(void) {
     handler_list = NULL;
 
     nano_spin_cnt = 0;
-    calibrate_clock();
+    //calibrate_clock();
 
     return TRUE;
 }

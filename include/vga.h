@@ -33,7 +33,7 @@ struct rgb15 {
 
 #define VGA_SHM             "vgadisp"
 #define VGA_SHM_PRJ_ID      'm'
-#define VGA_SHM_SIZE        VGA_WIDTH * VGA_HEIGHT * sizeof (struct rgb15)
+#define VGA_SHM_SIZE        (VGA_WIDTH * VGA_HEIGHT * sizeof (struct rgb15))
 
 #define VGA_REFRESH_RATE    60
 
