@@ -295,7 +295,7 @@ int init_cpu(void) {
         return FALSE;
     }
 
-    ret = register_clock_hander(clock_cpu);
+    ret = register_clock_hander(clock_cpu, CPU_DEVIDER);
     if (!ret) {
         return FALSE;
     }

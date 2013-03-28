@@ -79,7 +79,7 @@ int init_dma(void) {
     start_dma = FALSE;
     dma_cnt = 0;
 
-    ret = register_clock_hander(clock_dma);
+    ret = register_clock_hander(clock_dma, CPU_DEVIDER);
     if (!ret) {
         return FALSE;
     }
