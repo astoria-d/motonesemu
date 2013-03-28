@@ -18,12 +18,8 @@ struct clock_handler {
 };
 
 static struct clock_handler *handler_list;
-static int nano_spin_cnt;
-
-static void spin_nanosec(int nanosec);
 
 #define NANOMAX (1000000000L - 1)
-#define NANOSEC 1000000000L
 
 static void* cpu_clock_loop(void* arg) {
     struct clock_handler *ch;
@@ -43,7 +39,6 @@ static void* cpu_clock_loop(void* arg) {
                 ch->cnt = 0;
             ch = (struct clock_handler*)ch->l.next;
         }
-        //spin_nanosec(BASE_CLOCK_NSEC);
     }
 
     return NULL;
@@ -94,55 +89,9 @@ int register_clock_hander(clock_func_t *handler, int devide) {
     return TRUE;
 }
 
-static void spin(long cnt) {
-    int a, b, c, d;
-    a = b = c = d = cnt;
-    while (cnt-- > 0) {
-        long i;
-        for (i = 0 ; i < 100000; i++) {
-            d = a * b * c;
-            c = d * b * d;
-            a = d * b * c;
-            b = d * a * c;
-        }
-    }
-}
-static void spin_nanosec(int nanosec) {
-    spin(nano_spin_cnt);
-}
-
-static void calibrate_clock(void) {
-    long cnt;
-    struct timespec begin;
-    struct timespec end;
-    long b_nsec, e_nsec;
-
-    cnt = 1;
-    while (1) {
-        clock_gettime(CLOCK_REALTIME, &begin);
-        b_nsec = begin.tv_nsec;
-        spin(cnt++);
-        clock_gettime(CLOCK_REALTIME, &end);
-        if (end.tv_sec == begin.tv_sec) {
-            continue;
-        }
-
-        //calcurate
-        e_nsec = NANOSEC + end.tv_nsec;
-        if (e_nsec - b_nsec > NANOSEC / 10)
-            break;
-    }
-    nano_spin_cnt = cnt / 10;
-
-    dprint("cnt :%d, begin:%d, end:%d, diff:%d\n", cnt, b_nsec, e_nsec, e_nsec - b_nsec);
-}
-
 int init_clock(void) {
     exit_loop = FALSE;
     handler_list = NULL;
-
-    nano_spin_cnt = 0;
-    //calibrate_clock();
 
     return TRUE;
 }

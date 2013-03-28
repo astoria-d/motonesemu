@@ -17,6 +17,12 @@
 #define NES_VIDEO_CLK_SEC   (1L / NES_VIDEO_FREQ)
 #define NES_VIDEO_CLK_NSEC  (1000000000L / NES_VIDEO_FREQ)
 
+#define HSCAN_MAX               341
+#define VSCAN_MAX               262
+
+#define VSCREEN_WIDTH       (H_SCREEN_TILE_SIZE * TILE_DOT_SIZE)
+#define VSCREEN_HEIGHT      (V_SCREEN_TILE_SIZE * TILE_DOT_SIZE)
+
 
 void ppu_ctrl1_set(unsigned char data);
 void ppu_ctrl2_set(unsigned char data);

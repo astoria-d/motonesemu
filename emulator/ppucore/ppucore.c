@@ -8,6 +8,7 @@
 #include "ppucore.h"
 #include "vga_xfer.h"
 #include "sprite.h"
+#include "clock.h"
 
 int vscreen_init(void);
 void clean_vscreen(void);
@@ -103,6 +104,10 @@ static unsigned int     vram_read_cnt;
 
 #define SCAN_LINE       (V_SCREEN_TILE_SIZE * TILE_DOT_SIZE)
 
+#define OLD_PPU_LOOP
+#undef OLD_PPU_LOOP
+
+#ifdef OLD_PPU_LOOP
 static pthread_t ppucore_thread_id;
 static int ppucore_end_loop;
 
@@ -176,6 +181,65 @@ static void *ppucore_loop(void* arg) {
         }
     }
     return NULL;
+}
+#endif
+
+static int scan_x;
+static int scan_y;
+static int clock_ppu(void) {
+//    dprint("ppu x:%d, y:%d...\n", scan_x, scan_y);
+
+    if (scan_x < VSCREEN_WIDTH && scan_y < VSCREEN_HEIGHT) {
+        int scanline = scan_y;
+        if (scan_x == 0 && scan_y == 0) {
+            //start displaying
+            status_reg.vblank = 0;
+            status_reg.vram_ignore = 1;
+        }
+
+        if (scan_x == 0) {
+            status_reg.sprite0_hit = 0;
+
+            if (ctrl_reg2.show_sprite) {
+                //sprite in the back
+                load_sprite(FALSE, scanline);
+            }
+            if (ctrl_reg2.show_bg/**/) {
+                //back ground image is pre-loaded. load 1 line ahead of drawline.
+                if (scanline == 0)
+                    load_background(scanline);
+                if (scanline < SCAN_LINE - 1)
+                    load_background(scanline + 8);
+            }
+            if (ctrl_reg2.show_sprite) {
+                //foreground sprite
+                load_sprite(TRUE, scanline);
+            }
+            vga_xfer(scanline);
+        }
+    }
+    else {
+        if (scan_x == 0 && scan_y == VSCREEN_HEIGHT) {
+            //printing display done.
+            status_reg.vblank = 1;
+            status_reg.vram_ignore = 0;
+            if (ctrl_reg1.nmi_vblank) {
+                //generate nmi interrupt to the cpu.
+                set_nmi_pin(TRUE);
+            }
+        }
+    }
+
+
+    scan_x++;
+    if (scan_x == HSCAN_MAX) {
+        scan_x = 0;
+        scan_y++;
+    }
+    if (scan_y == VSCAN_MAX) {
+        scan_y = 0;
+    }
+    return TRUE;
 }
 
 void ppu_ctrl1_set(unsigned char data) {
@@ -313,7 +377,6 @@ void sprite0_hit_set(void) {
 
 int ppucore_init(void) {
     int ret;
-    pthread_attr_t attr;
 
     memset(&ctrl_reg1, 0, sizeof(ctrl_reg1));
     memset(&ctrl_reg2, 0,  sizeof(ctrl_reg1));
@@ -330,6 +393,9 @@ int ppucore_init(void) {
 
     sprite_size_type = SPR_STYPE_8x8;
     vram_addr_inc = 1;
+
+    scan_x = 0;
+    scan_y = 0;
 
     ret = vga_xfer_init();
     if (!ret)
@@ -350,6 +416,8 @@ int ppucore_init(void) {
     ret = vram_init();
     if (!ret)
         return FALSE;
+#ifdef OLD_PPU_LOOP
+    pthread_attr_t attr;
 
     ppucore_end_loop = FALSE;
     ret = pthread_attr_init(&attr);
@@ -361,16 +429,24 @@ int ppucore_init(void) {
     if (ret != RT_OK) {
         return FALSE;
     }
+#else
+    ret = register_clock_hander(clock_ppu, PPU_DEVIDER);
+    if (!ret) {
+        return FALSE;
+    }
+#endif
 
 
     return TRUE;
 }
 
 void clean_ppucore(void) {
+#ifdef OLD_PPU_LOOP
     void* ret;
     ppucore_end_loop = TRUE;
     pthread_join(ppucore_thread_id, &ret);
     dprint("ppucore thread joined.\n");
+#endif
 
     clean_vram();
     clean_sprite();
