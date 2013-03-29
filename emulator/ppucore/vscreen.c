@@ -13,6 +13,11 @@ void load_pattern(unsigned char bank, unsigned char ptn_index, struct tile_2* pa
 void load_spr_attribute(struct sprite_attr sa, struct palette *plt);
 void sprite0_hit_set(void);
 unsigned char spr_ram_tbl_get(unsigned short offset);
+unsigned char vram_data_get(unsigned short addr);
+void palette_index_to_rgb15(unsigned char index, struct rgb15* rgb);
+
+
+#define TRANSPARENT_PALETTE_ADDR        0x3F10
 
 struct tile_rgb15_line {
     struct rgb15 d[8];
@@ -103,7 +108,9 @@ void set_bgtile(int tile_id) {
                 set_data->l[i].d[7 - j] = plt.col[pi];
             }
             else {
-                //TODO for the time being, transparent bg color is black..
+                //transparent bg color is read from sprite 0x10 color.
+                pi = vram_data_get(TRANSPARENT_PALETTE_ADDR);
+                palette_index_to_rgb15(pi, &set_data->l[i].d[7 - j]);
                 /*
                 set_data->l[i].d[7 - j].r = 0;
                 set_data->l[i].d[7 - j].g = 0;

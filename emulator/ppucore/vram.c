@@ -404,16 +404,16 @@ void load_spr_attribute(struct sprite_attr sa, struct palette *plt) {
 
     /*load bg rgb palette color*/
     palette_addr = sa.palette * 4;
-    pi = bg_palette_tbl_get(palette_addr++);
+    pi = spr_palette_tbl_get(palette_addr++);
     palette_index_to_rgb15(pi, &plt->col[0]);
 
-    pi = bg_palette_tbl_get(palette_addr++);
+    pi = spr_palette_tbl_get(palette_addr++);
     palette_index_to_rgb15(pi, &plt->col[1]);
 
-    pi = bg_palette_tbl_get(palette_addr++);
+    pi = spr_palette_tbl_get(palette_addr++);
     palette_index_to_rgb15(pi, &plt->col[2]);
 
-    pi = bg_palette_tbl_get(palette_addr);
+    pi = spr_palette_tbl_get(palette_addr);
     palette_index_to_rgb15(pi, &plt->col[3]);
 }
 
