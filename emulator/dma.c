@@ -7,11 +7,12 @@
 #define DMA_ADDR_MULTIPLE       0x100
 
 void spr_ram_tbl_set(unsigned short offset, unsigned char data);
+int register_cpu_clock(void);
+int unregister_cpu_clock(void);
 
 static unsigned short dma_ram_addr;
 static unsigned char dma_ram_data;
 static unsigned char dma_spr_addr;
-static int start_dma;
 static int dma_cnt;
 
 static void get_ram_data(void) {
@@ -32,8 +33,10 @@ static void get_ram_data(void) {
     take_bus();
 }
 
-static void copy_data(void) {
-
+/*
+ * clock handler.
+ * */
+static int clock_dma(void) {
     if (dma_cnt % 2 == 0) {
         //load ram value
         get_ram_data();
@@ -45,19 +48,13 @@ static void copy_data(void) {
     }
 
     if (dma_cnt == SPRITE_RAM_SIZE * 2 - 1) {
+        //dma done.
         release_bus();
-        start_dma = FALSE;
+        //restore clock handler.
+        unregister_clock_hander(clock_dma);
+        register_cpu_clock();
     }
     dma_cnt++;
-}
-
-/*
- * clock handler.
- * */
-static int clock_dma(void) {
-    if (start_dma) {
-        copy_data();
-    }
 
     return TRUE;
 }
@@ -66,23 +63,18 @@ void set_dma_data(unsigned char data) {
     //dprint("set_dma_data: %02x\n", data);
     dma_ram_addr = data * DMA_ADDR_MULTIPLE;
     dma_spr_addr = 0;
-    start_dma = TRUE;
+    //start dma work
+    register_clock_hander(clock_dma, CPU_DEVIDER);
+    //stop cpu clock
+    unregister_cpu_clock();
     dma_cnt = 0;
 }
 
 int init_dma(void) {
-    int ret;
-
     dma_ram_addr = 0;
     dma_spr_addr = 0;
     dma_ram_data = 0;
-    start_dma = FALSE;
     dma_cnt = 0;
-
-    ret = register_clock_hander(clock_dma, CPU_DEVIDER);
-    if (!ret) {
-        return FALSE;
-    }
 
     return TRUE;
 }

@@ -297,14 +297,14 @@ unsigned char ppu_status_get(void) {
 }
 
 void sprite_addr_set(unsigned char addr) {
-    dprint("sprite_addr_set addr=%02x\n", addr);
+    //dprint("sprite_addr_set addr=%02x\n", addr);
     sprite_ram_addr_reg = addr;
     sprite_reg.cnt = 0;
 }
 
 void sprite_data_set(unsigned char data) {
-    dprint("sprite_data_set addr=%02x, data=%02x, cnt:%d\n", 
-            sprite_ram_addr_reg, data, sprite_reg.cnt);
+    //dprint("sprite_data_set addr=%02x, data=%02x, cnt:%d\n", 
+     //       sprite_ram_addr_reg, data, sprite_reg.cnt);
     switch (sprite_reg.cnt) {
         case 0:
         default:
@@ -325,7 +325,7 @@ void sprite_data_set(unsigned char data) {
 }
 
 void ppu_scroll_set(unsigned char data) {
-    dprint("scroll set %s = %02x\n", (scroll_reg.cnt == 0 ? "x" : "y"), data);
+    //dprint("scroll set %s = %02x\n", (scroll_reg.cnt == 0 ? "x" : "y"), data);
     if (scroll_reg.cnt++ == 0)
         scroll_reg.x = data;
     else
@@ -371,7 +371,7 @@ unsigned char ppu_vram_data_get(void) {
 }
 
 void sprite0_hit_set(void) {
-    dprint("sprite0 set...\n");
+    //dprint("sprite0 set...\n");
     status_reg.sprite0_hit = 1;
 }
 

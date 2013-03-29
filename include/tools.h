@@ -21,6 +21,7 @@ int slist_count (struct slist* head);
 void dlist_init (struct dlist* node) ;
 void dlist_add_next (struct dlist* dest, struct dlist* node) ;
 void dlist_add_prev (struct dlist* dest, struct dlist* node) ;
+void dlist_add_tail (struct dlist* dest, struct dlist* node);
 int dlist_remove (struct dlist* node) ;
 int dlist_count (struct dlist* head);
 

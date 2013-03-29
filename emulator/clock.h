@@ -7,6 +7,8 @@ int init_clock(void);
 void clean_clock(void);
 
 int register_clock_hander(clock_func_t *handler, int devide);
+int unregister_clock_hander(clock_func_t *handler);
+
 int start_clock(void);
 int pause_cpu_clock(void);
 int start_cpu_clock(void);
@@ -19,8 +21,13 @@ int start_cpu_clock(void);
 
 
 #define BASE_CLOCK      21477270L
+#if 0
 #define CPU_DEVIDER     12
 #define PPU_DEVIDER     4
+#else
+#define CPU_DEVIDER     3
+#define PPU_DEVIDER     1 
+#endif
 
 #define CPU_CLOCK_FREQ  (BASE_CLOCK / CPU_DEVIDER)
 #define PPU_CLOCK_FREQ  (BASE_CLOCK / PPU_DEVIDER)

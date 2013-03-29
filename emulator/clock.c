@@ -11,7 +11,7 @@ static int exit_loop;
 static pthread_t cpu_thread_id;
 
 struct clock_handler {
-    struct slist l;
+    struct dlist l;
     clock_func_t *handler;
     int devider;
     int cnt;
@@ -75,7 +75,7 @@ int register_clock_hander(clock_func_t *handler, int devide) {
     struct clock_handler *ch;
 
     ch = malloc(sizeof(struct clock_handler));
-    ch->l.next = NULL;
+    dlist_init(&ch->l);
     ch->handler = handler;
     ch->devider = devide;
     ch->cnt = 0;
@@ -84,9 +84,23 @@ int register_clock_hander(clock_func_t *handler, int devide) {
         handler_list = ch;
     }
     else {
-        slist_add_tail(&handler_list->l, &ch->l);
+        dlist_add_tail(&handler_list->l, &ch->l);
     }
     return TRUE;
+}
+
+int unregister_clock_hander(clock_func_t *handler) {
+    int removed = FALSE;
+    struct clock_handler *ch = handler_list;
+
+    while (ch != NULL) {
+        if (ch->handler == handler) {
+            dlist_remove(&ch->l);
+            removed = TRUE;
+        }
+        ch = (struct clock_handler*)ch->l.next;
+    }
+    return removed;
 }
 
 int init_clock(void) {

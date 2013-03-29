@@ -76,6 +76,14 @@ int clock_cpu(void) {
     return ret;
 }
 
+int register_cpu_clock(void) {
+    return register_clock_hander(clock_cpu, CPU_DEVIDER);
+}
+
+int unregister_cpu_clock(void) {
+    return unregister_clock_hander(clock_cpu);
+}
+
 unsigned char load_memory(unsigned short addr) {
 
     set_rw_pin(0);
@@ -295,7 +303,7 @@ int init_cpu(void) {
         return FALSE;
     }
 
-    ret = register_clock_hander(clock_cpu, CPU_DEVIDER);
+    ret = register_cpu_clock();
     if (!ret) {
         return FALSE;
     }

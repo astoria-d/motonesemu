@@ -91,8 +91,13 @@ unsigned char load_memory(unsigned short addr);
 unsigned short load_addr(unsigned short addr, int cycle);
 void store_memory(unsigned short addr, unsigned char data);
 int bus_ready(void);
+#if 0
 #define BUS_READY_CHECK()  \
     if ((bus_status = bus_ready()) != TRUE) { return FALSE; } 
+#else
+//for the performance reason, skip bus ready bit.
+#define BUS_READY_CHECK() 
+#endif
 
 unsigned char get_cpu_data_buf(void);
 void set_cpu_data_buf(unsigned char data);
