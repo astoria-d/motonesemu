@@ -125,13 +125,12 @@ static int clock_ppu(void) {
                 //sprite in the back
                 load_sprite_old(FALSE, scanline);
             }
-            if (ctrl_reg2.show_bg/**/) {
-                //back ground image is pre-loaded. load 1 line ahead of drawline.
-                if (scanline == 0)
-                    load_background_old(scanline);
-                if (scanline < SCAN_LINE - 1)
-                    load_background_old(scanline + 8);
-            }
+        }
+        if (ctrl_reg2.show_bg/**/) {
+            //back ground image is pre-loaded. load 1 line ahead of drawline.
+            load_background(scan_x, scan_y);
+        }
+        if (scan_x == 0) {
             if (ctrl_reg2.show_sprite) {
                 //foreground sprite
                 load_sprite_old(TRUE, scanline);
