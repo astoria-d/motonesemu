@@ -21,8 +21,9 @@ void set_bg_name_tbl_base(unsigned char sw);
 void spr_ram_tbl_set(unsigned short offset, unsigned char data);
 
 int load_sprite(int foreground, int scanline);
-int load_background(int scanline);
-void vga_xfer(int scanline);
+int load_background(int x, int y);
+void vga_xfer(int x, int y);
+void vga_posinit(void);
 
 void dump_ppu_reg(void);
 
@@ -104,86 +105,6 @@ static unsigned int     vram_read_cnt;
 
 #define SCAN_LINE       (V_SCREEN_TILE_SIZE * TILE_DOT_SIZE)
 
-#define OLD_PPU_LOOP
-#undef OLD_PPU_LOOP
-
-#ifdef OLD_PPU_LOOP
-static pthread_t ppucore_thread_id;
-static int ppucore_end_loop;
-
-/*
- * ppucore main loop.
- * periodically update the display buffer.
- * */
-static void *ppucore_loop(void* arg) {
-    //struct timespec ts = {CPU_CLOCK_SEC, CPU_CLOCK_NSEC / 10};
-    struct timespec begin, end;
-    struct timespec slp;
-    long sec, nsec;
-    int scanline;
-#define NANOMAX (1000000000 - 1)
-
-    while (!ppucore_end_loop) {
-
-        //start displaying
-        status_reg.vblank = 0;
-        status_reg.vram_ignore = 1;
-        status_reg.sprite0_hit = 0;
-
-        clock_gettime(CLOCK_REALTIME, &begin);
-        for (scanline = 0; scanline < SCAN_LINE; scanline++) {
-            if (ctrl_reg2.show_sprite) {
-                //sprite in the back
-                load_sprite_old(FALSE, scanline);
-            }
-            if (ctrl_reg2.show_bg/**/) {
-                //back ground image is pre-loaded. load 1 line ahead of drawline.
-                if (scanline == 0)
-                    load_background_old(scanline);
-                if (scanline < SCAN_LINE - 1)
-                    load_background(scanline + 8);
-            }
-            if (ctrl_reg2.show_sprite) {
-                //foreground sprite
-                load_sprite_old(TRUE, scanline);
-            }
-            vga_xfer(scanline);
-        }
-
-        //printing display done.
-        status_reg.vblank = 1;
-        status_reg.vram_ignore = 0;
-        if (ctrl_reg1.nmi_vblank) {
-            //generate nmi interrupt to the cpu.
-            set_nmi_pin(TRUE);
-        }
-
-        clock_gettime(CLOCK_REALTIME, &end);
-
-        //sleep rest of time...
-        if (end.tv_sec < begin.tv_sec )
-            sec = LONG_MAX - begin.tv_sec + end.tv_sec + 1;
-        else
-            sec = end.tv_sec - begin.tv_sec;
-
-        if (end.tv_nsec < begin.tv_nsec)
-            nsec = NANOMAX - begin.tv_nsec + end.tv_nsec + 1;
-        else
-            nsec = end.tv_nsec - begin.tv_nsec;
-
-        if (sec < NES_VIDEO_CLK_SEC || nsec < NES_VIDEO_CLK_NSEC) {
-            int ret;
-            slp.tv_sec = sec > NES_VIDEO_CLK_SEC ? 0 : NES_VIDEO_CLK_SEC - sec;
-            slp.tv_nsec = nsec > NES_VIDEO_CLK_NSEC ? 0 : NES_VIDEO_CLK_NSEC - nsec;
-
-            //dprint("%d.%09d sec sleep\n", slp.tv_sec, slp.tv_nsec);
-            ret = nanosleep(&slp, NULL);
-        }
-    }
-    return NULL;
-}
-#endif
-
 static int scan_x;
 static int scan_y;
 static int clock_ppu(void) {
@@ -215,8 +136,8 @@ static int clock_ppu(void) {
                 //foreground sprite
                 load_sprite_old(TRUE, scanline);
             }
-            vga_xfer_old(scanline);
         }
+        vga_xfer(scan_x, scan_y);
     }
     else {
         if (scan_x == 0 && scan_y == VSCREEN_HEIGHT) {
@@ -416,38 +337,17 @@ int ppucore_init(void) {
     ret = vram_init();
     if (!ret)
         return FALSE;
-#ifdef OLD_PPU_LOOP
-    pthread_attr_t attr;
-
-    ppucore_end_loop = FALSE;
-    ret = pthread_attr_init(&attr);
-    if (ret != RT_OK) {
-        return FALSE;
-    }
-    ppucore_thread_id = 0;
-    ret = pthread_create(&ppucore_thread_id, &attr, ppucore_loop, NULL);
-    if (ret != RT_OK) {
-        return FALSE;
-    }
-#else
     ret = register_clock_hander(clock_ppu, PPU_DEVIDER);
     if (!ret) {
         return FALSE;
     }
-#endif
 
+    vga_posinit();
 
     return TRUE;
 }
 
 void clean_ppucore(void) {
-#ifdef OLD_PPU_LOOP
-    void* ret;
-    ppucore_end_loop = TRUE;
-    pthread_join(ppucore_thread_id, &ret);
-    dprint("ppucore thread joined.\n");
-#endif
-
     clean_vram();
     clean_sprite();
     clean_vscreen();
