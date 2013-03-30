@@ -134,18 +134,18 @@ static void *ppucore_loop(void* arg) {
         for (scanline = 0; scanline < SCAN_LINE; scanline++) {
             if (ctrl_reg2.show_sprite) {
                 //sprite in the back
-                load_sprite(FALSE, scanline);
+                load_sprite_old(FALSE, scanline);
             }
             if (ctrl_reg2.show_bg/**/) {
                 //back ground image is pre-loaded. load 1 line ahead of drawline.
                 if (scanline == 0)
-                    load_background(scanline);
+                    load_background_old(scanline);
                 if (scanline < SCAN_LINE - 1)
                     load_background(scanline + 8);
             }
             if (ctrl_reg2.show_sprite) {
                 //foreground sprite
-                load_sprite(TRUE, scanline);
+                load_sprite_old(TRUE, scanline);
             }
             vga_xfer(scanline);
         }
@@ -202,20 +202,20 @@ static int clock_ppu(void) {
 
             if (ctrl_reg2.show_sprite) {
                 //sprite in the back
-                load_sprite(FALSE, scanline);
+                load_sprite_old(FALSE, scanline);
             }
             if (ctrl_reg2.show_bg/**/) {
                 //back ground image is pre-loaded. load 1 line ahead of drawline.
                 if (scanline == 0)
-                    load_background(scanline);
+                    load_background_old(scanline);
                 if (scanline < SCAN_LINE - 1)
-                    load_background(scanline + 8);
+                    load_background_old(scanline + 8);
             }
             if (ctrl_reg2.show_sprite) {
                 //foreground sprite
-                load_sprite(TRUE, scanline);
+                load_sprite_old(TRUE, scanline);
             }
-            vga_xfer(scanline);
+            vga_xfer_old(scanline);
         }
     }
     else {

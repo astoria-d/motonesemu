@@ -4,6 +4,7 @@
 #include "ppucore.h"
 
 void vscreenn_dot_get(int x, int y, struct rgb15 *col);
+struct rgb15 *get_vscreen_head(void);
 
 #define VSCREEN_WIDTH       (H_SCREEN_TILE_SIZE * TILE_DOT_SIZE)
 #define VSCREEN_HEIGHT      (V_SCREEN_TILE_SIZE * TILE_DOT_SIZE)
@@ -51,7 +52,7 @@ static int vga_y;
 static int vscrn_y, vscrn_y_old;
 static struct rgb15 *vga_col;
 
-void vga_xfer(int scanline) {
+void vga_xfer_old(int scanline) {
     int vscrn_x, vscrn_x_old;
     int vga_x;
     struct rgb15 *col_old;
@@ -93,6 +94,58 @@ void vga_xfer(int scanline) {
         vga_y++;
         vscrn_y_old = vscrn_y;
     }
+}
+
+static struct rgb15 *vs_col, *vs_head;
+static struct rgb15 *vga_col;
+
+void vga_posinit(void) {
+    vs_head = (struct rgb15 *)get_vscreen_head();
+}
+
+void vga_xfer(int vs_x, int vs_y) {
+    int vga_x, vga_y, vga_x_next;
+    struct rgb15 *vga_col_next;
+
+    //dprint("vga_xfer x:%d, y:%d\n", vs_x, vs_y);
+    //x direction scale is 640/256.
+    //y direction scale is 480/240
+
+    if (vs_x == 0) {
+        int tile_id, tile_id_y;
+        int inner_y;
+
+        tile_id_y = vs_y / TILE_DOT_SIZE;
+        tile_id = tile_id_y * H_SCREEN_TILE_SIZE;
+        inner_y = vs_y % TILE_DOT_SIZE;
+            
+        vs_col = vs_head + tile_id * TILE_DOT_SIZE * TILE_DOT_SIZE + inner_y * TILE_DOT_SIZE;
+
+        vga_y = vs_y * VGA_HEIGHT / VSCREEN_HEIGHT;
+        vga_col = vga_base + vga_y * VGA_WIDTH;
+    }
+    else {
+        if (vs_x % TILE_DOT_SIZE) {
+            vs_col++;
+        }
+        else {
+            vs_col += (TILE_DOT_SIZE - 1) * TILE_DOT_SIZE + 1;
+        }
+    }
+
+    vga_x = vs_x * VGA_WIDTH / VSCREEN_WIDTH;
+    vga_x_next = (vs_x + 1) * VGA_WIDTH / VSCREEN_WIDTH;
+    vga_col_next = vga_col + vga_x_next - vga_x;
+
+    //copy color in vscreen to vga buffer.
+    while ( vga_col != vga_col_next) {
+        *vga_col = *vs_col;
+        //double the copy of the next dot below as well 
+        //since y direction scale is just x2.
+        *(vga_col + VGA_WIDTH) = *vs_col;
+        vga_col++;
+    }
+
 }
 
 int vga_xfer_init(void) {
