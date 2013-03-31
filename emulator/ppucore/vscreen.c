@@ -360,7 +360,7 @@ int load_sprite(int foreground, int x, int y) {
             pi = pal_index(&sprite_buf[i].ptn, draw_y_in, draw_x_in);
             if (pi) {
                 vscreenn_dot_set(x, y, &sprite_buf[i].plt.col[pi]);
-                if (sprite_buf[i].sprite_num == 0)
+                if (sprite_temp_buf[i].sa.priority && sprite_buf[i].sprite_num == 0)
                     sprite0_hit_set();
                 return TRUE;
             }
