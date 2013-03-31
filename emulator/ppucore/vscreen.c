@@ -41,11 +41,11 @@ static unsigned short   bg_name_tbl_base;
 static unsigned char    bg_attr_tbl_bank;
 
 
-#define SPRITE_PREFETCH_CNT     64
+#define SPRITE_PREFETCH_CNT     8
 static struct ppu_sprite_reg sprite_temp_buf [SPRITE_PREFETCH_CNT];
 static struct sprite_buf_reg sprite_buf [SPRITE_PREFETCH_CNT];
 static int sprite_hit_cnt;
-
+static int bg_transparent;
 
 void vscreenn_dot_get(int x, int y, struct rgb15 *col) {
     int tile_id, tile_id_x, tile_id_y;
@@ -183,11 +183,13 @@ int load_background(int x, int y) {
     if (pi) {
         //dprint("%d, %d, colind:%d\n", j, i, pi);
         set_data->l[inner_y].d[7 - inner_x] = plt.col[pi];
+        bg_transparent = FALSE;
     }
     else {
         //transparent bg color is read from sprite 0x10 color.
         pi = vram_data_get(TRANSPARENT_PALETTE_ADDR);
         palette_index_to_rgb15(pi, &set_data->l[inner_y].d[7 - inner_x]);
+        bg_transparent = TRUE;
     }
 
     return TRUE;
@@ -312,7 +314,7 @@ int sprite_prefetch2(int srch_line) {
         load_spr_attribute(sprite_temp_buf[i].sa, &sprite_buf[i].plt);
         load_pattern(spr_pattern_bank, sprite_temp_buf[i].index, &sprite_buf[i].ptn);
     }
-    return 0;
+    return spr_buf_bottom;
 }
 
 int load_sprite(int foreground, int x, int y) {
@@ -358,17 +360,15 @@ int load_sprite(int foreground, int x, int y) {
             pi = pal_index(&sprite_buf[i].ptn, draw_y_in, draw_x_in);
             if (pi) {
                 vscreenn_dot_set(x, y, &sprite_buf[i].plt.col[pi]);
+                if (sprite_buf[i].sprite_num == 0)
+                    sprite0_hit_set();
                 return TRUE;
-            }
-            else if (sprite_buf[i].sprite_num == 0) {
-                sprite0_hit_set();
             }
         }
     }
 
     return FALSE;
 }
-
 
 void set_bg_pattern_bank(unsigned char bank) {
     bg_pattern_bank = bank;
