@@ -59,8 +59,8 @@ static int pal_index(struct tile_2 *ptn, int l, int dot_x) {
     }
 }
 
-static struct palette plt;
-static struct tile_2 ptn;
+static struct palette bg_plt;
+static struct tile_2 bg_ptn;
 static struct rgb15* set_data;
 
 struct rgb15* get_current_vscreen(void) {
@@ -88,19 +88,19 @@ int load_background(int x, int y) {
         tile_id = tile_id_x + tile_id_y * H_SCREEN_TILE_SIZE;
 
         //dprint("load tile.\n");
-        load_attribute(bg_attr_tbl_bank, tile_id, &plt);
+        load_attribute(bg_attr_tbl_bank, tile_id, &bg_plt);
         name_index = vram_data_get(bg_name_tbl_base + tile_id);
-        load_pattern(bg_pattern_bank, name_index, &ptn);
+        load_pattern(bg_pattern_bank, name_index, &bg_ptn);
     }
 
     //pattern dot is stored right to left order (little endian.).
     inner_x = 7 - x % TILE_DOT_SIZE;
     inner_y = y % TILE_DOT_SIZE;
 
-    int pi = pal_index(&ptn, inner_y, inner_x);
+    int pi = pal_index(&bg_ptn, inner_y, inner_x);
     if (pi) {
         //dprint("%d, %d, colind:%d\n", j, i, pi);
-        *set_data = plt.col[pi];
+        *set_data = bg_plt.col[pi];
         bg_transparent = FALSE;
     }
     else {
