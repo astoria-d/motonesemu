@@ -20,7 +20,9 @@ void set_spr_pattern_bank(unsigned char bank);
 void set_bg_name_tbl_base(unsigned char sw);
 void spr_ram_tbl_set(unsigned short offset, unsigned char data);
 
-int load_sprite(int foreground, int scanline);
+int sprite_prefetch1(int srch_line);
+int sprite_prefetch2(int srch_line);
+int load_sprite(int foreground, int x, int y);
 int load_background(int x, int y);
 void vga_xfer(int x, int y);
 void vga_posinit(void);
@@ -107,38 +109,49 @@ static unsigned int     vram_read_cnt;
 
 static int scan_x;
 static int scan_y;
+
+static int scan_recovery(void) {
+    if (scan_y == VSCREEN_HEIGHT)
+        return FALSE;
+
+    if (scan_x == VSCREEN_WIDTH) {
+        int next_line = (scan_y == VSCAN_MAX - 1 ? 0 : scan_y + 1);
+        sprite_prefetch1(next_line);
+        sprite_prefetch2(next_line);
+        return TRUE;
+    }
+    return FALSE;
+}
+
 static int clock_ppu(void) {
 //    dprint("ppu x:%d, y:%d...\n", scan_x, scan_y);
 
     if (scan_x < VSCREEN_WIDTH && scan_y < VSCREEN_HEIGHT) {
-        int scanline = scan_y;
-        if (scan_x == 0 && scan_y == 0) {
-            //start displaying
-            status_reg.vblank = 0;
-            status_reg.vram_ignore = 1;
-        }
-
         if (scan_x == 0) {
             status_reg.sprite0_hit = 0;
-
-            if (ctrl_reg2.show_sprite) {
-                //sprite in the back
-                load_sprite_old(FALSE, scanline);
+            if (scan_y == 0) {
+                //start displaying
+                status_reg.vblank = 0;
+                status_reg.vram_ignore = 1;
             }
+        }
+
+        if (ctrl_reg2.show_sprite) {
+            //sprite in the back
+            load_sprite(FALSE, scan_x, scan_y);
         }
         if (ctrl_reg2.show_bg/**/) {
             //back ground image is pre-loaded. load 1 line ahead of drawline.
             load_background(scan_x, scan_y);
         }
-        if (scan_x == 0) {
-            if (ctrl_reg2.show_sprite) {
-                //foreground sprite
-                load_sprite_old(TRUE, scanline);
-            }
+        if (ctrl_reg2.show_sprite) {
+            //foreground sprite
+            load_sprite(TRUE, scan_x, scan_y);
         }
         vga_xfer(scan_x, scan_y);
     }
     else {
+        scan_recovery();
         if (scan_x == 0 && scan_y == VSCREEN_HEIGHT) {
             //printing display done.
             status_reg.vblank = 1;

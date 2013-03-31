@@ -30,6 +30,7 @@ struct tile_rgb15 {
 struct sprite_buf_reg {
     struct palette plt;
     struct tile_2 ptn;
+    int sprite_num;
 };
 
 static struct tile_rgb15 *vscreen;
@@ -276,7 +277,7 @@ int sprite_prefetch1(int srch_line) {
     unsigned char tmp;
 
     sprite_hit_cnt = 0;
-    for (i = 0; i < SPRITE_CNT; i++) {
+    for (i = SPRITE_CNT - 1; i >= 0; i--) {
         int spr_y;
         spr_y = spr_ram_tbl_get(4 * i);
         if (srch_line < spr_y || srch_line > spr_y + TILE_DOT_SIZE)
@@ -288,6 +289,7 @@ int sprite_prefetch1(int srch_line) {
             tmp = spr_ram_tbl_get(4 * i + 2);
             memcpy(&sprite_temp_buf[sprite_hit_cnt].sa, &tmp, sizeof(struct sprite_attr));
             sprite_temp_buf[sprite_hit_cnt].x = spr_ram_tbl_get(4 * i + 3);
+            sprite_buf[sprite_hit_cnt].sprite_num = i;
         }
 /*
         dprint("sprite prefetch hit. #%d, index:%d, srch y:%d, spr y:%d, spr x:%d\n", 
@@ -323,7 +325,7 @@ int load_sprite(int foreground, int x, int y) {
     //high priority late. highest priority comes top.
     //seek for the topmost sprite on this spot (x, y)
     spr_buf_bottom = sprite_hit_cnt > SPRITE_PREFETCH_CNT ? SPRITE_PREFETCH_CNT : sprite_hit_cnt;
-    for (i = 0; i < spr_buf_bottom; i++) {
+    for (i = spr_buf_bottom - 1; i >= 0; i--) {
         if (sprite_temp_buf[i].x <= x && x < sprite_temp_buf[i].x + TILE_DOT_SIZE) {
             int x_in, y_in;
             int draw_x_in, draw_y_in;
@@ -352,14 +354,14 @@ int load_sprite(int foreground, int x, int y) {
                 }
             }
 
+            //dprint("spr#%d, dot set x:%d, y:%d\n", sprite_temp_buf[i].index, x, y);
             pi = pal_index(&sprite_buf[i].ptn, draw_y_in, draw_x_in);
             if (pi) {
-                //dprint("spr#%d, dot set x:%d, y:%d\n", sprite_temp_buf[i].index, x, y);
                 vscreenn_dot_set(x, y, &sprite_buf[i].plt.col[pi]);
-                if (sprite_temp_buf[i].index == 0) {
-                    sprite0_hit_set();
-                }
                 return TRUE;
+            }
+            else if (sprite_buf[i].sprite_num == 0) {
+                sprite0_hit_set();
             }
         }
     }
