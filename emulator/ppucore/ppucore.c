@@ -283,9 +283,11 @@ void ppu_vram_addr_set(unsigned char half_addr) {
 void ppu_vram_data_set(unsigned char data) {
     //check vram_ignore bit on write.
     /*
-    */
+     * TODO ignore bit set timing is unknown.
+     * currently ignore bit is disabled...
     if (status_reg.vram_ignore)
         return;
+    */
 
     //dprint("vram data:%04x\n", data);
     vram_data_reg = data;
