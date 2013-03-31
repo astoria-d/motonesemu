@@ -22,7 +22,7 @@ void spr_ram_tbl_set(unsigned short offset, unsigned char data);
 
 int sprite_prefetch1(int srch_line);
 int sprite_prefetch2(int srch_line);
-int load_sprite(int foreground, int x, int y);
+int load_sprite(int background, int x, int y);
 int load_background(int x, int y);
 void vga_xfer(int x, int y);
 void vga_posinit(void);
@@ -118,7 +118,7 @@ static int scan_recovery(void) {
      * Sprite reg:
      * Stores the y-coordinate of the top left of the sprite minus 1
      * */
-    if (scan_x == VSCREEN_WIDTH) {
+    if (scan_x == VSCREEN_WIDTH && scan_y < VSCREEN_HEIGHT) {
         int next_line = (scan_y == VSCAN_MAX - 1 ? 0 : scan_y + 1);
         sprite_prefetch1(next_line);
         sprite_prefetch2(next_line);
@@ -142,7 +142,7 @@ static int clock_ppu(void) {
 
         if (ctrl_reg2.show_sprite) {
             //sprite in the back
-            load_sprite(FALSE, scan_x, scan_y);
+            load_sprite(TRUE, scan_x, scan_y);
         }
         if (ctrl_reg2.show_bg/**/) {
             //back ground image is pre-loaded. load 1 line ahead of drawline.
@@ -150,7 +150,7 @@ static int clock_ppu(void) {
         }
         if (ctrl_reg2.show_sprite) {
             //foreground sprite
-            load_sprite(TRUE, scan_x, scan_y);
+            load_sprite(FALSE, scan_x, scan_y);
         }
         vga_xfer(scan_x, scan_y);
     }
@@ -358,7 +358,7 @@ int ppucore_init(void) {
         return FALSE;
     }
 
-    vga_posinit();
+    //vga_posinit();
 
     return TRUE;
 }

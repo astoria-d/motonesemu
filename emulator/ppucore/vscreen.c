@@ -10,22 +10,13 @@
 
 void load_attribute(unsigned char bank, int tile_index, struct palette *plt);
 void load_pattern(unsigned char bank, unsigned char ptn_index, struct tile_2* pattern);
-void load_spr_attribute(struct sprite_attr sa, struct palette *plt);
+void load_spr_palette(struct sprite_attr sa, struct palette *plt);
 void sprite0_hit_set(void);
 unsigned char spr_ram_tbl_get(unsigned short offset);
 unsigned char vram_data_get(unsigned short addr);
 void palette_index_to_rgb15(unsigned char index, struct rgb15* rgb);
 
-
 #define TRANSPARENT_PALETTE_ADDR        0x3F10
-
-struct tile_rgb15_line {
-    struct rgb15 d[8];
-};
-
-struct tile_rgb15 {
-    struct tile_rgb15_line l[8];
-};
 
 struct sprite_buf_reg {
     struct palette plt;
@@ -33,49 +24,18 @@ struct sprite_buf_reg {
     int sprite_num;
 };
 
-static struct tile_rgb15 *vscreen;
+static struct rgb15 *vscreen;
 
 static unsigned char bg_pattern_bank;
 static unsigned char spr_pattern_bank;
 static unsigned short   bg_name_tbl_base;
 static unsigned char    bg_attr_tbl_bank;
 
-
 #define SPRITE_PREFETCH_CNT     8
 static struct ppu_sprite_reg sprite_temp_buf [SPRITE_PREFETCH_CNT];
 static struct sprite_buf_reg sprite_buf [SPRITE_PREFETCH_CNT];
 static int sprite_hit_cnt;
 static int bg_transparent;
-
-void vscreenn_dot_get(int x, int y, struct rgb15 *col) {
-    int tile_id, tile_id_x, tile_id_y;
-    int inner_x, inner_y;
-    struct tile_rgb15* tile;
-
-    tile_id_x = x / TILE_DOT_SIZE;
-    tile_id_y = y / TILE_DOT_SIZE;
-    tile_id = tile_id_x + tile_id_y * H_SCREEN_TILE_SIZE;
-    tile = vscreen + tile_id;
-
-    inner_x = x % TILE_DOT_SIZE;
-    inner_y = y % TILE_DOT_SIZE;
-    *col = tile->l[inner_y].d[inner_x];
-}
-
-void vscreenn_dot_set(int x, int y, struct rgb15 *col) {
-    int tile_id, tile_id_x, tile_id_y;
-    int inner_x, inner_y;
-    struct tile_rgb15* tile;
-
-    tile_id_x = x / TILE_DOT_SIZE;
-    tile_id_y = y / TILE_DOT_SIZE;
-    tile_id = tile_id_x + tile_id_y * H_SCREEN_TILE_SIZE;
-    tile = vscreen + tile_id;
-
-    inner_x = x % TILE_DOT_SIZE;
-    inner_y = y % TILE_DOT_SIZE;
-    tile->l[inner_y].d[inner_x] = *col;
-}
 
 static int pal_index(struct tile_2 *ptn, int l, int dot_x) {
     switch (dot_x) {
@@ -99,65 +59,24 @@ static int pal_index(struct tile_2 *ptn, int l, int dot_x) {
     }
 }
 
-void set_bgtile(int tile_id) {
-    struct palette plt;
-    struct tile_2 ptn;
-    unsigned char name_index;
-    struct tile_rgb15* set_data;
-    int i,j;
-
-    load_attribute(bg_attr_tbl_bank, tile_id, &plt);
-
-    name_index = vram_data_get(bg_name_tbl_base + tile_id);
-    load_pattern(bg_pattern_bank, name_index, &ptn);
-
-    set_data = vscreen + tile_id;
-    for (i = 0; i < TILE_DOT_SIZE; i++) {
-        //display shows left to right with high bit to low bit
-        for (j = 0; j < 8; j++) {
-            int pi = pal_index(&ptn, i, j);
-            if (pi) {
-                //dprint("%d, %d, colind:%d\n", j, i, pi);
-                set_data->l[i].d[7 - j] = plt.col[pi];
-            }
-            else {
-                //transparent bg color is read from sprite 0x10 color.
-                pi = vram_data_get(TRANSPARENT_PALETTE_ADDR);
-                palette_index_to_rgb15(pi, &set_data->l[i].d[7 - j]);
-                /*
-                set_data->l[i].d[7 - j].r = 0;
-                set_data->l[i].d[7 - j].g = 0;
-                set_data->l[i].d[7 - j].b = 0;
-                */
-            }
-        }
-    }
-
-}
-
-int load_background_old(int scanline) {
-    int i, start, end;
-
-    //load tile must be executed every 8 scanlines only.
-    if (scanline % TILE_DOT_SIZE)
-        return TRUE;
-
-    start = scanline / TILE_DOT_SIZE * H_SCREEN_TILE_SIZE;
-    end = start + H_SCREEN_TILE_SIZE;
-    for (i = start; i < end; i++) {
-        set_bgtile(i);
-    }
-    return TRUE;
-}
-
 static struct palette plt;
 static struct tile_2 ptn;
-static struct tile_rgb15* set_data;
+static struct rgb15* set_data;
+
+struct rgb15* get_current_vscreen(void) {
+    return set_data;
+}
 int load_background(int x, int y) {
     //dprint("load bg x:%d, y:%d...\n", x, y);
 
     int inner_x, inner_y;
 
+    if (x == 0 && y == 0) {
+        set_data = vscreen + x + y * H_SCREEN_TILE_SIZE * TILE_DOT_SIZE;
+    }
+    else {
+        set_data++;
+    }
 
     //tile loading happens every 8 dots only.
     if (x % TILE_DOT_SIZE == 0) {
@@ -172,101 +91,23 @@ int load_background(int x, int y) {
         load_attribute(bg_attr_tbl_bank, tile_id, &plt);
         name_index = vram_data_get(bg_name_tbl_base + tile_id);
         load_pattern(bg_pattern_bank, name_index, &ptn);
-        set_data = vscreen + tile_id;
     }
 
-
-    inner_x = x % TILE_DOT_SIZE;
+    //pattern dot is stored right to left order (little endian.).
+    inner_x = 7 - x % TILE_DOT_SIZE;
     inner_y = y % TILE_DOT_SIZE;
 
     int pi = pal_index(&ptn, inner_y, inner_x);
     if (pi) {
         //dprint("%d, %d, colind:%d\n", j, i, pi);
-        set_data->l[inner_y].d[7 - inner_x] = plt.col[pi];
+        *set_data = plt.col[pi];
         bg_transparent = FALSE;
     }
     else {
         //transparent bg color is read from sprite 0x10 color.
         pi = vram_data_get(TRANSPARENT_PALETTE_ADDR);
-        palette_index_to_rgb15(pi, &set_data->l[inner_y].d[7 - inner_x]);
+        palette_index_to_rgb15(pi, set_data);
         bg_transparent = TRUE;
-    }
-
-    return TRUE;
-}
-
-
-void set_sprite(int x, int y, int tile_id, struct sprite_attr sa) {
-    struct palette plt;
-    struct tile_2 ptn;
-    int i, j;
-
-    load_spr_attribute(sa, &plt);
-
-    load_pattern(spr_pattern_bank, tile_id, &ptn);
-
-    //display shows left to right with high bit to low bit
-    for (i = 0; i < TILE_DOT_SIZE; i++) {
-        if (sa.flip_h) {
-            if (sa.flip_v) {
-                for (j = 0; j < 8; j++) {
-                    int pi = pal_index(&ptn, i, j);
-                    if (pi)
-                        vscreenn_dot_set(x + j, y + 7 - i, &plt.col[pi]);
-                }
-            }
-            else {
-                for (j = 0; j < 8; j++) {
-                    int pi = pal_index(&ptn, i, j);
-                    if (pi)
-                        vscreenn_dot_set(x + j, y + i, &plt.col[pi]);
-                }
-            }
-        }
-        else {
-            if (sa.flip_v) {
-                for (j = 0; j < 8; j++) {
-                    int pi = pal_index(&ptn, i, j);
-                    if (pi)
-                        vscreenn_dot_set(x + 7 - j, y + 7 - i, &plt.col[pi]);
-                }
-            }
-            else {
-                for (j = 0; j < 8; j++) {
-                    int pi = pal_index(&ptn, i, j);
-                    if (pi)
-                        vscreenn_dot_set(x + 7 - j, y + i, &plt.col[pi]);
-                }
-            }
-        }
-    }
-}
-
-int load_sprite_old(int foreground, int scanline) {
-    int i;
-    struct sprite_attr sa;
-    unsigned char x, y, tile, tmp;
-
-    //sprite priority:
-    //draw lowest priority first, 
-    //high priority late. highest priority comes top.
-    for (i = SPRITE_CNT - 1; i >= 0; i--) {
-        y = spr_ram_tbl_get(4 * i);
-        if (scanline != y)
-            continue;
-
-        tmp = spr_ram_tbl_get(4 * i + 2);
-        memcpy(&sa, &tmp, sizeof(struct sprite_attr));
-        if (sa.priority != foreground)
-            continue;
-
-        tile = spr_ram_tbl_get(4 * i + 1);
-        x = spr_ram_tbl_get(4 * i + 3);
-
-        set_sprite(x, y, tile, sa);
-        if (i == 0) {
-            sprite0_hit_set();
-        }
     }
 
     return TRUE;
@@ -311,13 +152,13 @@ int sprite_prefetch2(int srch_line) {
 
     spr_buf_bottom = sprite_hit_cnt > SPRITE_PREFETCH_CNT ? SPRITE_PREFETCH_CNT : sprite_hit_cnt;
     for (i = 0; i < spr_buf_bottom; i++) {
-        load_spr_attribute(sprite_temp_buf[i].sa, &sprite_buf[i].plt);
+        load_spr_palette(sprite_temp_buf[i].sa, &sprite_buf[i].plt);
         load_pattern(spr_pattern_bank, sprite_temp_buf[i].index, &sprite_buf[i].ptn);
     }
     return spr_buf_bottom;
 }
 
-int load_sprite(int foreground, int x, int y) {
+int load_sprite(int background, int x, int y) {
     int i;
     int spr_buf_bottom;
     int pi;
@@ -332,7 +173,9 @@ int load_sprite(int foreground, int x, int y) {
             int x_in, y_in;
             int draw_x_in, draw_y_in;
 
-            if (sprite_temp_buf[i].sa.priority != foreground)
+            set_data->r = set_data->g = set_data->b = 0;
+
+            if (sprite_temp_buf[i].sa.priority != background)
                 continue;
 
             x_in = x % TILE_DOT_SIZE;
@@ -356,16 +199,18 @@ int load_sprite(int foreground, int x, int y) {
                 }
             }
 
-            //dprint("spr#%d, dot set x:%d, y:%d\n", sprite_temp_buf[i].index, x, y);
             pi = pal_index(&sprite_buf[i].ptn, draw_y_in, draw_x_in);
             if (pi) {
-                vscreenn_dot_set(x, y, &sprite_buf[i].plt.col[pi]);
+                //dprint("spr#%d, id:%d, dot set x:%d, y:%d\n", 
+                 //       sprite_buf[i].sprite_num, sprite_temp_buf[i].index, x, y);
+                *set_data = sprite_buf[i].plt.col[pi];
                 if (sprite_temp_buf[i].sa.priority && sprite_buf[i].sprite_num == 0)
                     sprite0_hit_set();
                 return TRUE;
             }
         }
     }
+    //spr_data->r = spr_data->g = spr_data->b = 0;
 
     return FALSE;
 }
@@ -395,10 +240,6 @@ void set_bg_name_tbl_base(unsigned char sw) {
     bg_attr_tbl_bank = sw;
 }
 
-struct rgb15 *get_vscreen_head(void) {
-    return (struct rgb15 *)vscreen;
-}
-
 int vscreen_init(void) {
     bg_pattern_bank = 0;
     spr_pattern_bank = 0;
@@ -407,11 +248,14 @@ int vscreen_init(void) {
 
     sprite_hit_cnt = 0;
 
-    vscreen = (struct tile_rgb15 *) malloc(
-        sizeof (struct tile_rgb15) * VIRT_SCREEN_TILE_SIZE * VIRT_SCREEN_TILE_SIZE);
+    vscreen = (struct rgb15 *) malloc(
+        sizeof (struct rgb15) * H_SCREEN_TILE_SIZE * V_SCREEN_TILE_SIZE 
+        * TILE_DOT_SIZE * TILE_DOT_SIZE);
     if (vscreen == NULL)
         return FALSE;
-    memset(vscreen, 0, sizeof (struct tile_rgb15) * VIRT_SCREEN_TILE_SIZE * VIRT_SCREEN_TILE_SIZE);
+    memset(vscreen, 0, sizeof (struct rgb15) * H_SCREEN_TILE_SIZE * V_SCREEN_TILE_SIZE 
+        * TILE_DOT_SIZE * TILE_DOT_SIZE);
+    set_data = NULL;
 
     //dprint("tile_1_line:%d tile_2 size:%d\n", sizeof(struct tile_1_line), sizeof(struct tile_2));
 

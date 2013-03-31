@@ -120,6 +120,7 @@ static void test_ppu(void) {
     //bg&sprite show
     ppu_ctrl2_set(0x18);
 
+    /*
     for (i = 0; i < 960; i++) 
         set_bgtile(i);
 
@@ -134,6 +135,7 @@ static void test_ppu(void) {
     set_sprite(50, 100, 'd', sa);
     sa.flip_v = 1;
     set_sprite(70, 105, 'd', sa);
+*/
 
     struct timespec begin, end;
     clock_gettime(CLOCK_REALTIME, &begin);

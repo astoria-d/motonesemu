@@ -9,7 +9,7 @@
 struct sprite_attr {
     unsigned int palette    :2;
     unsigned int unused     :3;
-    unsigned int priority   :1;
+    unsigned int priority   :1;     /*0: foreground, 1:background.*/
     unsigned int flip_h     :1;
     unsigned int flip_v     :1;
 } __attribute__ ((packed));

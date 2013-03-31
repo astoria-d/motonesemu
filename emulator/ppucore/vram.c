@@ -398,7 +398,7 @@ void load_attribute(unsigned char bank, int tile_index, struct palette *plt) {
 
 }
 
-void load_spr_attribute(struct sprite_attr sa, struct palette *plt) {
+void load_spr_palette(struct sprite_attr sa, struct palette *plt) {
     unsigned short palette_addr;
     unsigned char pi;
 
