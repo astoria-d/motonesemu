@@ -66,17 +66,19 @@ static struct rgb15* set_data;
 struct rgb15* get_current_vscreen(void) {
     return set_data;
 }
-int load_background(int x, int y) {
-    //dprint("load bg x:%d, y:%d...\n", x, y);
 
-    int inner_x, inner_y;
-
+void set_vscreen_pos(int x, int y) {
     if (x == 0 && y == 0) {
-        set_data = vscreen + x + y * H_SCREEN_TILE_SIZE * TILE_DOT_SIZE;
+        set_data = vscreen;
     }
     else {
         set_data++;
     }
+}
+
+int load_background(int x, int y) {
+    //dprint("load bg x:%d, y:%d...\n", x, y);
+    int inner_x, inner_y;
 
     //tile loading happens every 8 dots only.
     if (x % TILE_DOT_SIZE == 0) {

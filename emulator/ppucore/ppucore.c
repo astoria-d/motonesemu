@@ -20,6 +20,7 @@ void set_spr_pattern_bank(unsigned char bank);
 void set_bg_name_tbl_base(unsigned char sw);
 void spr_ram_tbl_set(unsigned short offset, unsigned char data);
 
+void set_vscreen_pos(int x, int y);
 int sprite_prefetch1(int srch_line);
 int sprite_prefetch2(int srch_line);
 int load_sprite(int background, int x, int y);
@@ -136,10 +137,10 @@ static int clock_ppu(void) {
             if (scan_y == 0) {
                 //start displaying
                 status_reg.vblank = 0;
-                status_reg.vram_ignore = 1;
             }
         }
 
+        set_vscreen_pos(scan_x, scan_y);
         if (ctrl_reg2.show_sprite) {
             //sprite in the back
             load_sprite(TRUE, scan_x, scan_y);
@@ -159,7 +160,6 @@ static int clock_ppu(void) {
         if (scan_x == 0 && scan_y == VSCREEN_HEIGHT) {
             //printing display done.
             status_reg.vblank = 1;
-            status_reg.vram_ignore = 0;
             if (ctrl_reg1.nmi_vblank) {
                 //generate nmi interrupt to the cpu.
                 set_nmi_pin(TRUE);
@@ -284,10 +284,9 @@ void ppu_vram_data_set(unsigned char data) {
     //check vram_ignore bit on write.
     /*
      * TODO ignore bit set timing is unknown.
-     * currently ignore bit is disabled...
+    */
     if (status_reg.vram_ignore)
         return;
-    */
 
     //dprint("vram data:%04x\n", data);
     vram_data_reg = data;
