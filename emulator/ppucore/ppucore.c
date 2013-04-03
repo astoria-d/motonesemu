@@ -119,7 +119,7 @@ static int scan_recovery(void) {
      * Sprite reg:
      * Stores the y-coordinate of the top left of the sprite minus 1
      * */
-    if (scan_x == VSCREEN_WIDTH && scan_y < VSCREEN_HEIGHT) {
+    if (scan_x == HSCAN_MAX - 1 && scan_y < VSCREEN_HEIGHT) {
         int next_line = (scan_y == VSCAN_MAX - 1 ? 0 : scan_y + 1);
         sprite_prefetch1(next_line);
         sprite_prefetch2(next_line);

@@ -36,6 +36,7 @@ static struct ppu_sprite_reg sprite_temp_buf [SPRITE_PREFETCH_CNT];
 static struct sprite_buf_reg sprite_buf [SPRITE_PREFETCH_CNT];
 static int sprite_hit_cnt;
 static int bg_transparent;
+static int bg_sprite;
 
 static int pal_index(struct tile_2 *ptn, int l, int dot_x) {
     switch (dot_x) {
@@ -105,7 +106,7 @@ int load_background(int x, int y) {
         *set_data = bg_plt.col[pi];
         bg_transparent = FALSE;
     }
-    else {
+    else if (!bg_sprite){
         //transparent bg color is read from sprite 0x10 color.
         pi = vram_data_get(TRANSPARENT_PALETTE_ADDR);
         palette_index_to_rgb15(pi, set_data);
@@ -125,23 +126,22 @@ int sprite_prefetch1(int srch_line) {
     for (i = SPRITE_CNT - 1; i >= 0; i--) {
         int spr_y;
         spr_y = spr_ram_tbl_get(4 * i);
-        if (srch_line < spr_y || srch_line > spr_y + TILE_DOT_SIZE)
-            continue;
-
-        if (sprite_hit_cnt < SPRITE_PREFETCH_CNT) {
-            sprite_temp_buf[sprite_hit_cnt].y = spr_y;
-            sprite_temp_buf[sprite_hit_cnt].index = spr_ram_tbl_get(4 * i + 1);
-            tmp = spr_ram_tbl_get(4 * i + 2);
-            memcpy(&sprite_temp_buf[sprite_hit_cnt].sa, &tmp, sizeof(struct sprite_attr));
-            sprite_temp_buf[sprite_hit_cnt].x = spr_ram_tbl_get(4 * i + 3);
-            sprite_buf[sprite_hit_cnt].sprite_num = i;
+        if (spr_y <= srch_line && srch_line < spr_y + TILE_DOT_SIZE) {
+            if (sprite_hit_cnt < SPRITE_PREFETCH_CNT) {
+                sprite_temp_buf[sprite_hit_cnt].y = spr_y;
+                sprite_temp_buf[sprite_hit_cnt].index = spr_ram_tbl_get(4 * i + 1);
+                tmp = spr_ram_tbl_get(4 * i + 2);
+                memcpy(&sprite_temp_buf[sprite_hit_cnt].sa, &tmp, sizeof(struct sprite_attr));
+                sprite_temp_buf[sprite_hit_cnt].x = spr_ram_tbl_get(4 * i + 3);
+                sprite_buf[sprite_hit_cnt].sprite_num = i;
+            }
+            /*
+               dprint("sprite prefetch hit. #%d, index:%d, srch y:%d, spr y:%d, spr x:%d\n", 
+               i, sprite_temp_buf[sprite_hit_cnt].index, srch_line, spr_y, 
+               sprite_temp_buf[sprite_hit_cnt].x);
+               */
+            sprite_hit_cnt++;
         }
-/*
-        dprint("sprite prefetch hit. #%d, index:%d, srch y:%d, spr y:%d, spr x:%d\n", 
-            i, sprite_temp_buf[sprite_hit_cnt].index, srch_line, spr_y, 
-            sprite_temp_buf[sprite_hit_cnt].x);
-*/
-        sprite_hit_cnt++;
     }
     return sprite_hit_cnt;
 }
@@ -165,6 +165,9 @@ int load_sprite(int background, int x, int y) {
     int spr_buf_bottom;
     int pi;
 
+    if (background)
+        bg_sprite = FALSE;
+
     //sprite priority:
     //draw lowest priority first, 
     //high priority late. highest priority comes top.
@@ -175,13 +178,13 @@ int load_sprite(int background, int x, int y) {
             int x_in, y_in;
             int draw_x_in, draw_y_in;
 
-            set_data->r = set_data->g = set_data->b = 0;
+            //set_data->r = set_data->g = set_data->b = 0;
 
             if (sprite_temp_buf[i].sa.priority != background)
                 continue;
 
-            x_in = x % TILE_DOT_SIZE;
-            y_in = y % TILE_DOT_SIZE;
+            x_in = x - sprite_temp_buf[i].x;
+            y_in = y - sprite_temp_buf[i].y;
             if (sprite_temp_buf[i].sa.flip_h) {
                 draw_x_in = x_in;
                 if (sprite_temp_buf[i].sa.flip_v) {
@@ -208,6 +211,8 @@ int load_sprite(int background, int x, int y) {
                 *set_data = sprite_buf[i].plt.col[pi];
                 if (sprite_temp_buf[i].sa.priority && sprite_buf[i].sprite_num == 0)
                     sprite0_hit_set();
+                if (background)
+                    bg_sprite = TRUE;
                 return TRUE;
             }
         }
