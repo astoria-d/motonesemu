@@ -1727,8 +1727,15 @@ acc_done:
     return TRUE;
 }
 
+/*
+ * No Operation: NOP
+ * No Operation
+ * Flags: none
+ * */
 int func_NOP(void) {
-    return FALSE;
+    //do nothing.
+    exec_done = TRUE;
+    return TRUE;
 }
 
 /*
