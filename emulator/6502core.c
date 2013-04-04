@@ -1795,8 +1795,22 @@ int func_PHA(void) {
     return ret;
 }
 
+/*
+ * Push Processor Status on Stack: PHP
+ * P -> S
+ * The processor status is stored as a single byte with the 
+ * following flags bits from high to low: NV-BDIZC.
+ *
+ * Flags: none
+ * */
 int func_PHP(void) {
-    return FALSE;
+    int ret;
+    int done = FALSE;
+    unsigned char st;
+    memcpy(&st, &cpu_reg.status, sizeof(struct status_reg));
+    ret = push_op(st, &done);
+    exec_done = done;
+    return ret;
 }
 
 /*
@@ -1839,8 +1853,23 @@ int func_PLA(void) {
     return ret;
 }
 
+/*
+ * Pull Processor Status from Stack: PLP
+ * S -> P
+ * Setting the processor status from the stack is the only way to clear the B (Break) flag.
+ * Flags: all
+ * */
 int func_PLP(void) {
-    return FALSE;
+    int ret;
+    int done = FALSE;
+    ret = pull_op(&done);
+    if (done) {
+        unsigned char st;
+        st = get_cpu_data_buf();
+        memcpy(&cpu_reg.status, &st, sizeof(struct status_reg));
+    }
+    exec_done = done;
+    return ret;
 }
 
 /*
