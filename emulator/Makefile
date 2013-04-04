@@ -9,19 +9,24 @@ OBJS=emu-main.o clock.o bus.o cpu.o \
 
 
 #LIBS=-L../libs -pthread -lrt -lncurses
-LIBS=-L../libs -L./ppucore -lmotones -lppucore -pthread -lrt
+	 LIBS=-L../libs -lmotones -pthread -lrt \
+		  -L./ppucore -lppucore \
+		  -L./joypad -ljoypad
 
-INCLUDE=-I../include -Ippucore
+INCLUDE=-I../include -Ippucore -Ijoypad
 
 CFLAGS=-g $(INCLUDE) -Wall
 
 all:	$(BIN)
 
-$(BIN): $(OBJS) ../libs ppucore/libppucore.a
+$(BIN): $(OBJS) ../libs ppucore/libppucore.a joypad/libjoypad.a
 	gcc -o $(BIN) $(OBJS) $(LIBS)
 
 ppucore/libppucore.a: ppucore/*.c
 	make -C ppucore
+
+joypad/libjoypad.a: joypad/*.c
+	make -C joypad
 
 .c.o: 
 	gcc $(CFLAGS) -c $<
@@ -36,6 +41,7 @@ test:
 
 clean:
 	make -C ppucore clean
+	make -C joypad clean
 	-rm $(OBJS) $(BIN) opcode \
 		
 tag:

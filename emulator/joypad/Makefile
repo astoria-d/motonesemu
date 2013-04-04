@@ -1,13 +1,12 @@
 
-BIN=libppucore.a
-TEST_BIN=dummy-driver2
+BIN=libjoypad.a
+TEST_BIN=jp-driver
 
-DUMMY_OBJS=dummy-driver2.o debug.o cartridge.o 
+DUMMY_OBJS=jp-driver.o
 
-OBJS=ppucore.o vram.o vscreen.o palette.o \
-	 vga_xfer.o sprite.o
+OBJS=joypad.o
 	 
-LIBS=-L../../libs -L./ -lmotones -lrt -lppucore
+LIBS=-L../../libs -L./ -lmotones -lppucore
 
 INCLUDE=-I../../include -I../
 
