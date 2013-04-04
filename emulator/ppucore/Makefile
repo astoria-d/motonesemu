@@ -15,7 +15,8 @@ CFLAGS=-g $(INCLUDE) -Wall
 
 LFLAGS=-g $(LIBS) -Wall
 
-all:	$(BIN) $(TEST_BIN)
+all:	$(BIN)
+test:	$(TEST_BIN)
 
 $(TEST_BIN): $(BIN) $(DUMMY_OBJS) ../../libs
 	gcc -o $(TEST_BIN) $(DUMMY_OBJS) $(LFLAGS)

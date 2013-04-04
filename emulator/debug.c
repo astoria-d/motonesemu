@@ -335,7 +335,7 @@ void break_hit(void) {
 
 
 int init_debug(void) {
-    dprint("init debug..\n");
+    //dprint("init debug..\n");
     debug_history = NULL;
     break_point = 0;
     //initscr();          /* Start curses mode          */
@@ -344,7 +344,7 @@ int init_debug(void) {
 }
 
 void clean_debug(void) {
-    dprint("clean debug..\n");
+    //dprint("clean debug..\n");
     //endwin();           /* End curses mode        */
 }
 
