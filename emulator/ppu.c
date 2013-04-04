@@ -140,7 +140,7 @@ int init_ppu(void) {
     memset(vga_shared_buf, 0, VGA_SHM_SIZE);
     set_vga_base((unsigned char*)vga_shared_buf);
 
-    ret = ppucore_init();
+    ret = init_ppucore();
     if (ret == FALSE) {
         return FALSE;
     }

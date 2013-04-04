@@ -35,7 +35,7 @@ void ppu_vram_data_set(unsigned char data);
 unsigned char ppu_status_get(void);
 unsigned char ppu_vram_data_get(void);
 
-int ppucore_init(void);
+int init_ppucore(void);
 void clean_ppucore(void);
 
 #endif /*__ppucore_h__*/

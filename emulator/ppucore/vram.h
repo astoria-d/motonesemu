@@ -7,7 +7,7 @@
 unsigned char vram_data_get(unsigned short addr);
 void vram_data_set(unsigned short addr, unsigned char data);
 
-int vram_init(void);
+int init_vram(void);
 void clean_vram(void);
 
 /*

@@ -2,7 +2,7 @@
 #define __vga_xfer_h__
 
 
-int vga_xfer_init(void);
+int init_vga_xfer(void);
 void set_emphasize_red(int set);
 void set_emphasize_green(int set);
 void set_emphasize_blue(int set);

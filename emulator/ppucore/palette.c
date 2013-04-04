@@ -56,7 +56,7 @@ void palette_index_to_rgb15(unsigned char index, struct rgb15* rgb) {
     rgb->b = NES_PALETTE_RGB15[index].b;
 }
 
-int palette_init(void) {
+int init_palette(void) {
     int i;
     for (i = 0; i < PALETTE_SIZE; i++) {
         from_rgb24(NES_PALETTE_RGB24[i], &NES_PALETTE_RGB15[i]);

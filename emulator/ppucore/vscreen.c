@@ -279,7 +279,7 @@ void set_bg_name_tbl_base(unsigned char sw) {
     bg_attr_tbl_bank = sw;
 }
 
-int vscreen_init(void) {
+int init_vscreen(void) {
     bg_pattern_bank = 0;
     spr_pattern_bank = 0;
     bg_name_tbl_base = NAME0_START;

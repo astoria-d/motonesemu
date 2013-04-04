@@ -26,7 +26,7 @@ struct ppu_sprite_reg {
 #define SPRITE_CNT              (SPRITE_RAM_SIZE / 4)
 #define SPR_RAM_ADDR_MASK       (SPRITE_RAM_SIZE - 1)
 
-int sprite_init(void);
+int init_sprite(void);
 void clean_sprite(void);
 
 #endif /*__sprite_h__*/

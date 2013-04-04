@@ -1,10 +1,10 @@
 #include "tools.h"
 
 
-int jp_init(void) {
+int init_jp(void) {
     return TRUE;
 }
 
-void jp_clean(void) {
+void clean_jp(void) {
 }
 

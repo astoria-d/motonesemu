@@ -10,9 +10,9 @@
 #include "sprite.h"
 #include "clock.h"
 
-int vscreen_init(void);
+int init_vscreen(void);
 void clean_vscreen(void);
-int palette_init(void);
+int init_palette(void);
 void set_monocolor (int mono);
 void set_nmi_pin(int val);
 void set_bg_pattern_bank(unsigned char bank);
@@ -319,7 +319,7 @@ void sprite_overflow_set(void) {
     status_reg.sprite_overflow = 1;
 }
 
-int ppucore_init(void) {
+int init_ppucore(void) {
     int ret;
 
     memset(&ctrl_reg1, 0, sizeof(ctrl_reg1));
@@ -341,23 +341,23 @@ int ppucore_init(void) {
     scan_x = 0;
     scan_y = 0;
 
-    ret = vga_xfer_init();
+    ret = init_vga_xfer();
     if (!ret)
         return FALSE;
 
-    ret = sprite_init();
+    ret = init_sprite();
     if (!ret)
         return FALSE;
 
-    ret = vscreen_init();
+    ret = init_vscreen();
     if (!ret)
         return FALSE;
 
-    ret = palette_init();
+    ret = init_palette();
     if (!ret)
         return FALSE;
 
-    ret = vram_init();
+    ret = init_vram();
     if (!ret)
         return FALSE;
     ret = register_clock_hander(clock_ppu, PPU_DEVIDER);

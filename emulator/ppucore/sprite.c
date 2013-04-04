@@ -20,7 +20,7 @@ unsigned char spr_ram_tbl_get(unsigned short offset) {
     return sprite_ram[offset & SPR_RAM_ADDR_MASK];
 }
 
-int sprite_init(void) {
+int init_sprite(void) {
     sprite_ram = malloc(SPRITE_RAM_SIZE);
     if (sprite_ram == NULL)
         return FALSE;

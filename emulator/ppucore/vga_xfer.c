@@ -79,7 +79,7 @@ void vga_xfer(int vs_x, int vs_y) {
     }
 }
 
-int vga_xfer_init(void) {
+int init_vga_xfer(void) {
     emp_red = FALSE;
     emp_green = FALSE;
     emp_blue = FALSE;

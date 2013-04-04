@@ -459,7 +459,7 @@ int load_chr_rom(FILE* cartridge, int num_rom_bank) {
     return TRUE;
 }
 
-int vram_init(void) {
+int init_vram(void) {
 
     pattern_tbl0 = malloc(PATTERN_TBL_SIZE);
     if (pattern_tbl0 == NULL)

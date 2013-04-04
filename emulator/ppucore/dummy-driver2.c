@@ -15,7 +15,7 @@
 static struct rgb15 *disp_data;
 void *vga_shm_get(void);
 void vga_shm_free(void* addr);
-int ppucore_init(void);
+int init_ppucore(void);
 void clean_ppucore(void);
 int load_cartridge(const char* cartridge);
 void set_vga_base(unsigned char* base);
@@ -160,7 +160,7 @@ static void test_ppu(void) {
 int main(int argc, char** argv) {
     int ret;
 
-    ret = ppucore_init();
+    ret = init_ppucore();
     if (ret == FALSE) {
         fprintf(stderr, "ppucore init error.\n");
         return -1;
