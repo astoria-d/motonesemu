@@ -12,6 +12,7 @@ void load_attribute(unsigned char bank, int tile_index, struct palette *plt);
 void load_pattern(unsigned char bank, unsigned char ptn_index, struct tile_2* pattern);
 void load_spr_palette(struct sprite_attr sa, struct palette *plt);
 void sprite0_hit_set(void);
+void sprite_overflow_set(void);
 unsigned char spr_ram_tbl_get(unsigned short offset);
 unsigned char vram_data_get(unsigned short addr);
 void palette_index_to_rgb15(unsigned char index, struct rgb15* rgb);
@@ -80,8 +81,36 @@ void set_vscreen_pos(int x, int y) {
 int load_background(int x, int y) {
     //dprint("load bg x:%d, y:%d...\n", x, y);
     int inner_x, inner_y;
+    unsigned short name_base;
+    unsigned short attr_bank;
+
+    //TODO name/attr table switch must be set with respect to the cartridge mapper setting.
+    if (x >= VSCREEN_WIDTH) {
+        x -= VSCREEN_WIDTH;
+        if (y >= VSCREEN_HEIGHT) {
+            y -= VSCREEN_HEIGHT;
+            name_base = bg_name_tbl_base + (NAME_TBL_SIZE + ATTR_TBL_SIZE) * 3;
+            attr_bank = bg_attr_tbl_bank + 3;
+        }
+        else {
+            name_base = bg_name_tbl_base + NAME_TBL_SIZE + ATTR_TBL_SIZE;
+            attr_bank = bg_attr_tbl_bank + 1;
+        }
+    }
+    else {
+        if (y >= VSCREEN_HEIGHT) {
+            y -= VSCREEN_HEIGHT;
+            name_base = bg_name_tbl_base + (NAME_TBL_SIZE + ATTR_TBL_SIZE) * 2;
+            attr_bank = bg_attr_tbl_bank + 2;
+        }
+        else {
+            name_base = bg_name_tbl_base;
+            attr_bank = bg_attr_tbl_bank;
+        }
+    }
 
     //tile loading happens every 8 dots only.
+    //TODO must check if the tile is loaded due to the in-draw scrolling??.
     if (x % TILE_DOT_SIZE == 0) {
         int tile_id, tile_id_x, tile_id_y;
         unsigned char name_index;
@@ -91,8 +120,8 @@ int load_background(int x, int y) {
         tile_id = tile_id_x + tile_id_y * H_SCREEN_TILE_SIZE;
 
         //dprint("load tile.\n");
-        load_attribute(bg_attr_tbl_bank, tile_id, &bg_plt);
-        name_index = vram_data_get(bg_name_tbl_base + tile_id);
+        load_attribute(attr_bank, tile_id, &bg_plt);
+        name_index = vram_data_get(name_base + tile_id);
         load_pattern(bg_pattern_bank, name_index, &bg_ptn);
     }
 
@@ -142,6 +171,9 @@ int sprite_prefetch1(int srch_line) {
                */
             sprite_hit_cnt++;
         }
+    }
+    if (sprite_hit_cnt > SPRITE_PREFETCH_CNT) {
+        sprite_overflow_set();
     }
     return sprite_hit_cnt;
 }

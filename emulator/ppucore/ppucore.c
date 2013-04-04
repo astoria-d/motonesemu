@@ -134,6 +134,7 @@ static int clock_ppu(void) {
     if (scan_x < VSCREEN_WIDTH && scan_y < VSCREEN_HEIGHT) {
         if (scan_x == 0) {
             status_reg.sprite0_hit = 0;
+            status_reg.sprite_overflow = 0;
             if (scan_y == 0) {
                 //start displaying
                 status_reg.vblank = 0;
@@ -147,7 +148,7 @@ static int clock_ppu(void) {
         }
         if (ctrl_reg2.show_bg/**/) {
             //back ground image is pre-loaded. load 1 line ahead of drawline.
-            load_background(scan_x, scan_y);
+            load_background(scan_x + scroll_reg.x, scan_y + scroll_reg.y);
         }
         if (ctrl_reg2.show_sprite) {
             //foreground sprite
@@ -311,6 +312,11 @@ unsigned char ppu_vram_data_get(void) {
 void sprite0_hit_set(void) {
     //dprint("sprite0 set...\n");
     status_reg.sprite0_hit = 1;
+}
+
+void sprite_overflow_set(void) {
+    //dprint("sprite0 set...\n");
+    status_reg.sprite_overflow = 1;
 }
 
 int ppucore_init(void) {

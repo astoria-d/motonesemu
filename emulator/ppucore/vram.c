@@ -48,6 +48,8 @@ void d4_set(int on_off);
  * */
 
 static unsigned char pattern_tbl_get(unsigned char bank, unsigned short offset) {
+    //bank is masked to fit within 0-1
+    bank &= 0x01;
     if (bank == 0)
         return pattern_tbl0[offset];
     else
@@ -55,6 +57,8 @@ static unsigned char pattern_tbl_get(unsigned char bank, unsigned short offset) 
 }
 
 static unsigned char name_tbl_get(unsigned char bank, unsigned short offset) {
+    //bank is masked to fit within 0-3
+    bank &= 0x03;
     if (bank == 0)
         return name_tbl0[offset];
     else if (bank == 1)
@@ -66,6 +70,8 @@ static unsigned char name_tbl_get(unsigned char bank, unsigned short offset) {
 }
 
 static void name_tbl_set(unsigned char bank, unsigned short offset, unsigned char data) {
+    //bank is masked to fit within 0-3
+    bank &= 0x03;
     if (bank == 0)
         name_tbl0[offset] = data;
     else if (bank == 1)
@@ -78,6 +84,8 @@ static void name_tbl_set(unsigned char bank, unsigned short offset, unsigned cha
 
 
 static unsigned char attr_tbl_get(unsigned char bank, unsigned short offset) {
+    //bank is masked to fit within 0-3
+    bank &= 0x03;
     if (bank == 0)
         return attr_tbl0[offset];
     else if (bank == 1)
@@ -89,6 +97,8 @@ static unsigned char attr_tbl_get(unsigned char bank, unsigned short offset) {
 }
 
 static void attr_tbl_set(unsigned char bank, unsigned short offset, unsigned char data) {
+    //bank is masked to fit within 0-3
+    bank &= 0x03;
     if (bank == 0)
         attr_tbl0[offset] = data;
     else if (bank == 1)
