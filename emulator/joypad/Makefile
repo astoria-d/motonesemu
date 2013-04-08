@@ -2,19 +2,20 @@
 BIN=libjoypad.a
 TEST_BIN=jp-driver
 
-DUMMY_OBJS=jp-driver.o
-
 OBJS=joypad.o
+
+DUMMY_OBJS=jp-driver.o
 	 
-LIBS=-L../../libs -L./ -lmotones -lppucore
+LIBS=-L../../libs -L./ -ljoypad -lmotones -pthread
+#LIBS=-L./ -lmotones -ljoypad
 
 INCLUDE=-I../../include -I../
 
-CFLAGS=-g $(INCLUDE) -Wall
+CFLAGS=-g $(INCLUDE) -Wall `pkg-config gtk+-2.0 --cflags`
 
-LFLAGS=-g $(LIBS) -Wall
+LFLAGS=-g $(LIBS) `pkg-config gtk+-2.0 gthread-2.0 --libs`
 
-all:	$(BIN)
+all:	$(BIN) test
 test:	$(TEST_BIN)
 
 $(TEST_BIN): $(BIN) $(DUMMY_OBJS) ../../libs
