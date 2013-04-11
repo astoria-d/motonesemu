@@ -14,12 +14,14 @@ int init_debug(void);
 int init_ppu(void);
 int init_apu(void);
 int init_dma(void);
+int init_joypad(void);
 
 void clean_bus(void);
 void clean_debug(void);
 void clean_ppu(void);
 void clean_apu(void);
 void clean_dma(void);
+void clean_joypad(void);
 
 void reset_cpu(void);
 int load_cartridge(const char* cartridge);
@@ -65,6 +67,12 @@ static int init_datas(void) {
         return FALSE;
     }
 
+    ret = init_joypad();
+    if (!ret) {
+        fprintf(stderr, "ppu init err.\n");
+        return FALSE;
+    }
+
     ret = init_apu();
     if (!ret) {
         fprintf(stderr, "apu init err.\n");
@@ -99,6 +107,7 @@ static void clean_datas(void) {
     clean_rom();
     clean_ram();
     clean_ppu();
+    clean_joypad();
     clean_apu();
     clean_bus();
 

@@ -1,6 +1,7 @@
 #include <gtk/gtk.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <libio.h>
+#include <gdk/gdkkeysyms.h>
 
 #include "tools.h"
 
@@ -100,12 +101,12 @@ static void key_press(GtkWidget *widget,
             valid_key = TRUE;
             key = "A";
             break;
-        case 65289: //tab key
+        case GDK_Tab: //tab key
             button_select = TRUE;
             valid_key = TRUE;
             key = "select";
             break;
-        case 65293: //enter key
+        case GDK_Return: //enter key
             button_start = TRUE;
             valid_key = TRUE;
             key = "start";
@@ -181,25 +182,34 @@ static void key_release(GtkWidget *widget,
     //dprint("release, key code: %d key: %s\n", event->keyval, event->string);
 }
 
-int window_start(int argc, char** argv)
+
+void close_joypad_wnd(void) {
+    gtk_main_quit();
+}
+
+void* window_start(void* arg)
 {
     GtkWidget *window;
     GtkWidget *drawing_area;
     GdkPixbuf *pixbuf;
     GError *err = NULL;
     int width, height;
+    int argc;
+    char *argv0 = "./motonesemu";
+    char *argv[] = {(char*)&argv0, NULL};
 
     //get thread lock
     gdk_threads_enter();
 
     //init.
-    gtk_init(&argc, &argv);
+    argc = 1;
+    gtk_init(&argc, (char***)&argv);
 
     pixbuf = gdk_pixbuf_new_from_file(JOYPAD_IMG_PATH, &err);
     if (pixbuf == NULL) {
         fprintf(stderr, "error reading image file[%s].\n", JOYPAD_IMG_PATH);
         g_error_free (err);
-        return -1;
+        return NULL;
     }
     width = gdk_pixbuf_get_width (pixbuf); 
     height = gdk_pixbuf_get_height (pixbuf);
@@ -232,7 +242,7 @@ int window_start(int argc, char** argv)
     gtk_main();
     gdk_threads_leave();
 
-    return 0;
+    return NULL;
 }
 
 int init_joypad_wnd(void) {

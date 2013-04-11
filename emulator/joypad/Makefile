@@ -15,7 +15,7 @@ CFLAGS=-g $(INCLUDE) -Wall `pkg-config gtk+-2.0 --cflags`
 
 LFLAGS=-g $(LIBS) `pkg-config gtk+-2.0 gthread-2.0 --libs`
 
-all:	$(BIN) test
+all:	$(BIN)
 test:	$(TEST_BIN)
 
 $(TEST_BIN): $(BIN) $(DUMMY_OBJS) ../../libs
