@@ -10,6 +10,8 @@ static unsigned char apu_data;
  * apucore r/w func ptr.
  * */
 void set_dma_data(unsigned char data);
+void set_joypad_data(unsigned char data);
+unsigned char get_joypad_data(void);
 void release_bus(void);
 int get_rw_pin(void);
 
@@ -67,6 +69,9 @@ int init_apu(void) {
     }
     //dma func
     apu_write_func[0x14] = set_dma_data;
+    //joypad func
+    apu_write_func[0x16] = set_joypad_data;
+    apu_read_func[0x16] = get_joypad_data;
 
     return TRUE;
 }
