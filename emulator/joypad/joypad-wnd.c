@@ -235,7 +235,7 @@ int window_start(int argc, char** argv)
     return 0;
 }
 
-int init_jp(void) {
+int init_joypad_wnd(void) {
     //init thread
     g_thread_init (NULL);
     gdk_threads_init ();

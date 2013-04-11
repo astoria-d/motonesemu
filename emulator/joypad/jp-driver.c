@@ -8,7 +8,7 @@ int window_start(int argc, char** argv);
 int main(int argc, char** argv) {
     printf("jp-driver...\n");
 
-    init_jp();
+    init_joypad_wnd();
     window_start(argc, argv);
     
     return 0;

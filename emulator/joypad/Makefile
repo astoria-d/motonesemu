@@ -2,7 +2,7 @@
 BIN=libjoypad.a
 TEST_BIN=jp-driver
 
-OBJS=joypad.o
+OBJS=joypad-wnd.o
 
 DUMMY_OBJS=jp-driver.o
 	 
