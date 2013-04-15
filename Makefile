@@ -7,6 +7,9 @@ all:
 	for dir in $(DIRS); do \
 		make -C $(ROOT_DIR)/$$dir; \
 	done
+	cp emulator/motonesemu bin/
+	cp display/vgadisp bin/
+	cp emulator/joypad/famicon-controller.jpg bin/
 
 tag:
 	find . -name "*.[ch]" | xargs ctags
