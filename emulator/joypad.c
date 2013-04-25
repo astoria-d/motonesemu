@@ -47,7 +47,7 @@ void set_joypad_data(unsigned char data) {
 unsigned char get_joypad_data(void) {
     unsigned char data;
     jp_reg.r.button_data = get_button(jp_reg.read_cnt++);
-    memcpy(&data, &jp_reg.w, sizeof(unsigned char));
+    memcpy(&data, &jp_reg.r, sizeof(unsigned char));
     //dprint("get joypad data(%d) %d\n", jp_reg.read_cnt, data);
     return data;
 }
