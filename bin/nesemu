@@ -1,0 +1,33 @@
+#!/bin/bash
+
+if [ ! -e vgadisp ] ; then
+    echo vgadisp command not found!
+    exit -1
+fi
+
+if [ ! -e motonesemu ] ; then
+    echo motonesemu command not found!
+    exit -2
+fi
+
+./vgadisp &
+vga_pid="$!"
+
+echo -e "\n\n\n\nWelcome to MOTO NES EMULATOR"
+echo -e "\n\n\n\n       .....press ctl-C to terminate emulator.\n\n\n\n"
+./motonesemu $1
+
+#clean up
+#echo vga: $vga_pid
+
+kill $vga_pid
+
+ipcs -m -p > ipclist
+#cat ipclist
+
+shmid=$(awk "{     if (\$3 == $vga_pid)    print \$1}" < ipclist)
+#echo shmid: $shmid
+rm ipclist
+ipcrm -m $shmid
+
+

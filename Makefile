@@ -16,5 +16,5 @@ clean:
 	for dir in $(DIRS); do \
 		make -C $$dir clean; \
 	done
-	rm -rf bin
+	rm bin/motonesemu bin/vgadisp bin/famicon-controller.jpg
 

@@ -30,6 +30,7 @@ void *vga_shm_get(void) {
             return NULL;
         }
     }
+    //printf("shmid:%d\n", shmid);
 
     /* Attach (map) the shared memory segment into the current process */
     if((ret = shmat(shmid, 0, 0)) == (void*)-1)
