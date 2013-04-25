@@ -155,7 +155,7 @@ void set_bus_data(unsigned char data){
     data_bus = data;
 }
 
-char get_bus_data(void) {
+unsigned char get_bus_data(void) {
     if (!pin_status.ready)
         return 0;
 

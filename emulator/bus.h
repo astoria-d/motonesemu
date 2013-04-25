@@ -3,7 +3,7 @@
 
 void set_bus_addr(unsigned short addr);
 void set_bus_data(unsigned char data);
-char get_bus_data(void);
+unsigned char get_bus_data(void);
 
 void start_bus(void);
 void end_bus(void);

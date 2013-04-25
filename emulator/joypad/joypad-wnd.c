@@ -112,9 +112,9 @@ static void key_press(GtkWidget *widget,
             key = "start";
             break;
     }
+/*
     if (valid_key)
         dprint("%s key pressed\n", key);
-/*
 */
     //dprint("press, key code: %d key: %s\n", event->keyval, event->string);
 }
@@ -179,9 +179,9 @@ static void key_release(GtkWidget *widget,
             key = "start";
             break;
     }
+/*
     if (valid_key)
         dprint("%s key released\n", key);
-/*
 */
     //dprint("release, key code: %d key: %s\n", event->keyval, event->string);
 }
