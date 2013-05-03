@@ -13,6 +13,7 @@ fi
 ./vgadisp &
 vga_pid="$!"
 
+sleep 0.5
 echo -e "\n\n\n\nWelcome to MOTO NES EMULATOR"
 echo -e "\n\n\n\n       .....press ctl-C to terminate emulator.\n\n\n\n"
 ./motonesemu $1
@@ -28,6 +29,7 @@ ipcs -m -p > ipclist
 shmid=$(awk "{     if (\$3 == $vga_pid)    print \$1}" < ipclist)
 #echo shmid: $shmid
 rm ipclist
+sleep 0.5
 ipcrm -m $shmid
 
 
