@@ -901,16 +901,16 @@ static void set_SUB_carry(unsigned char d1, unsigned char d2, unsigned char d3) 
 }
 
 /*
- * v Set if signed borrow not required; cleared if signed borrow.
+ * v Set if signed borrow required; cleared if no signed borrow.
  * */
 static void set_SUB_overflow(char d1, char d2, char d3) {
     short d1_short = d1;
     short d2_short = d2;
     short d3_short = d3;
     if (d1_short >= d2_short + d3_short)
-        cpu_reg.status.overflow = 1;
-    else
         cpu_reg.status.overflow = 0;
+    else
+        cpu_reg.status.overflow = 1;
 }
 
 /*-------------   stack operation..  ---------------------*/
