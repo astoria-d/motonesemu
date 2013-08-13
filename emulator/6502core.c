@@ -907,10 +907,12 @@ static void set_SUB_overflow(char d1, char d2, char d3) {
     short d1_short = d1;
     short d2_short = d2;
     short d3_short = d3;
-    if (d1_short >= d2_short + d3_short)
-        cpu_reg.status.overflow = 0;
-    else
+    if ((d1_short - d2_short - d3_short) > +127 || (d1_short - d2_short - d3_short) < -128 ){
         cpu_reg.status.overflow = 1;
+    }
+    else {
+        cpu_reg.status.overflow = 0;
+    }
 }
 
 /*-------------   stack operation..  ---------------------*/
