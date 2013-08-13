@@ -16,6 +16,8 @@ static int button_B;
 static int button_select;
 static int button_start;
 
+static int jp_wnd_start;
+
 int get_button(unsigned int code) {
     code &= 0x07;
     switch (code) {
@@ -188,7 +190,8 @@ static void key_release(GtkWidget *widget,
 
 
 void close_joypad_wnd(void) {
-    gtk_main_quit();
+    if (jp_wnd_start == TRUE)
+        gtk_main_quit();
 }
 
 void* window_start(void* arg)
@@ -213,6 +216,7 @@ void* window_start(void* arg)
     if (pixbuf == NULL) {
         fprintf(stderr, "error reading image file[%s].\n", JOYPAD_IMG_PATH);
         g_error_free (err);
+        gdk_threads_leave();
         return NULL;
     }
     width = gdk_pixbuf_get_width (pixbuf); 
@@ -243,6 +247,7 @@ void* window_start(void* arg)
 */
 
     gtk_widget_show_all(window);
+    jp_wnd_start = TRUE;
     gtk_main();
     gdk_threads_leave();
 
@@ -272,6 +277,8 @@ int init_joypad_wnd(void) {
     button_B = FALSE;
     button_select = FALSE;
     button_start = FALSE;
+
+    jp_wnd_start = FALSE;
 
     return TRUE;
 }
