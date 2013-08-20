@@ -231,6 +231,9 @@ unsigned char ppu_status_get(void) {
     //if read status reg, vram addr register counter is reset
     vram_addr_reg.cnt = 0;
     //dprint("ppu_status:%02x\n", ret);
+
+    //reading status resets the vblank flg.
+    status_reg.vblank = 0;
     return ret;
 }
 
