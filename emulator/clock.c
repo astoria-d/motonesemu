@@ -35,7 +35,7 @@ static void* cpu_clock_loop(void* arg) {
                 if (!ch->handler())
                     return NULL;
             }
-            if (ch->cnt++ == ch->devider)
+            if (++ch->cnt == ch->devider)
                 ch->cnt = 0;
             ch = (struct clock_handler*)ch->l.next;
         }
