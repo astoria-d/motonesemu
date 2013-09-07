@@ -111,11 +111,19 @@ static void attr_tbl_set(unsigned char bank, unsigned short offset, unsigned cha
 
 
 static unsigned char spr_palette_tbl_get(unsigned short offset) {
-    return spr_palette_tbl[offset];
+    //Addresses $3F10/$3F14/$3F18/$3F1C are mirrors of $3F00/$3F04/$3F08/$3F0C
+    if (offset == 0x00 || offset == 0x04 || offset == 0x08 || offset == 0x0c) 
+        return bg_palette_tbl[offset];
+    else
+        return spr_palette_tbl[offset];
 }
 
 static void spr_palette_tbl_set(unsigned short offset, unsigned char data) {
-    spr_palette_tbl[offset] = data;
+    //Addresses $3F10/$3F14/$3F18/$3F1C are mirrors of $3F00/$3F04/$3F08/$3F0C
+    if (offset == 0x00 || offset == 0x04 || offset == 0x08 || offset == 0x0c) 
+        bg_palette_tbl[offset] = data;
+    else
+        spr_palette_tbl[offset] = data;
 }
 
 static unsigned char bg_palette_tbl_get(unsigned short offset) {

@@ -17,7 +17,7 @@ unsigned char spr_ram_tbl_get(unsigned short offset);
 unsigned char vram_data_get(unsigned short addr);
 void palette_index_to_rgb15(unsigned char index, struct rgb15* rgb);
 
-#define TRANSPARENT_PALETTE_ADDR        0x3F10
+#define TRANSPARENT_PALETTE_ADDR        0x3F00
 
 struct sprite_buf_reg {
     struct palette plt;
