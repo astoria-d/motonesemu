@@ -158,7 +158,7 @@ static int clock_ppu(void) {
     }
     else {
         scan_recovery();
-        if (scan_x == 1 && scan_y == VSCREEN_HEIGHT + 1) {
+        if (scan_x == 0 && scan_y == VSCREEN_HEIGHT) {
             //printing display done.
             status_reg.vblank = 1;
             if (ctrl_reg1.nmi_vblank) {
