@@ -15,5 +15,8 @@ void take_bus(void);
 void set_nmi_pin(int val);
 int get_nmi_pin(void);
 
+void set_reset_pin(int val);
+int get_reset_pin(void);
+
 #endif /*__bus_h__*/
 

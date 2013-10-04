@@ -402,5 +402,16 @@ void dump_ppu_reg(void) {
     printf(" left 8 pix bg:%d\n", ctrl_reg2.show_left_8bg);
     printf(" col mode:%d\n", ctrl_reg2.color_mode);
 
+    printf("\nstatus reg\n");
+    printf(" vram_ignore:%d\n", status_reg.vram_ignore);
+    printf(" sprite_overflow:%d\n", status_reg.sprite_overflow);
+    printf(" sprite0_hit:%d\n", status_reg.sprite0_hit);
+    printf(" vblank:%d\n", status_reg.vblank);
+
+    printf("\nvram_addr_reg:%04x\n", vram_addr_reg.addr.s);
+    printf("vram_data_reg:%02x\n", vram_data_reg);
+    printf("\nscroll_reg:\n");
+    printf(" x:%d\n", scroll_reg.x);
+    printf(" y:%d\n", scroll_reg.y);
 }
 

@@ -19,6 +19,7 @@ void d1_set(int on_off);
 void d2_set(int on_off);
 void d3_set(int on_off);
 void d4_set(int on_off);
+void reset_cpu(void);
 
 #define MAX_HISTORY     10
 
@@ -35,6 +36,7 @@ static void print_debug(void) {
     printf("   command:\n");
     printf("            s: step\n");
     printf("            c: continue\n");
+    printf("            r: reset\n");
     printf("       b addr: set break point\n");
     printf("               (break point can be set only 1 address.)\n");
     printf("          del: delete break point\n");
@@ -102,6 +104,9 @@ int emu_debug(void) {
         else if (!strcmp(buf, "c")){
             debug_mode = FALSE;
             break;
+        }
+        else if (!strcmp(buf, "r")){
+            reset_cpu();
         }
         else if (!strcmp(buf, "show")){
             dump_6502(TRUE);

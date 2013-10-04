@@ -10,6 +10,7 @@
 static int fetch_and_decode_inst(void);
 static int decode_inst(void);
 static int execute_inst(void);
+static int reset_handler1(void);
 
 int reset6502(void);
 int reset_exec6502(void);
@@ -70,6 +71,12 @@ int clock_cpu(void) {
 
     //dprint("%d\n", clock_cnt);
     clock_cnt++;
+
+    if (get_reset_pin()) {
+        execute_func = reset_handler1;
+        set_reset_pin(0);
+        return execute_func();
+    }
 
     ret = execute_func();
 
@@ -154,7 +161,7 @@ static int reset_handler1(void) {
 }
 
 void reset_cpu(void) {
-    execute_func = reset_handler1;
+    set_reset_pin(1);
 }
 
 static int nmi_handler(void) {

@@ -194,6 +194,14 @@ int get_nmi_pin(void) {
     return pin_status.nmi;
 }
 
+void set_reset_pin(int val) {
+    pin_status.reset = val;
+}
+
+int get_reset_pin(void) {
+    return pin_status.reset;
+}
+
 int init_bus(void) {
     addr_bus = 0;
     data_bus = 0;
