@@ -3,18 +3,23 @@ BIN=vgadisp
 
 DRIVER=dummy-driver
 
-OBJS=display.o window.o
-	 
 DRIVER_OBJS=dummy-driver.o
 
 
 LIBS=-L../libs -lmotones -pthread
 
-INCLUDE=-I../include -I/usr/include/gtk-2.0
+ifeq ($(linux_env),1)
+    INCLUDE=-I../include -I/usr/include/gtk-2.0
+    CFLAGS=-g $(INCLUDE) `pkg-config gtk+-2.0 --cflags` -Wall
+    LFLAGS=-g $(LIBS) `pkg-config gtk+-2.0 gthread-2.0 --libs`
+    OBJS=display.o window.o
+else
+    INCLUDE=-I../include
+    CFLAGS=-g $(INCLUDE) -Wall
+    LFLAGS=-g $(LIBS)
+    OBJS=display.o no-window.o
+endif
 
-CFLAGS=-g $(INCLUDE) `pkg-config gtk+-2.0 --cflags` -Wall
-
-LFLAGS=-g $(LIBS) `pkg-config gtk+-2.0 gthread-2.0 --libs`
 
 all:	$(BIN) $(DRIVER)
 

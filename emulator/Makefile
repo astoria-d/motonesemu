@@ -15,8 +15,14 @@ LIBS=-L../libs -lmotones -lpthread -lrt \
 
 INCLUDE=-I../include -Ippucore
 
-CFLAGS=-g $(INCLUDE) -Wall
-LFLAGS=$(LIBS) `pkg-config gtk+-2.0 gthread-2.0 --libs`
+CFLAGS=-g $(INCLUDE) -Wall -DUSE_GUI=$(linux_env)
+
+ifeq ($(linux_env),1)
+    LFLAGS=$(LIBS) `pkg-config gtk+-2.0 gthread-2.0 --libs`
+else
+    LFLAGS=$(LIBS)
+endif
+
 
 all:	$(BIN)
 

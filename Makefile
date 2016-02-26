@@ -1,4 +1,7 @@
 
+linux_env := 0
+export linux_env
+
 DIRS=libs emulator display
 
 ROOT_DIR=$(CURDIR)

@@ -130,12 +130,21 @@ int init_ppu(void) {
     ppu_addr = 0;
     ppu_data = 0;
 
+#if USE_GUI
     /* get vga shared memory */
     if((vga_shared_buf = (unsigned char*)vga_shm_get()) == NULL)
     {
         fprintf(stderr, "error attaching shared memory.\n");
         return FALSE;
     }
+#else
+    /* get vga shared memory */
+    if((vga_shared_buf = (unsigned char*)malloc(VGA_SHM_SIZE)) == NULL)
+    {
+        fprintf(stderr, "error allocating dummy shared memory.\n");
+        return FALSE;
+    }
+#endif
 
     memset(vga_shared_buf, 0, VGA_SHM_SIZE);
     set_vga_base((unsigned char*)vga_shared_buf);

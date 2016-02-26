@@ -1,0 +1,7 @@
+*.bin
+*.nes
+*.o
+*.exe
+vgadisp
+tags
+*.a

@@ -1,7 +1,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef __CYGWIN__
 #include "libio.h"
+#endif
 #include "tools.h"
 #include "vga.h"
 #include "ppucore.h"
