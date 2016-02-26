@@ -1812,6 +1812,10 @@ int func_PHP(void) {
     int done = FALSE;
     unsigned char st;
     memcpy(&st, &cpu_reg.status, sizeof(struct status_reg));
+    /* researved bit always 1*/
+    cpu_reg.status.researved = 1;
+    /* decimal always 0*/
+    cpu_reg.status.decimal = 0;
     ret = push_op(st, &done);
     exec_done = done;
     return ret;
