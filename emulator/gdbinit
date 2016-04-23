@@ -1,0 +1,7 @@
+
+
+#b 6502core.c:2167
+b 6502core.c:609
+
+run -d regression.nes
+

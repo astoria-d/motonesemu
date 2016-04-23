@@ -265,7 +265,7 @@ void disasm(const char* mnemonic, int addr_mode, unsigned short pc) {
                     mnemonic, (char)dbg_get_byte(pc + 1));
             break;
         case ADDR_MODE_INDEX_INDIR:
-            printf("%04x: %02x %02x       %-5s ($%02x, x), y\n", pc, 
+            printf("%04x: %02x %02x       %-5s ($%02x, x)\n", pc, 
                     dbg_get_byte(pc), dbg_get_byte(pc + 1), 
                     mnemonic, dbg_get_byte(pc + 1));
             break;
