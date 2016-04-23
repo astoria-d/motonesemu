@@ -1,7 +1,65 @@
+set history save on
+set history size 10000
+set history filename ~/.gdb_history
+set print pretty on
+set print static-members off
+set charset ASCII
+
+#handle SIG34 nostop
+
+#b joypad-wnd.c:206
+#b joypad-wnd.c:246
+
+#b clock_cpu
+#b fetch_inst
+#b execute_inst
+#b decode6502
+#b cpu_clock_loop
+#b clock.c:39
+#b func_BNE
+#b func_BPL
+#b func_JSR
+#b func_RTS
+#b func_CPY
+#b 6502core.c:740
+#b func_STA
+#b store_memory
+#b func_TAX
+#b vram.c:127
+#b ppu_vram_data_get
+#b ppu_status_get
+
+#b show_background
+#b test_ppu
+#b ppu_ctrl1_set
+#b func_CMP
+#b nmi6502
+
+#b emu_debug
+#b ppu_ctrl1_set
+#b ppu_ctrl2_set
+#b bus.c:94
+#b set_bgtile
+#b name_tbl_set
+#b attr_tbl_set
+#b bg_palette_tbl_set
+#b spr_palette_tbl_set
+#b vram_data_set
+#b copy_data
+#b ppucore_loop
+#b vga_xfer
+#b calibrate_clock
+#b vscreenn_dot_get
+#b clock_ppu
+#b load_background
+#b set_SUB_overflow
+b reset_cpu
 
 
-#b 6502core.c:2167
-b 6502core.c:609
+run -d ./sample1.nes
+#run ./sample1.nes
+#run -d ./smb.nes
+#run ./smb.nes
+#run -d ./bvs-test.nes
 
-run -d regression.nes
 
