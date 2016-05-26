@@ -56,7 +56,7 @@ int init_joypad(void) {
     int ret;
     pthread_attr_t attr;
 
-    memset(&jp_reg, sizeof(struct joypad_reg), 0);
+    memset(&jp_reg, 0, sizeof(struct joypad_reg));
 
     ret = init_joypad_wnd();
     if (ret == FALSE) {
