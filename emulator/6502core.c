@@ -397,7 +397,7 @@ static int load_addr_mode(int *done) {
             }
             else if (current_exec_index == 3) {
                 unsigned char addr = get_cpu_data_buf();
-                load_addr(addr + 1, 2);
+                load_addr((unsigned char)(addr + 1), 2);
                 return TRUE;
             }
             else if (current_exec_index == 4) {
@@ -422,7 +422,7 @@ static int load_addr_mode(int *done) {
             }
             else if (current_exec_index == 2) {
                 unsigned char addr = get_cpu_data_buf();
-                load_addr(addr + 1, 2);
+                load_addr((unsigned char)(addr + 1), 2);
                 return TRUE;
             }
             else if (current_exec_index == 3) {
@@ -626,7 +626,7 @@ static int store_addr_mode(unsigned char data, int *done) {
             }
             else if (current_exec_index == 3) {
                 unsigned char addr = get_cpu_data_buf();
-                load_addr(addr + 1, 2);
+                load_addr((unsigned char)(addr + 1), 2);
                 return TRUE;
             }
             else if (current_exec_index == 4) {
@@ -651,7 +651,7 @@ static int store_addr_mode(unsigned char data, int *done) {
             }
             else if (current_exec_index == 2) {
                 unsigned char addr = get_cpu_data_buf();
-                load_addr(addr + 1, 2);
+                load_addr((unsigned char)(addr + 1), 2);
                 return TRUE;
             }
             else if (current_exec_index == 3) {
