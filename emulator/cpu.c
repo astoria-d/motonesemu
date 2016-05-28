@@ -37,6 +37,7 @@ int disas_inst(unsigned short addr);
 void dump_6502(int full);
 extern int debug_mode;
 extern unsigned short break_point;
+extern unsigned long break_counter_point;
 extern int critical_error;
 
 
@@ -58,7 +59,7 @@ clock_func_t *execute_func;
 static unsigned long clock_cnt;
 
 /*for debug purpos*/
-int get_clock_cnt(void) {
+unsigned long get_clock_cnt(void) {
     return clock_cnt;
 }
 
@@ -209,6 +210,9 @@ static int fetch_and_decode_inst(void) {
     pc = pc_get();
 
     if (break_point == pc) {
+        break_hit();
+    }
+    if (break_counter_point == clock_cnt) {
         break_hit();
     }
 

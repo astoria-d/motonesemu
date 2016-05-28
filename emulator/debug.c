@@ -20,6 +20,7 @@ void d2_set(int on_off);
 void d3_set(int on_off);
 void d4_set(int on_off);
 void reset_cpu(void);
+unsigned long get_clock_cnt(void);
 
 #define MAX_HISTORY     10
 
@@ -29,8 +30,12 @@ struct cmd_list {
 };
 
 static struct cmd_list* debug_history;
+static int d5_disas;
+
 //global variable.
 unsigned short break_point;
+unsigned long break_counter_point;
+
 
 static void print_debug(void) {
     printf("   command:\n");
@@ -39,6 +44,8 @@ static void print_debug(void) {
     printf("            r: reset\n");
     printf("       b addr: set break point\n");
     printf("               (break point can be set only 1 address.)\n");
+    printf("       bc counter: set break point at specified cpu counter\n");
+    printf("               (counter is set in 64 bit long hex form.)\n");
     printf("          del: delete break point\n");
     printf("  m addr size: memory dump\n");
     printf("         show: show registers\n");
@@ -49,6 +56,7 @@ static void print_debug(void) {
     printf("   d2 on/off: debug log level 2 (dump reg status for each instruction)\n");
     printf("   d3 on/off: debug log level 3 (dump load/store data value)\n");
     printf("   d4 on/off: debug log level 4 (dump vram data write)\n");
+    printf("   d5 on/off: debug log level 5 (dump clock counter w/ d1)\n");
     printf("            q: quit emulator\n");
 }
 
@@ -159,10 +167,27 @@ int emu_debug(void) {
                 printf("d4 parameter must be either [on] or [off].\n");
             }
         }
+        else if (!strcmp(buf, "d5")){
+            scanf("%s", buf);
+            if (!strcmp(buf, "on")){
+                d5_disas = TRUE;
+            }
+            else if (!strcmp(buf, "off")){
+                d5_disas = FALSE;
+            }
+            else {
+                printf("d5 parameter must be either [on] or [off].\n");
+            }
+        }
         else if (!strcmp(buf, "b")){
             unsigned int val;
             scanf("%x", &val);
             break_point = val;
+        }
+        else if (!strcmp(buf, "bc")){
+            unsigned long val;
+            scanf("%lx", &val);
+            break_counter_point = val;
         }
         else if (!strcmp(buf, "del")){
             break_point = 0;
@@ -211,6 +236,9 @@ int emu_debug(void) {
 }
 
 void disasm(const char* mnemonic, int addr_mode, unsigned short pc) {
+
+    if (d5_disas)
+        printf("%016lx ", get_clock_cnt());
 
     switch(addr_mode) {
         case ADDR_MODE_ZP:
@@ -343,6 +371,8 @@ int init_debug(void) {
     //dprint("init debug..\n");
     debug_history = NULL;
     break_point = 0;
+    break_counter_point = 0;
+    d5_disas = FALSE;
     //initscr();          /* Start curses mode          */
 
     return TRUE;

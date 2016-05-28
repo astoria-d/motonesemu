@@ -105,7 +105,7 @@ unsigned char get_cpu_data_buf(void);
 void set_cpu_data_buf(unsigned char data);
 unsigned short get_cpu_addr_buf(void);
 void set_cpu_addr_buf(unsigned short addr);
-int get_clock_cnt(void);
+unsigned long get_clock_cnt(void);
 
 int func_ADC(void);
 int func_AND(void);
@@ -2480,7 +2480,7 @@ int init_6502core(void) {
 /* for debug.c */
 
 void dump_6502(int full) {
-    printf("\nclock: %09d\n", get_clock_cnt());
+    printf("\nclock: %09ud\n", (unsigned int)get_clock_cnt());
     if (full) 
         printf("6502 CPU registers:\n");
 
