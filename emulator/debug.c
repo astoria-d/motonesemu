@@ -21,6 +21,7 @@ void d3_set(int on_off);
 void d4_set(int on_off);
 void reset_cpu(void);
 unsigned long get_clock_cnt(void);
+unsigned int get_nmi_cnt(void);
 
 #define MAX_HISTORY     10
 
@@ -238,7 +239,8 @@ int emu_debug(void) {
 void disasm(const char* mnemonic, int addr_mode, unsigned short pc) {
 
     if (d5_disas)
-        printf("%016lx ", get_clock_cnt());
+        printf("%02x%014lx ", (0xff & get_nmi_cnt()),
+        (unsigned long)(0x00ffffffffffffffff & get_clock_cnt()));
 
     switch(addr_mode) {
         case ADDR_MODE_ZP:

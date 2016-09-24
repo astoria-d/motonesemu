@@ -90,7 +90,7 @@ static int intr_done;
 static int bus_status;
 
 //debug purpose..
-static int nmi_cnt;
+static unsigned int nmi_cnt;
 
 unsigned char load_memory(unsigned short addr);
 unsigned short load_addr(unsigned short addr, int cycle);
@@ -2488,8 +2488,11 @@ int init_6502core(void) {
 /* for debug.c */
 
 void dump_6502(int full) {
-    printf("\nclock: %09ud\n", (unsigned int)get_clock_cnt());
-    printf("nmi: %d\n", nmi_cnt);
+    //clock is 64 bit format.
+    //upper 8 bit is nmi cnt.
+    //lower 56 bit is cpu counter from nmi.
+    printf("\nclock: %02x%014lx\n", (0xff & nmi_cnt),
+        (unsigned long)(0x00ffffffffffffffff & get_clock_cnt()));
     if (full) 
         printf("6502 CPU registers:\n");
 
@@ -2531,3 +2534,6 @@ void report_exec_err(void) {
             current_inst->mnemonic, current_exec_index - 1);
 }
 
+unsigned int get_nmi_cnt(void) {
+    return nmi_cnt;
+}
