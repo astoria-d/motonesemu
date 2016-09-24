@@ -70,9 +70,6 @@ unsigned long get_clock_cnt(void) {
 int clock_cpu(void) {
     int ret;
 
-    //dprint("%d\n", clock_cnt);
-    clock_cnt++;
-
     if (get_reset_pin()) {
         execute_func = reset_handler1;
         set_reset_pin(0);
@@ -245,6 +242,9 @@ static int fetch_and_decode_inst(void) {
 
     execute_func = execute_inst;
     pc_move(1);
+
+    //dprint("%d\n", clock_cnt);
+    clock_cnt++;
 
     return TRUE;
 }
