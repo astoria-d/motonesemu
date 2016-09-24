@@ -1,5 +1,5 @@
 
-linux_env := 0
+linux_env := 1
 export linux_env
 
 DIRS=libs emulator display

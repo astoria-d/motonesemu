@@ -5,3 +5,5 @@
 vgadisp
 tags
 *.a
+*.lnk
+emulator/opcode

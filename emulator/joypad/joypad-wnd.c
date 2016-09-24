@@ -1,6 +1,6 @@
 #include <gtk/gtk.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
-#include <libio.h>
+/*#include <libio.h>*/
 #include <gdk/gdkkeysyms.h>
 
 #include "tools.h"
