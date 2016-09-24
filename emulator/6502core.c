@@ -89,6 +89,9 @@ static int exec_done;
 static int intr_done;
 static int bus_status;
 
+//debug purpose..
+static int nmi_cnt;
+
 unsigned char load_memory(unsigned short addr);
 unsigned short load_addr(unsigned short addr, int cycle);
 void store_memory(unsigned short addr, unsigned char data);
@@ -106,6 +109,7 @@ void set_cpu_data_buf(unsigned char data);
 unsigned short get_cpu_addr_buf(void);
 void set_cpu_addr_buf(unsigned short addr);
 unsigned long get_clock_cnt(void);
+void reset_clock_cnt(void);
 
 int func_ADC(void);
 int func_AND(void);
@@ -2399,6 +2403,7 @@ int reset_exec6502(void) {
 
 int reset6502(void) {
     current_exec_index = 0;
+    nmi_cnt = 0;
     return reset_exec6502();
 }
 
@@ -2440,6 +2445,9 @@ int nmi6502(void) {
             cpu_reg.status.decimal = 0;
             cpu_reg.status.irq_disable = 1;
 
+            //reset cpu counter...
+            nmi_cnt++;
+            reset_clock_cnt();
             intr_done = TRUE;
             return TRUE;
     }
@@ -2481,6 +2489,7 @@ int init_6502core(void) {
 
 void dump_6502(int full) {
     printf("\nclock: %09ud\n", (unsigned int)get_clock_cnt());
+    printf("nmi: %d\n", nmi_cnt);
     if (full) 
         printf("6502 CPU registers:\n");
 

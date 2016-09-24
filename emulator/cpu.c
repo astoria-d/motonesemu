@@ -63,6 +63,10 @@ unsigned long get_clock_cnt(void) {
     return clock_cnt;
 }
 
+void reset_clock_cnt(void) {
+    clock_cnt = 0;
+}
+
 
 /*
  * clock handler.
