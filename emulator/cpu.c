@@ -30,6 +30,7 @@ void report_exec_err(void);
 void d1_set(int on_off);
 void d2_set(int on_off);
 void d3_set(int on_off);
+unsigned int get_nmi_cnt(void);
 
 //for debug.c
 void break_hit(void);
@@ -38,6 +39,7 @@ void dump_6502(int full);
 extern int debug_mode;
 extern unsigned short break_point;
 extern unsigned long break_counter_point;
+extern unsigned char break_nmi_point;
 extern int critical_error;
 
 
@@ -213,7 +215,7 @@ static int fetch_and_decode_inst(void) {
     if (break_point == pc) {
         break_hit();
     }
-    if (break_counter_point == clock_cnt) {
+    if ((break_nmi_point == get_nmi_cnt()) && (break_counter_point == clock_cnt)) {
         break_hit();
     }
 
