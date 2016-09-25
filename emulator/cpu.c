@@ -212,10 +212,10 @@ static int fetch_and_decode_inst(void) {
     dump_6502_level2(TRUE);
     pc = pc_get();
 
-    if (break_point == pc) {
+    if (break_point == pc && debug_mode == TRUE) {
         break_hit();
     }
-    if ((break_nmi_point == get_nmi_cnt()) && (break_counter_point == clock_cnt)) {
+    if ((break_nmi_point == get_nmi_cnt()) && (break_counter_point == clock_cnt) && debug_mode == TRUE) {
         break_hit();
     }
 
