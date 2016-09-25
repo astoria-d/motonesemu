@@ -7,3 +7,5 @@ tags
 *.a
 *.lnk
 emulator/opcode
+bin/*.log
+bin/*.txt

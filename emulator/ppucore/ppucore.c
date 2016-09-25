@@ -111,6 +111,8 @@ static unsigned int     vram_read_cnt;
 static int scan_x;
 static int scan_y;
 
+static int d6_flag;
+
 static int scan_recovery(void) {
     if (scan_y == VSCREEN_HEIGHT)
         return FALSE;
@@ -315,6 +317,9 @@ unsigned char ppu_vram_data_get(void) {
 void sprite0_hit_set(void) {
     //dprint("sprite0 set...\n");
     status_reg.sprite0_hit = 1;
+    if (d6_flag == TRUE) {
+        printf("sprite hit @(%d, %d)\n", scan_x, scan_y);
+    }
 }
 
 void sprite_overflow_set(void) {
@@ -343,6 +348,8 @@ int init_ppucore(void) {
 
     scan_x = 0;
     scan_y = 0;
+
+    d6_flag = FALSE;
 
     ret = init_vga_xfer();
     if (!ret)
@@ -413,5 +420,9 @@ void dump_ppu_reg(void) {
     printf("\nscroll_reg:\n");
     printf(" x:%d\n", scroll_reg.x);
     printf(" y:%d\n", scroll_reg.y);
+}
+
+void d6_set(int on_off) {
+    d6_flag = on_off;
 }
 
