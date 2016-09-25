@@ -38,7 +38,7 @@ static int d5_disas;
 
 //global variable.
 unsigned short break_point;
-unsigned long break_counter_point;
+unsigned long long break_counter_point;
 unsigned char break_nmi_point;
 
 
@@ -206,7 +206,7 @@ int emu_debug(void) {
         else if (!strcmp(buf, "bc")){
             unsigned long long val;
             scanf("%llx", &val);
-            break_counter_point = (0x00ffffffffffffffff & val);
+            break_counter_point = (0x00ffffffffffffffffLL & val);
             break_nmi_point = (unsigned char)(val >> 56);
             d5_disas = TRUE;
         }
@@ -427,7 +427,7 @@ int init_debug(void) {
     //dprint("init debug..\n");
     debug_history = NULL;
     break_point = 0;
-    break_counter_point = 0;
+    break_counter_point = 0xffffffffffffffffLL;
     d5_disas = FALSE;
     //initscr();          /* Start curses mode          */
 
