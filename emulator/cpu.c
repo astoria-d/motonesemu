@@ -38,7 +38,7 @@ int disas_inst(unsigned short addr);
 void dump_6502(int full);
 extern int debug_mode;
 extern unsigned short break_point;
-extern unsigned long break_counter_point;
+extern unsigned long long break_counter_point;
 extern unsigned char break_nmi_point;
 extern int critical_error;
 

@@ -206,7 +206,7 @@ int emu_debug(void) {
         else if (!strcmp(buf, "bc")){
             unsigned long long val;
             scanf("%llx", &val);
-            break_counter_point = (0x00ffffffffffffffffLL & val);
+            break_counter_point = (0x00ffffffffffffffLL & val);
             break_nmi_point = (unsigned char)(val >> 56);
             d5_disas = TRUE;
         }
