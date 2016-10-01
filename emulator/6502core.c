@@ -2452,6 +2452,7 @@ void pc_move(int offset) {
 
 int init_6502core(void) {
     memset(&cpu_reg, 0, sizeof(struct cpu_6502));
+    cpu_reg.status.researved = 1;
     current_inst = NULL;
     current_exec_index = 0;
     exec_done = FALSE;
