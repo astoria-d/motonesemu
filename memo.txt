@@ -1,0 +1,9 @@
+
+run xwin:
+run xwin -multiwindow -noclipboard
+
+run cygserver: (cygwin shared memory service)
+cygserver-config 
+
+cygrunsrv -S cygserver
+
