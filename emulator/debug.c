@@ -41,6 +41,8 @@ unsigned short break_point;
 unsigned long long break_counter_point;
 unsigned char break_nmi_point;
 
+static int d2_short;
+
 
 static void print_debug(void) {
     printf("   command:\n");
@@ -59,7 +61,7 @@ static void print_debug(void) {
     printf("  spr addr size: sprite dump\n");
     printf("  da addr size: disassemble\n");
     printf("   d1 on/off: debug log level 1 (dump instruction on execution)\n");
-    printf("   d2 on/off: debug log level 2 (dump reg status for each instruction)\n");
+    printf("   d2 0/1/2:  debug log level 2 (dump reg status for each instruction. 0=off, 1=full, 2=short.\n                                 dumped registers order is acc, x, y, sp, status.)\n");
     printf("   d3 on/off: debug log level 3 (dump load/store data value)\n");
     printf("   d4 on/off: debug log level 4 (dump vram data write)\n");
     printf("   d5 on/off: debug log level 5 (dump clock counter w/ d1)\n");
@@ -140,14 +142,20 @@ int emu_debug(void) {
         }
         else if (!strcmp(buf, "d2")){
             scanf("%s", buf);
-            if (!strcmp(buf, "on")){
+            if (!strcmp(buf, "1")){
                 d2_set(TRUE);
+                d2_short = FALSE;
             }
-            else if (!strcmp(buf, "off")){
+            else if (!strcmp(buf, "0")){
                 d2_set(FALSE);
+                d2_short = FALSE;
+            }
+            else if (!strcmp(buf, "2")){
+                d2_set(FALSE);
+                d2_short = TRUE;
             }
             else {
-                printf("d2 parameter must be either [on] or [off].\n");
+                printf("d2 parameter must be 0 or 1 or 2.\n");
             }
         }
         else if (!strcmp(buf, "d3")){
@@ -263,73 +271,81 @@ int emu_debug(void) {
     return TRUE;
 }
 
-void disasm(const char* mnemonic, int addr_mode, unsigned short pc) {
+void disasm(const char* mnemonic, int addr_mode, unsigned short pc, struct cpu_6502* reg) {
 
+    char full_reg[256];
     if (d5_disas)
         printf("%02x%014lx ", (0xff & get_nmi_cnt()),
         (unsigned long)(0x00ffffffffffffffff & get_clock_cnt()));
 
+    if (d2_short == TRUE) {
+        sprintf (full_reg, "%02x, %02x, %02x, %02x, %02x", reg->acc, reg->x, reg->y, reg->sp, *(unsigned char*)&reg->status);
+    }
+    else {
+        full_reg[0] = '\0';
+    }
+    
     switch(addr_mode) {
         case ADDR_MODE_ZP:
-            printf("%04x: %02x %02x       %-5s $%02x\n", pc, 
+            printf("%04x: %02x %02x       %-5s $%02x %44s\n", pc, 
                     dbg_get_byte(pc), dbg_get_byte(pc + 1), 
-                    mnemonic, dbg_get_byte(pc + 1));
+                    mnemonic, dbg_get_byte(pc + 1), full_reg);
             break;
         case ADDR_MODE_ZP_X:
-            printf("%04x: %02x %02x       %-5s $%02x, x\n", pc, 
+            printf("%04x: %02x %02x       %-5s $%02x, x %41s\n", pc, 
                     dbg_get_byte(pc), dbg_get_byte(pc + 1), 
-                    mnemonic, dbg_get_byte(pc + 1));
+                    mnemonic, dbg_get_byte(pc + 1), full_reg);
             break;
         case ADDR_MODE_ZP_Y:
-            printf("%04x: %02x %02x       %-5s $%02x, y\n", pc, 
+            printf("%04x: %02x %02x       %-5s $%02x, y %41s\n", pc, 
                     dbg_get_byte(pc), dbg_get_byte(pc + 1), 
-                    mnemonic, dbg_get_byte(pc + 1));
+                    mnemonic, dbg_get_byte(pc + 1), full_reg);
             break;
         case ADDR_MODE_ABS:
-            printf("%04x: %02x %02x %02x    %-5s $%04x\n", pc, 
+            printf("%04x: %02x %02x %02x    %-5s $%04x %42s\n", pc, 
                     dbg_get_byte(pc), dbg_get_byte(pc + 1), dbg_get_byte(pc + 2), 
-                    mnemonic, dbg_get_short(pc + 1));
+                    mnemonic, dbg_get_short(pc + 1), full_reg);
             break;
         case ADDR_MODE_ABS_X:
-            printf("%04x: %02x %02x %02x    %-5s $%04x, x\n", pc, 
+            printf("%04x: %02x %02x %02x    %-5s $%04x, x %39s\n", pc, 
                     dbg_get_byte(pc), dbg_get_byte(pc + 1), dbg_get_byte(pc + 2), 
-                    mnemonic, dbg_get_short(pc + 1));
+                    mnemonic, dbg_get_short(pc + 1), full_reg);
             break;
         case ADDR_MODE_ABS_Y:
-            printf("%04x: %02x %02x %02x    %-5s $%04x, y\n", pc, 
+            printf("%04x: %02x %02x %02x    %-5s $%04x, y %39s\n", pc, 
                     dbg_get_byte(pc), dbg_get_byte(pc + 1), dbg_get_byte(pc + 2), 
-                    mnemonic, dbg_get_short(pc + 1));
+                    mnemonic, dbg_get_short(pc + 1), full_reg);
             break;
         case ADDR_MODE_IND:
-            printf("%04x: %02x %02x %02x    %-5s ($%04x)\n", pc, 
+            printf("%04x: %02x %02x %02x    %-5s ($%04x) %40s\n", pc, 
                     dbg_get_byte(pc), dbg_get_byte(pc + 1), dbg_get_byte(pc + 2), 
-                    mnemonic, dbg_get_short(pc + 1));
+                    mnemonic, dbg_get_short(pc + 1), full_reg);
             break;
         case ADDR_MODE_IMP:
         case ADDR_MODE_ACC:
-            printf("%04x: %02x          %-5s \n", pc, 
+            printf("%04x: %02x          %-5s %48s\n", pc, 
                     dbg_get_byte(pc), 
-                    mnemonic);
+                    mnemonic, full_reg);
             break;
         case ADDR_MODE_IMM:
-            printf("%04x: %02x %02x       %-5s #$%02x\n", pc, 
+            printf("%04x: %02x %02x       %-5s #$%02x %43s\n", pc, 
                     dbg_get_byte(pc), dbg_get_byte(pc + 1), 
-                    mnemonic, dbg_get_byte(pc + 1));
+                    mnemonic, dbg_get_byte(pc + 1), full_reg);
             break;
         case ADDR_MODE_REL:
-            printf("%04x: %02x %02x       %-5s #%+d\n", pc, 
+            printf("%04x: %02x %02x       %-5s #%+4d %42s\n", pc, 
                     dbg_get_byte(pc), dbg_get_byte(pc + 1), 
-                    mnemonic, (char)dbg_get_byte(pc + 1));
+                    mnemonic, (char)dbg_get_byte(pc + 1), full_reg);
             break;
         case ADDR_MODE_INDEX_INDIR:
-            printf("%04x: %02x %02x       %-5s ($%02x, x)\n", pc, 
+            printf("%04x: %02x %02x       %-5s ($%02x, x) %39s\n", pc, 
                     dbg_get_byte(pc), dbg_get_byte(pc + 1), 
-                    mnemonic, dbg_get_byte(pc + 1));
+                    mnemonic, dbg_get_byte(pc + 1), full_reg);
             break;
         case ADDR_MODE_INDIR_INDEX:
-            printf("%04x: %02x %02x       %-5s ($%02x), y\n", pc, 
+            printf("%04x: %02x %02x       %-5s ($%02x), y %39s\n", pc, 
                     dbg_get_byte(pc), dbg_get_byte(pc + 1), 
-                    mnemonic, dbg_get_byte(pc + 1));
+                    mnemonic, dbg_get_byte(pc + 1), full_reg);
             break;
     }
 }
@@ -429,6 +445,7 @@ int init_debug(void) {
     break_point = 0;
     break_counter_point = 0xffffffffffffffffLL;
     d5_disas = FALSE;
+    d2_short = FALSE;
     //initscr();          /* Start curses mode          */
 
     return TRUE;

@@ -15,5 +15,30 @@
 #define ADDR_MODE_INDEX_INDIR       11
 #define ADDR_MODE_INDIR_INDEX       12
 
+/*
+ * 6502 little endian
+ * hi bit > low bit order
+ * but gcc generates low > hi order for bit field
+ * */
+struct status_reg {
+    unsigned int carry          :1;
+    unsigned int zero           :1;
+    unsigned int irq_disable    :1;
+    unsigned int decimal        :1;
+    unsigned int break_mode     :1;
+    unsigned int researved      :1;
+    unsigned int overflow       :1;
+    unsigned int negative       :1;
+} __attribute__ ((packed));
+
+struct cpu_6502 {
+    unsigned char acc;
+    unsigned char x;
+    unsigned char y;
+    unsigned char sp;
+    struct status_reg status;
+    unsigned short pc;
+};
+
 #endif /*__6502core_h__*/
 

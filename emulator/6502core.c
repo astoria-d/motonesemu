@@ -6,32 +6,6 @@
 #include "tools.h"
 #include "6502core.h"
 
-/*
- * 6502 little endian
- * hi bit > low bit order
- * but gcc generates low > hi order for bit field
- * */
-struct status_reg {
-    unsigned int carry          :1;
-    unsigned int zero           :1;
-    unsigned int irq_disable    :1;
-    unsigned int decimal        :1;
-    unsigned int break_mode     :1;
-    unsigned int researved      :1;
-    unsigned int overflow       :1;
-    unsigned int negative       :1;
-} __attribute__ ((packed));
-
-struct cpu_6502 {
-    unsigned char acc;
-    unsigned char x;
-    unsigned char y;
-    unsigned char sp;
-    struct status_reg status;
-    unsigned short pc;
-};
-
-
 typedef int (handler_6502_t) (void);
 
 /*
@@ -2519,12 +2493,12 @@ void dump_6502(int full) {
 int disas_inst(unsigned short addr) {
     unsigned char inst;
     unsigned char dbg_get_byte(unsigned short addr);
-    void disasm(const char* mnemonic, int addr_mode, unsigned short pc);
+    void disasm(const char* mnemonic, int addr_mode, unsigned short pc, struct cpu_6502* reg);
 
     inst = dbg_get_byte(addr);
     struct opcode_map * omap = &opcode_list[inst];
     
-    disasm(omap->mnemonic, omap->addr_mode, addr);
+    disasm(omap->mnemonic, omap->addr_mode, addr, &cpu_reg);
     return omap->inst_len;
 }
 
