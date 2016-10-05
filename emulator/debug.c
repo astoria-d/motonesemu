@@ -39,7 +39,7 @@ static int d5_disas;
 //global variable.
 unsigned short break_point;
 unsigned long long break_counter_point;
-unsigned char break_nmi_point;
+unsigned short break_nmi_point;
 
 static int d2_short;
 
@@ -215,7 +215,7 @@ int emu_debug(void) {
             unsigned long long val;
             scanf("%llx", &val);
             break_counter_point = (0x0000ffffffffffffLL & val);
-            break_nmi_point = (unsigned char)(val >> 48);
+            break_nmi_point = (unsigned short)(val >> 48);
             d5_disas = TRUE;
         }
         else if (!strcmp(buf, "del")){
