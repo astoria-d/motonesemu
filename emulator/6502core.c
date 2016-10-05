@@ -2466,8 +2466,8 @@ void dump_6502(int full) {
     //clock is 64 bit format.
     //upper 8 bit is nmi cnt.
     //lower 56 bit is cpu counter from nmi.
-    printf("\nclock: %02x%014lx\n", (0xff & nmi_cnt),
-        (unsigned long)(0x00ffffffffffffffff & get_clock_cnt()));
+    printf("\nclock: %04x%012lx\n", nmi_cnt,
+        (unsigned long)(0x0000ffffffffffffff & get_clock_cnt()));
     if (full) 
         printf("6502 CPU registers:\n");
 

@@ -214,8 +214,8 @@ int emu_debug(void) {
         else if (!strcmp(buf, "bc")){
             unsigned long long val;
             scanf("%llx", &val);
-            break_counter_point = (0x00ffffffffffffffLL & val);
-            break_nmi_point = (unsigned char)(val >> 56);
+            break_counter_point = (0x0000ffffffffffffLL & val);
+            break_nmi_point = (unsigned char)(val >> 48);
             d5_disas = TRUE;
         }
         else if (!strcmp(buf, "del")){
@@ -275,8 +275,8 @@ void disasm(const char* mnemonic, int addr_mode, unsigned short pc, struct cpu_6
 
     char full_reg[256];
     if (d5_disas)
-        printf("%02x%014lx ", (0xff & get_nmi_cnt()),
-        (unsigned long)(0x00ffffffffffffffff & get_clock_cnt()));
+        printf("%04x%012lx ", (0xff & get_nmi_cnt()),
+        (unsigned long)(0x0000ffffffffffffff & get_clock_cnt()));
 
     if (d2_short == TRUE) {
         sprintf (full_reg, "%02x, %02x, %02x, %02x, %02x", reg->acc, reg->x, reg->y, reg->sp, *(unsigned char*)&reg->status);
