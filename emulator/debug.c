@@ -275,7 +275,7 @@ void disasm(const char* mnemonic, int addr_mode, unsigned short pc, struct cpu_6
 
     char full_reg[256];
     if (d5_disas)
-        printf("%04x%012lx ", (0xff & get_nmi_cnt()),
+        printf("%04x%012lx ", (0xffff & get_nmi_cnt()),
         (unsigned long)(0x0000ffffffffffffff & get_clock_cnt()));
 
     if (d2_short == TRUE) {
