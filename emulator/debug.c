@@ -12,6 +12,7 @@ void dump_6502(int full);
 void dump_vram(unsigned short addr, int size);
 void dump_sprite_ram(unsigned short addr, int size);
 void dump_mem(unsigned short addr, int size);
+static void dump_mem_to_file(unsigned short addr, int size, const char* fname);
 unsigned char vram_data_get(unsigned short addr);
 unsigned char spr_ram_tbl_get(unsigned short offset);
 unsigned char dbg_get_byte(unsigned short addr);
@@ -55,6 +56,7 @@ static void print_debug(void) {
     printf("               (counter is set in 64 bit long hex form.)\n");
     printf("          del: delete break point\n");
     printf("  m addr size: memory dump\n");
+    printf("  mf addr size fname: binary memory dump to file\n");
     printf("         show: show registers\n");
     printf("        pshow: show ppu registers\n");
     printf("  v addr size: vram dump\n");
@@ -227,6 +229,15 @@ int emu_debug(void) {
             scanf("%x", &addr);
             scanf("%d", &size);
             dump_mem(addr, size);
+        }
+        else if (!strcmp(buf, "mf")){
+            unsigned int addr;
+            int size;
+            char outf[MAXBUF];
+            scanf("%x", &addr);
+            scanf("%d", &size);
+            scanf("%s", outf);
+            dump_mem_to_file(addr, size, outf);
         }
         else if (!strcmp(buf, "v")){
             unsigned int addr;
@@ -429,6 +440,26 @@ void dump_mem(unsigned short addr, int size) {
         addr++;
     }
     printf("\n");
+}
+
+static void dump_mem_to_file(unsigned short addr, int size, const char* fname) {
+    int i;
+    unsigned char vram_data_get(unsigned short addr);
+    FILE* f_out;
+
+    f_out = fopen(fname, "wb");
+    if (f_out == NULL) {
+        fprintf(stderr, "output file [%s] open failure.\n", fname);
+        return;
+    }
+
+    for (i = 0; i < size; i++) {
+        char bt = dbg_get_byte(addr);
+        fwrite (&bt, 1, 1, f_out);
+        addr++;
+    }
+    
+    fclose(f_out);
 }
 
 void break_hit(void) {
