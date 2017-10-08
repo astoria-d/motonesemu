@@ -27,8 +27,8 @@ static struct cpu_pin pin_status;
 static mp_set_addr_t set_rom_addr_in;
 static mp_get_data_t get_rom_data_in;
 
-static mp_dbg_get_byte_t dbg_rom_get_byte_in;
-static mp_dbg_get_short_t dbg_rom_get_short_in;
+extern mp_dbg_get_byte_t dbg_rom_get_byte_in;
+extern mp_dbg_get_short_t dbg_rom_get_short_in;
 
 /*
  * NES memory map

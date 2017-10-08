@@ -66,8 +66,8 @@ int init_rom(void) {
     unsigned short dbg_rom_get_short(unsigned short offset);
 
     /*setup mapper debug stab.*/
-    dbg_rom_get_byte_in = (mp_dbg_get_byte == NULL ? mp_dbg_get_byte : dbg_rom_get_byte);
-    dbg_rom_get_short_in = (mp_dbg_get_short == NULL ? mp_dbg_get_short : dbg_rom_get_short);
+    dbg_rom_get_byte_in = (mp_dbg_get_byte != NULL ? mp_dbg_get_byte : dbg_rom_get_byte);
+    dbg_rom_get_short_in = (mp_dbg_get_short != NULL ? mp_dbg_get_short : dbg_rom_get_short);
     return TRUE;
 }
 
