@@ -7,6 +7,7 @@
 #include "clock.h"
 #include "rom.h"
 #include "ram.h"
+#include "mapper.h"
 
 int init_cpu(void);
 int init_bus(void);
@@ -31,11 +32,18 @@ static int param_debug;
 int critical_error;
 int debug_mode;
 
+
 static int init_datas(void) {
     int ret;
 
     main_loop_done = FALSE;
     critical_error = FALSE;
+
+    ret = init_mapper();
+    if (!ret) {
+        fprintf(stderr, "mapper init err.\n");
+        return FALSE;
+    }
 
     ret = init_clock();
     if (!ret) {
@@ -112,6 +120,7 @@ static void clean_datas(void) {
     clean_bus();
 
     clean_debug();
+    clean_mapper();
 }
 
 static void sig_handler(int sig) {
@@ -142,6 +151,7 @@ static void print_usage(void) {
     printf("Options:\n");
     printf("\t-h: print this page.\n");
     printf("\t-d: debug mode.\n");
+    printf("\t-m: [mapper.so] mapper plugin.\n");
     //printf("\t-o [output]: output object file.\n");
 }
 
@@ -151,12 +161,23 @@ int main(int argc, char* argv[]) {
     char* cartridge;
     extern int optind;
     param_debug = FALSE;
+    mapper_load = FALSE;
     printf("motonesemu start...\n");
 
-    while( (ch = getopt(argc, argv, "dh")) != -1) {
+    while( (ch = getopt(argc, argv, "dhm:")) != -1) {
         switch (ch) {
             case 'd':
                 param_debug = TRUE;
+                break;
+            case 'm':
+                memset (mapper_fname, 0, FNAME_LEN);
+                if (strlen(optarg) > FNAME_LEN) {
+                    printf("mapper file name [%s] too long...\n", optarg);
+                    return 0;
+                }
+                strcpy (mapper_fname, optarg);
+                /*printf("mapper=%s\n", mapper_fname);*/
+                mapper_load = TRUE;
                 break;
             case 'h':
             default:
