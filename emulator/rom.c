@@ -4,6 +4,7 @@
 
 #include "tools.h"
 #include "clock.h"
+#include "mapper.h"
 
 void release_bus(void);
 
@@ -19,6 +20,12 @@ static unsigned char rom_data;
 #define ROM_32K 0x8000
 
 static unsigned char * rom_buffer;
+
+/*mapper debugger stab.*/
+mp_dbg_get_byte_t mp_dbg_get_byte;
+mp_dbg_get_short_t mp_dbg_get_short;
+mp_dbg_get_byte_t dbg_rom_get_byte_in;
+mp_dbg_get_short_t dbg_rom_get_short_in;
 
 int load_prg_rom(FILE* cartridge, int num_rom_bank) {
     int len;
@@ -55,7 +62,12 @@ int init_rom(void) {
     rom_data = 0;
     rom_pin_status.rw = 0;
     rom_pin_status.ce = 0;
+    unsigned char dbg_rom_get_byte(unsigned short offset);
+    unsigned short dbg_rom_get_short(unsigned short offset);
 
+    /*setup mapper debug stab.*/
+    dbg_rom_get_byte_in = (mp_dbg_get_byte == NULL ? mp_dbg_get_byte : dbg_rom_get_byte);
+    dbg_rom_get_short_in = (mp_dbg_get_short == NULL ? mp_dbg_get_short : dbg_rom_get_short);
     return TRUE;
 }
 

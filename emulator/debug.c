@@ -3,6 +3,7 @@
 #include <curses.h>
 #include "tools.h"
 #include "6502core.h"
+#include "mapper.h"
 
 #define MAXBUF  1024
 #define BYTES_PER_LINE 16
@@ -44,6 +45,9 @@ unsigned short break_nmi_point;
 
 static int d2_short;
 
+mp_set_debugger_t mp_set_debugger;
+unsigned char dbg_rom_get_byte(unsigned short offset);
+unsigned short dbg_rom_get_short(unsigned short offset);
 
 static void print_debug(void) {
     printf("   command:\n");
@@ -478,6 +482,11 @@ int init_debug(void) {
     d5_disas = FALSE;
     d2_short = FALSE;
     //initscr();          /* Start curses mode          */
+    
+    /*initialize mapper debugger.*/
+    if (mp_set_debugger != NULL) {
+        (*mp_set_debugger)(dbg_rom_get_byte, dbg_rom_get_short);
+    }
 
     return TRUE;
 }

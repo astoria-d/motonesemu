@@ -6,9 +6,8 @@
 #include "ram.h"
 #include "ppu.h"
 #include "apu.h"
+#include "mapper.h"
 
-unsigned char dbg_rom_get_byte(unsigned short offset);
-unsigned short dbg_rom_get_short(unsigned short offset);
 unsigned char dbg_ram_get_byte(unsigned short offset);
 unsigned short dbg_ram_get_short(unsigned short offset);
 
@@ -24,6 +23,12 @@ struct cpu_pin {
 static unsigned short addr_bus;
 static unsigned char data_bus;
 static struct cpu_pin pin_status;
+
+static mp_set_addr_t set_rom_addr_in;
+static mp_get_data_t get_rom_data_in;
+
+static mp_dbg_get_byte_t dbg_rom_get_byte_in;
+static mp_dbg_get_short_t dbg_rom_get_short_in;
 
 /*
  * NES memory map
@@ -109,7 +114,7 @@ void set_bus_addr(unsigned short addr) {
         return;
 
     if (addr & ROM_BIT) {
-        set_rom_addr(addr & ROM_MASK);
+        (*set_rom_addr_in)(addr & ROM_MASK);
     }
     else if (addr & IO_APU_BIT) {
         //dprint("bus addr ioapu...\n");
@@ -160,7 +165,7 @@ unsigned char get_bus_data(void) {
         return 0;
 
     if (addr_bus & ROM_BIT) {
-        data_bus = get_rom_data();
+        data_bus = (*get_rom_data_in)();
     }
     else if (addr_bus & IO_APU_BIT) {
         data_bus = get_apu_data();
@@ -207,6 +212,9 @@ int init_bus(void) {
     data_bus = 0;
     memset(&pin_status, 0, sizeof(struct cpu_pin));
     pin_status.ready = 1;
+    
+    set_rom_addr_in = mp_set_addr == NULL ? set_rom_addr : mp_set_addr;
+    get_rom_data_in = mp_get_data == NULL ? get_rom_data : mp_get_data;
 
     return TRUE;
 }
@@ -219,7 +227,7 @@ void clean_bus(void){
  * */
 unsigned char dbg_get_byte(unsigned short addr) {
     if (addr & ROM_BIT) {
-        return dbg_rom_get_byte(addr & ROM_MASK);
+        return (*dbg_rom_get_byte_in)(addr & ROM_MASK);
     }
     else if (addr & IO_APU_BIT) {
         return 0;
@@ -233,7 +241,7 @@ unsigned char dbg_get_byte(unsigned short addr) {
 }
 unsigned short dbg_get_short(unsigned short addr) {
     if (addr & ROM_BIT) {
-        return dbg_rom_get_short(addr & ROM_MASK);
+        return (*dbg_rom_get_short_in)(addr & ROM_MASK);
     }
     else if (addr & IO_APU_BIT) {
         return 0;
