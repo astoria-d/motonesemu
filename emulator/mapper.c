@@ -6,12 +6,14 @@
 
 void set_rom_addr(unsigned short addr);
 unsigned char get_rom_data(void);
+void set_rom_data(unsigned char data);
 
 
 int mapper_load;
 char mapper_fname [FNAME_LEN];
 mp_set_addr_t mp_set_addr;
 mp_get_data_t mp_get_data;
+mp_set_data_t mp_set_data;
 
 
 static void* mapper_dl;
@@ -20,6 +22,7 @@ int init_mapper(void) {
     mapper_dl = NULL;
     mp_set_addr = NULL;
     mp_get_data = NULL;
+    mp_set_data = NULL;
 
     if (mapper_load == TRUE) {
         if((mapper_dl = dlopen(mapper_fname, RTLD_LAZY)) == NULL) {
@@ -40,12 +43,18 @@ int init_mapper(void) {
             printf("%s\n", dlerror());
             return FALSE;
         }
+
+        if((mp_set_data = dlsym(mapper_dl , "mp_set_data")) == NULL) {
+            printf("%s\n", dlerror());
+            return FALSE;
+        }
+
         /*mp_set_debugger is optional..*/
         mp_set_debugger = dlsym(mapper_dl , "mp_set_debugger");
         mp_dbg_get_byte = dlsym(mapper_dl , "mp_dbg_get_byte");
         mp_dbg_get_short = dlsym(mapper_dl , "mp_dbg_get_short");
 
-        (*mp_init)(set_rom_addr, get_rom_data);
+        (*mp_init)(set_rom_addr, get_rom_data, set_rom_data);
     }
     return TRUE;
 }

@@ -47,6 +47,13 @@ unsigned char get_rom_data(void) {
     return rom_data;
 }
 
+void set_rom_data(unsigned char data){
+    extern int critical_error;
+    dprint("invalid write!!!!\n");
+    critical_error = TRUE;
+    //no write to ROM
+}
+
 void set_rom_ce_pin(int ce) {
     rom_pin_status.ce = ce;
     //let rom write the value on the bus.

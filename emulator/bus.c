@@ -26,6 +26,7 @@ static struct cpu_pin pin_status;
 
 static mp_set_addr_t set_rom_addr_in;
 static mp_get_data_t get_rom_data_in;
+static mp_set_data_t set_rom_data_in;
 
 extern mp_dbg_get_byte_t dbg_rom_get_byte_in;
 extern mp_dbg_get_short_t dbg_rom_get_short_in;
@@ -143,10 +144,7 @@ void set_bus_data(unsigned char data){
         return;
 
     if (addr_bus & ROM_BIT) {
-        extern int critical_error;
-        dprint("invalid write!!!!\n");
-        critical_error = TRUE;
-        //no write to ROM
+        (*set_rom_data_in)(data);
     }
     else if (addr_bus & IO_APU_BIT) {
         set_apu_data(data);
@@ -215,6 +213,7 @@ int init_bus(void) {
     
     set_rom_addr_in = mp_set_addr == NULL ? set_rom_addr : mp_set_addr;
     get_rom_data_in = mp_get_data == NULL ? get_rom_data : mp_get_data;
+    set_rom_data_in = mp_set_data == NULL ? set_rom_data : mp_set_data;
 
     return TRUE;
 }
