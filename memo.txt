@@ -7,3 +7,6 @@ cygserver-config
 
 cygrunsrv -S cygserver
 
+to run cygrunsrv, you may need to run the above command as a system administrator..
+
+
