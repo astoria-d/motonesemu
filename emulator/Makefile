@@ -11,7 +11,7 @@ OBJS=emu-main.o clock.o bus.o cpu.o \
 #LIBS=-L../libs -pthread -lrt -lncurses
 LIBS=-L../libs -lmotones -lpthread -lrt \
 		  -L./ppucore -lppucore \
-		  -L./joypad -ljoypad
+		  -L./joypad -ljoypad -ldl
 
 INCLUDE=-I../include -Ippucore
 
